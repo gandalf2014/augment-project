@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Debug Delete Function</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .test-section { margin: 20px 0; padding: 20px; border: 1px solid #ccc; }
+        button { padding: 10px 20px; margin: 5px; }
+        .result { margin: 10px 0; padding: 10px; background: #f5f5f5; }
+        .error { background: #ffebee; color: #c62828; }
+        .success { background: #e8f5e8; color: #2e7d32; }
+    </style>
+</head>
+<body>
+    <h1>Debug Delete Function</h1>
+    
+    <div class="test-section">
+        <h3>1. List All Memos</h3>
+        <button onclick="listMemos()">Get All Memos</button>
+        <div id="memos-list" class="result"></div>
+    </div>
+    
+    <div class="test-section">
+        <h3>2. Test Delete Function</h3>
+        <input type="number" id="delete-id" placeholder="Enter memo ID to delete">
+        <button onclick="testDelete()">Delete Memo</button>
+        <div id="delete-result" class="result"></div>
+    </div>
+    
+    <div class="test-section">
+        <h3>3. Create Test Memo</h3>
+        <button onclick="createTestMemo()">Create Test Memo</button>
+        <div id="create-result" class="result"></div>
+    </div>
+
+    <script>
+        const baseUrl = window.location.origin;
+        
+        async function listMemos() {
+            const resultDiv = document.getElementById('memos-list');
+            try {
+                const response = await fetch(`${baseUrl}/api/memos`);
+                const memos = await response.json();
+                
+                if (response.ok) {
+                    resultDiv.className = 'result success';
+                    resultDiv.innerHTML = `
+                        <h4>Found ${memos.length} memos:</h4>
+                        <ul>
+                            ${memos.map(memo => `
+                                <li>ID: ${memo.id} - ${memo.title} 
+                                    <button onclick="deleteMemo(${memo.id})">Delete</button>
+                                </li>
+                            `).join('')}
+                        </ul>
+                    `;
+                } else {
+                    resultDiv.className = 'result error';
+                    resultDiv.textContent = `Error: ${JSON.stringify(memos)}`;
+                }
+            } catch (error) {
+                resultDiv.className = 'result error';
+                resultDiv.textContent = `Error: ${error.message}`;
+            }
+        }
+        
+        async function testDelete() {
+            const id = document.getElementById('delete-id').value;
+            const resultDiv = document.getElementById('delete-result');
+            
+            if (!id) {
+                resultDiv.className = 'result error';
+                resultDiv.textContent = 'Please enter a memo ID';
+                return;
+            }
+            
+            try {
+                console.log('Attempting to delete memo ID:', id);
+                const response = await fetch(`${baseUrl}/api/memos/${id}`, {
+                    method: 'DELETE'
+                });
+                
+                const result = await response.json();
+                console.log('Delete response:', response.status, result);
+                
+                if (response.ok) {
+                    resultDiv.className = 'result success';
+                    resultDiv.textContent = `Success: ${result.message}`;
+                } else {
+                    resultDiv.className = 'result error';
+                    resultDiv.textContent = `Error ${response.status}: ${result.error}`;
+                }
+            } catch (error) {
+                console.error('Delete error:', error);
+                resultDiv.className = 'result error';
+                resultDiv.textContent = `Error: ${error.message}`;
+            }
+        }
+        
+        async function deleteMemo(id) {
+            const resultDiv = document.getElementById('delete-result');
+            
+            try {
+                console.log('Deleting memo ID:', id);
+                const response = await fetch(`${baseUrl}/api/memos/${id}`, {
+                    method: 'DELETE'
+                });
+                
+                const result = await response.json();
+                console.log('Delete response:', response.status, result);
+                
+                if (response.ok) {
+                    resultDiv.className = 'result success';
+                    resultDiv.textContent = `Successfully deleted memo ${id}`;
+                    // Refresh the list
+                    listMemos();
+                } else {
+                    resultDiv.className = 'result error';
+                    resultDiv.textContent = `Error ${response.status}: ${result.error}`;
+                }
+            } catch (error) {
+                console.error('Delete error:', error);
+                resultDiv.className = 'result error';
+                resultDiv.textContent = `Error: ${error.message}`;
+            }
+        }
+        
+        async function createTestMemo() {
+            const resultDiv = document.getElementById('create-result');
+            
+            const testMemo = {
+                title: 'Test Memo for Deletion',
+                content: 'This is a test memo that can be safely deleted.',
+                tags: 'test, debug',
+                is_favorite: false
+            };
+            
+            try {
+                const response = await fetch(`${baseUrl}/api/memos`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(testMemo)
+                });
+                
+                const result = await response.json();
+                
+                if (response.ok) {
+                    resultDiv.className = 'result success';
+                    resultDiv.textContent = `Created test memo with ID: ${result.id}`;
+                    // Refresh the list
+                    listMemos();
+                } else {
+                    resultDiv.className = 'result error';
+                    resultDiv.textContent = `Error: ${result.error}`;
+                }
+            } catch (error) {
+                resultDiv.className = 'result error';
+                resultDiv.textContent = `Error: ${error.message}`;
+            }
+        }
+        
+        // Load memos on page load
+        window.addEventListener('load', listMemos);
+    </script>
+</body>
+</html>

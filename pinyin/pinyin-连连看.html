@@ -1,0 +1,1615 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>拼音字母消消乐游戏</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Microsoft YaHei', Arial, sans-serif;
+            background: linear-gradient(135deg, #ff9a9e 0%, #fecfef 50%, #fecfef 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .title {
+            font-size: 2.5rem;
+            color: #ff6b6b;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 10px;
+        }
+
+        .subtitle {
+            font-size: 1.2rem;
+            color: #666;
+        }
+
+        .tabs {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 30px;
+            gap: 10px;
+        }
+
+        .tab-button {
+            padding: 15px 30px;
+            font-size: 1.2rem;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: bold;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+
+        .tab-button.active {
+            background: linear-gradient(45deg, #ff6b6b, #ffa500);
+            color: white;
+            transform: translateY(-2px);
+        }
+
+        .tab-button:not(.active) {
+            background: white;
+            color: #666;
+        }
+
+        .tab-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.15);
+        }
+
+        .content {
+            display: none;
+        }
+
+        .content.active {
+            display: block;
+        }
+
+        .game-area {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 15px;
+            padding: 20px;
+            max-width: 800px;
+            margin: 0 auto;
+            justify-items: center;
+        }
+
+        .card {
+            width: 120px;
+            height: 120px;
+            background: linear-gradient(45deg, #ff6b6b, #ffa500);
+            border-radius: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            border: 3px solid transparent;
+            position: relative;
+            user-select: none;
+            perspective: 1000px;
+        }
+
+        .card:hover {
+            transform: translateY(-3px) scale(1.05);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.2);
+        }
+
+        .card-inner {
+            width: 100%;
+            height: 100%;
+            position: relative;
+            transform-style: preserve-3d;
+            transition: transform 0.6s;
+        }
+
+        .card.flipped .card-inner {
+            transform: rotateY(180deg);
+        }
+
+        .card-front, .card-back {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            backface-visibility: hidden;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+        }
+
+        .card-front {
+            background: linear-gradient(45deg, #ff6b6b, #ffa500);
+            color: white;
+        }
+
+        .card-back {
+            background: white;
+            transform: rotateY(180deg);
+            border: 2px solid #ddd;
+        }
+
+        .card.matched {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .card.matched .card-back {
+            background: linear-gradient(45deg, #4CAF50, #45a049);
+            color: white;
+        }
+
+        .card.wrong {
+            animation: shake 0.5s ease;
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-5px); }
+            75% { transform: translateX(5px); }
+        }
+
+        .card-question {
+            font-size: 2rem;
+            font-weight: bold;
+            color: white;
+        }
+
+        .pinyin {
+            font-size: 1.8rem;
+            font-weight: bold;
+            color: #ff6b6b;
+            margin-bottom: 5px;
+        }
+
+        .example {
+            font-size: 0.9rem;
+            color: #666;
+            font-weight: 500;
+            text-align: center;
+        }
+
+        .card.matched .pinyin,
+        .card.matched .example {
+            color: white;
+        }
+
+        .game-stats {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .stat-item {
+            background: white;
+            padding: 15px 25px;
+            border-radius: 20px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            text-align: center;
+            min-width: 120px;
+        }
+
+        .stat-number {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #ff6b6b;
+            display: block;
+        }
+
+        .stat-label {
+            font-size: 0.9rem;
+            color: #666;
+            margin-top: 5px;
+        }
+
+        .connection-line {
+            position: absolute;
+            background: #4CAF50;
+            height: 3px;
+            border-radius: 2px;
+            z-index: 10;
+            opacity: 0.8;
+            transition: all 0.3s ease;
+        }
+
+        .success-message {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: linear-gradient(45deg, #4CAF50, #45a049);
+            color: white;
+            padding: 30px;
+            border-radius: 20px;
+            font-size: 1.5rem;
+            font-weight: bold;
+            text-align: center;
+            z-index: 1000;
+            box-shadow: 0 8px 30px rgba(0,0,0,0.3);
+            animation: successPop 0.5s ease;
+        }
+
+        @keyframes successPop {
+            0% { transform: translate(-50%, -50%) scale(0.5); opacity: 0; }
+            100% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+        }
+
+        /* 炸裂烟花效果样式 */
+        .fireworks-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 999;
+            overflow: hidden;
+            background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+            animation: flash-background 0.5s ease-out;
+        }
+
+        @keyframes flash-background {
+            0% { background: radial-gradient(circle, rgba(255,255,255,0.3) 0%, transparent 70%); }
+            100% { background: radial-gradient(circle, rgba(255,255,255,0.05) 0%, transparent 70%); }
+        }
+
+        .firework {
+            position: absolute;
+            border-radius: 50%;
+            animation: firework-explosion 2.5s ease-out forwards;
+            box-shadow: 0 0 10px currentColor;
+        }
+
+        .firework-small {
+            width: 3px;
+            height: 3px;
+        }
+
+        .firework-medium {
+            width: 6px;
+            height: 6px;
+        }
+
+        .firework-large {
+            width: 10px;
+            height: 10px;
+        }
+
+        .firework-sparkle {
+            width: 2px;
+            height: 2px;
+            animation: sparkle-twinkle 2s ease-out forwards;
+        }
+
+        @keyframes firework-explosion {
+            0% {
+                transform: scale(0) rotate(0deg);
+                opacity: 1;
+                box-shadow: 0 0 20px currentColor;
+            }
+            20% {
+                transform: scale(0.5) rotate(72deg);
+                opacity: 1;
+                box-shadow: 0 0 30px currentColor;
+            }
+            50% {
+                transform: scale(1.2) rotate(180deg);
+                opacity: 0.9;
+                box-shadow: 0 0 40px currentColor;
+            }
+            80% {
+                transform: scale(2) rotate(288deg);
+                opacity: 0.4;
+                box-shadow: 0 0 20px currentColor;
+            }
+            100% {
+                transform: scale(3) rotate(360deg);
+                opacity: 0;
+                box-shadow: 0 0 5px currentColor;
+            }
+        }
+
+        @keyframes sparkle-twinkle {
+            0%, 100% {
+                opacity: 0;
+                transform: scale(0) rotate(0deg);
+                box-shadow: 0 0 5px currentColor;
+            }
+            10%, 90% {
+                opacity: 1;
+                transform: scale(1) rotate(180deg);
+                box-shadow: 0 0 15px currentColor;
+            }
+            50% {
+                opacity: 0.8;
+                transform: scale(1.5) rotate(360deg);
+                box-shadow: 0 0 25px currentColor;
+            }
+        }
+
+        .firework-trail {
+            position: absolute;
+            width: 2px;
+            height: 20px;
+            background: linear-gradient(to bottom, currentColor, transparent);
+            animation: trail-fade 1.5s ease-out forwards;
+        }
+
+        @keyframes trail-fade {
+            0% { opacity: 1; height: 20px; }
+            100% { opacity: 0; height: 5px; }
+        }
+
+        .spark {
+            position: absolute;
+            width: 3px;
+            height: 3px;
+            border-radius: 50%;
+            animation: spark-fly 1.2s ease-out forwards;
+        }
+
+        @keyframes spark-fly {
+            0% {
+                transform: translate(0, 0) scale(1);
+                opacity: 1;
+            }
+            100% {
+                transform: translate(var(--dx), var(--dy)) scale(0);
+                opacity: 0;
+            }
+        }
+
+        .celebration-text {
+            position: fixed;
+            top: 30%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 3rem;
+            font-weight: bold;
+            color: #ff6b6b;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+            z-index: 1000;
+            pointer-events: none;
+            animation: celebration-bounce 1s ease-out forwards;
+        }
+
+        @keyframes celebration-bounce {
+            0% {
+                transform: translate(-50%, -50%) scale(0) rotate(-10deg);
+                opacity: 0;
+            }
+            50% {
+                transform: translate(-50%, -50%) scale(1.2) rotate(5deg);
+                opacity: 1;
+            }
+            100% {
+                transform: translate(-50%, -50%) scale(1) rotate(0deg);
+                opacity: 0;
+            }
+        }
+
+        /* 关卡进度条样式 */
+        .level-progress {
+            background: white;
+            border-radius: 20px;
+            padding: 15px 25px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+
+        .level-info {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .level-title {
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: #ff6b6b;
+        }
+
+        .level-counter {
+            font-size: 1rem;
+            color: #666;
+            background: #f0f0f0;
+            padding: 5px 15px;
+            border-radius: 15px;
+        }
+
+        .progress-bar {
+            background: #f0f0f0;
+            height: 8px;
+            border-radius: 4px;
+            overflow: hidden;
+            margin-top: 10px;
+        }
+
+        .progress-fill {
+            background: linear-gradient(45deg, #4CAF50, #45a049);
+            height: 100%;
+            border-radius: 4px;
+            transition: width 0.5s ease;
+        }
+
+        .level-complete-message {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: linear-gradient(45deg, #4CAF50, #45a049);
+            color: white;
+            padding: 30px;
+            border-radius: 20px;
+            font-size: 1.3rem;
+            font-weight: bold;
+            text-align: center;
+            z-index: 1000;
+            box-shadow: 0 8px 30px rgba(0,0,0,0.3);
+            animation: levelCompleteAnimation 0.6s ease;
+        }
+
+        @keyframes levelCompleteAnimation {
+            0% { transform: translate(-50%, -50%) scale(0.3) rotate(-10deg); opacity: 0; }
+            50% { transform: translate(-50%, -50%) scale(1.1) rotate(5deg); opacity: 1; }
+            100% { transform: translate(-50%, -50%) scale(1) rotate(0deg); opacity: 1; }
+        }
+
+        .loading {
+            text-align: center;
+            font-size: 1.2rem;
+            color: #666;
+            margin: 50px 0;
+        }
+
+        @media (max-width: 768px) {
+            .title {
+                font-size: 2rem;
+            }
+
+            .game-area {
+                grid-template-columns: repeat(3, 1fr);
+                gap: 12px;
+            }
+
+            .card {
+                width: 100px;
+                height: 100px;
+            }
+
+            .pinyin {
+                font-size: 1.5rem;
+            }
+
+            .tab-button {
+                padding: 12px 20px;
+                font-size: 1rem;
+            }
+
+            .game-stats {
+                gap: 15px;
+            }
+
+            .stat-item {
+                min-width: 100px;
+                padding: 12px 20px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .tabs {
+                flex-direction: column;
+                align-items: center;
+            }
+
+            .tab-button {
+                width: 200px;
+            }
+
+            .game-area {
+                grid-template-columns: repeat(2, 1fr);
+                padding: 10px;
+                gap: 10px;
+            }
+
+            .card {
+                width: 80px;
+                height: 80px;
+            }
+
+            .pinyin {
+                font-size: 1.2rem;
+            }
+
+            .example {
+                font-size: 0.8rem;
+            }
+
+            .card-question {
+                font-size: 1.5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1 class="title">🎮 拼音字母消消乐 🎮</h1>
+            <p class="subtitle">翻开卡片找对子，记忆拼音更有趣！</p>
+        </div>
+
+        <div class="tabs">
+            <button class="tab-button active" onclick="switchTab('shengmu')">声母消消乐</button>
+            <button class="tab-button" onclick="switchTab('yunmu')">韵母消消乐</button>
+        </div>
+
+        <div id="shengmu" class="content active">
+            <div class="level-progress">
+                <div class="level-info">
+                    <div class="level-title" id="shengmu-level-title">第1关</div>
+                    <div class="level-counter" id="shengmu-level-counter">1/3</div>
+                </div>
+                <div class="progress-bar">
+                    <div class="progress-fill" id="shengmu-progress-fill" style="width: 0%"></div>
+                </div>
+            </div>
+            <div class="game-stats">
+                <div class="stat-item">
+                    <span class="stat-number" id="shengmu-score">0</span>
+                    <div class="stat-label">得分</div>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-number" id="shengmu-matched">0</span>
+                    <div class="stat-label">已配对</div>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-number" id="shengmu-moves">0</span>
+                    <div class="stat-label">步数</div>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-number" id="shengmu-total">8</span>
+                    <div class="stat-label">总对数</div>
+                </div>
+            </div>
+            <div class="game-area" id="shengmu-game-area">
+                <!-- 游戏卡片将通过JavaScript生成 -->
+            </div>
+        </div>
+
+        <div id="yunmu" class="content">
+            <div class="level-progress">
+                <div class="level-info">
+                    <div class="level-title" id="yunmu-level-title">第1关</div>
+                    <div class="level-counter" id="yunmu-level-counter">1/3</div>
+                </div>
+                <div class="progress-bar">
+                    <div class="progress-fill" id="yunmu-progress-fill" style="width: 0%"></div>
+                </div>
+            </div>
+            <div class="game-stats">
+                <div class="stat-item">
+                    <span class="stat-number" id="yunmu-score">0</span>
+                    <div class="stat-label">得分</div>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-number" id="yunmu-matched">0</span>
+                    <div class="stat-label">已配对</div>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-number" id="yunmu-moves">0</span>
+                    <div class="stat-label">步数</div>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-number" id="yunmu-total">8</span>
+                    <div class="stat-label">总对数</div>
+                </div>
+            </div>
+            <div class="game-area" id="yunmu-game-area">
+                <!-- 游戏卡片将通过JavaScript生成 -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 完整声母数据（23个）
+        const allShengmuData = [
+            {pinyin: 'b', example: '爸爸'},
+            {pinyin: 'p', example: '苹果'},
+            {pinyin: 'm', example: '妈妈'},
+            {pinyin: 'f', example: '飞机'},
+            {pinyin: 'd', example: '大象'},
+            {pinyin: 't', example: '兔子'},
+            {pinyin: 'n', example: '牛奶'},
+            {pinyin: 'l', example: '老虎'},
+            {pinyin: 'g', example: '哥哥'},
+            {pinyin: 'k', example: '开心'},
+            {pinyin: 'h', example: '花朵'},
+            {pinyin: 'j', example: '鸡蛋'},
+            {pinyin: 'q', example: '气球'},
+            {pinyin: 'x', example: '西瓜'},
+            {pinyin: 'zh', example: '竹子'},
+            {pinyin: 'ch', example: '吃饭'},
+            {pinyin: 'sh', example: '狮子'},
+            {pinyin: 'r', example: '日出'},
+            {pinyin: 'z', example: '桌子'},
+            {pinyin: 'c', example: '草地'},
+            {pinyin: 's', example: '太阳'},
+            {pinyin: 'y', example: '月亮'},
+            {pinyin: 'w', example: '我们'}
+        ];
+
+        // 完整韵母数据（24个）
+        const allYunmuData = [
+            {pinyin: 'a', example: '阿姨'},
+            {pinyin: 'o', example: '哦'},
+            {pinyin: 'e', example: '鹅'},
+            {pinyin: 'i', example: '衣服'},
+            {pinyin: 'u', example: '乌鸦'},
+            {pinyin: 'ü', example: '鱼'},
+            {pinyin: 'ai', example: '爱心'},
+            {pinyin: 'ei', example: '杯子'},
+            {pinyin: 'ui', example: '水'},
+            {pinyin: 'ao', example: '猫'},
+            {pinyin: 'ou', example: '狗'},
+            {pinyin: 'iu', example: '牛'},
+            {pinyin: 'ie', example: '叶子'},
+            {pinyin: 'üe', example: '月'},
+            {pinyin: 'er', example: '儿子'},
+            {pinyin: 'an', example: '山'},
+            {pinyin: 'en', example: '门'},
+            {pinyin: 'in', example: '心'},
+            {pinyin: 'un', example: '云'},
+            {pinyin: 'ün', example: '云'},
+            {pinyin: 'ang', example: '糖'},
+            {pinyin: 'eng', example: '灯'},
+            {pinyin: 'ing', example: '星'},
+            {pinyin: 'ong', example: '虫'}
+        ];
+
+        // 游戏状态
+        let gameState = {
+            currentTab: 'shengmu',
+            flippedCards: [],
+            matchedPairs: [],
+            score: 0,
+            moves: 0,
+            totalPairs: 8,
+            isProcessing: false,
+            currentLevel: 1,
+            totalLevels: 0,
+            completedLevels: 0,
+            allData: [],
+            currentLevelData: [],
+            // 定时器管理
+            activeTimers: [],
+            matchCheckTimer: null
+        };
+
+        // 音频播放功能
+        let currentAudio = null;
+
+        // 播放拼音发音
+        function playPinyin(pinyin) {
+            // 停止当前播放的音频
+            if (currentAudio) {
+                currentAudio.pause();
+                currentAudio.currentTime = 0;
+            }
+
+            // 尝试播放预录制的音频文件
+            const audioPath = `audio/${pinyin}.mp3`;
+            currentAudio = new Audio(audioPath);
+
+            // 设置音频属性
+            currentAudio.preload = 'auto';
+            currentAudio.volume = 1.0;
+
+            currentAudio.onerror = function(e) {
+                console.warn(`音频文件加载失败: ${audioPath}`, e);
+                playPinyinWithTTS(pinyin);
+            };
+
+            // 尝试播放音频
+            const playPromise = currentAudio.play();
+
+            if (playPromise !== undefined) {
+                playPromise.then(() => {
+                    console.log(`音频播放成功: ${audioPath}`);
+                }).catch(error => {
+                    console.warn('音频播放失败，使用备用方案:', error.message);
+                    playPinyinWithTTS(pinyin);
+                });
+            }
+        }
+
+        // 播放成功音效
+        function playSuccessSound() {
+            const successAudio = new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwhBSuBzvLZiTYIG2m98OScTgwOUarm7blmGgU7k9n1unEiBC13yO/eizEIHWq+8+OWT');
+            successAudio.volume = 0.3;
+            successAudio.play().catch(() => {});
+        }
+
+        // 播放错误音效
+        function playErrorSound() {
+            const errorAudio = new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwhBSuBzvLZiTYIG2m98OScTgwOUarm7blmGgU7k9n1unEiBC13yO/eizEIHWq+8+OWT');
+            errorAudio.volume = 0.2;
+            errorAudio.play().catch(() => {});
+        }
+
+        // 清理所有定时器
+        function clearAllTimers() {
+            // 清理所有活跃的定时器
+            gameState.activeTimers.forEach(timerId => {
+                clearTimeout(timerId);
+            });
+            gameState.activeTimers = [];
+
+            // 清理匹配检查定时器
+            if (gameState.matchCheckTimer) {
+                clearTimeout(gameState.matchCheckTimer);
+                gameState.matchCheckTimer = null;
+            }
+        }
+
+        // 安全的setTimeout包装器
+        function safeSetTimeout(callback, delay) {
+            const timerId = setTimeout(() => {
+                // 从活跃定时器列表中移除
+                const index = gameState.activeTimers.indexOf(timerId);
+                if (index > -1) {
+                    gameState.activeTimers.splice(index, 1);
+                }
+                callback();
+            }, delay);
+
+            // 添加到活跃定时器列表
+            gameState.activeTimers.push(timerId);
+            return timerId;
+        }
+
+        // 创建炸裂烟花效果
+        function createFireworks() {
+            // 创建烟花容器
+            const container = document.createElement('div');
+            container.className = 'fireworks-container';
+            document.body.appendChild(container);
+
+            // 炸裂色彩配置
+            const colors = [
+                '#ff0080', '#ff4000', '#ff8000', '#ffff00', '#80ff00', '#00ff00',
+                '#00ff80', '#00ffff', '#0080ff', '#0000ff', '#8000ff', '#ff00ff',
+                '#ff6b6b', '#4ecdc4', '#45b7d1', '#96ceb4', '#feca57', '#ff9ff3',
+                '#f093fb', '#f5576c', '#4facfe', '#00f2fe', '#43e97b', '#38f9d7'
+            ];
+
+            // 创建大量烟花爆炸点
+            const fireworksCount = 12;
+            const explosionTypes = ['circle', 'heart', 'star', 'spiral', 'burst'];
+
+            for (let i = 0; i < fireworksCount; i++) {
+                safeSetTimeout(() => {
+                    if (container.parentElement) { // 检查容器是否仍然存在
+                        const explosionType = explosionTypes[Math.floor(Math.random() * explosionTypes.length)];
+                        createSingleFirework(container, colors, explosionType);
+                    }
+                }, i * 150);
+            }
+
+            // 添加额外的闪烁粒子
+            safeSetTimeout(() => {
+                if (container.parentElement) { // 检查容器是否仍然存在
+                    createSparkleEffect(container, colors);
+                }
+            }, 500);
+
+            // 显示庆祝文字
+            showCelebrationText();
+
+            // 清理烟花容器
+            safeSetTimeout(() => {
+                if (container.parentElement) {
+                    container.remove();
+                }
+            }, 3500);
+        }
+
+        // 创建单个炸裂烟花
+        function createSingleFirework(container, colors, explosionType = 'circle') {
+            // 随机位置
+            const x = Math.random() * window.innerWidth;
+            const y = Math.random() * (window.innerHeight * 0.7) + window.innerHeight * 0.15;
+
+            // 创建中心爆炸点
+            const center = document.createElement('div');
+            center.className = 'firework firework-large';
+            center.style.left = x + 'px';
+            center.style.top = y + 'px';
+            const color1 = colors[Math.floor(Math.random() * colors.length)];
+            const color2 = colors[Math.floor(Math.random() * colors.length)];
+            center.style.background = `radial-gradient(circle, ${color1}, ${color2})`;
+            container.appendChild(center);
+
+            // 根据爆炸类型创建粒子
+            let particleCount = 60 + Math.random() * 40; // 60-100个粒子
+
+            for (let i = 0; i < particleCount; i++) {
+                const particle = document.createElement('div');
+                const size = Math.random();
+
+                if (size < 0.3) {
+                    particle.className = 'firework firework-small';
+                } else if (size < 0.7) {
+                    particle.className = 'firework firework-medium';
+                } else {
+                    particle.className = 'firework firework-large';
+                }
+
+                let particleX, particleY;
+
+                // 根据爆炸类型计算位置
+                switch (explosionType) {
+                    case 'heart':
+                        const t = (i / particleCount) * Math.PI * 2;
+                        const heartX = 16 * Math.pow(Math.sin(t), 3);
+                        const heartY = -(13 * Math.cos(t) - 5 * Math.cos(2*t) - 2 * Math.cos(3*t) - Math.cos(4*t));
+                        particleX = x + heartX * 3;
+                        particleY = y + heartY * 3;
+                        break;
+
+                    case 'star':
+                        const starAngle = (i / particleCount) * Math.PI * 2;
+                        const starRadius = (i % 2 === 0) ? 80 + Math.random() * 40 : 40 + Math.random() * 20;
+                        particleX = x + Math.cos(starAngle) * starRadius;
+                        particleY = y + Math.sin(starAngle) * starRadius;
+                        break;
+
+                    case 'spiral':
+                        const spiralAngle = (i / particleCount) * Math.PI * 6;
+                        const spiralRadius = (i / particleCount) * 120;
+                        particleX = x + Math.cos(spiralAngle) * spiralRadius;
+                        particleY = y + Math.sin(spiralAngle) * spiralRadius;
+                        break;
+
+                    case 'burst':
+                        const burstAngle = Math.random() * Math.PI * 2;
+                        const burstRadius = 30 + Math.random() * 150;
+                        particleX = x + Math.cos(burstAngle) * burstRadius;
+                        particleY = y + Math.sin(burstAngle) * burstRadius;
+                        break;
+
+                    default: // circle
+                        const angle = (i / particleCount) * Math.PI * 2 + Math.random() * 0.5;
+                        const distance = 60 + Math.random() * 120;
+                        particleX = x + Math.cos(angle) * distance;
+                        particleY = y + Math.sin(angle) * distance;
+                }
+
+                particle.style.left = particleX + 'px';
+                particle.style.top = particleY + 'px';
+
+                // 渐变色彩
+                const pColor1 = colors[Math.floor(Math.random() * colors.length)];
+                const pColor2 = colors[Math.floor(Math.random() * colors.length)];
+                particle.style.background = `radial-gradient(circle, ${pColor1}, ${pColor2})`;
+                particle.style.animationDelay = Math.random() * 0.8 + 's';
+
+                container.appendChild(particle);
+            }
+        }
+
+        // 创建闪烁粒子效果
+        function createSparkleEffect(container, colors) {
+            const sparkleCount = 200;
+
+            for (let i = 0; i < sparkleCount; i++) {
+                safeSetTimeout(() => {
+                    if (!container.parentElement) return; // 检查容器是否仍然存在
+
+                    const sparkle = document.createElement('div');
+                    sparkle.className = 'firework firework-sparkle';
+
+                    // 随机位置
+                    sparkle.style.left = Math.random() * window.innerWidth + 'px';
+                    sparkle.style.top = Math.random() * window.innerHeight + 'px';
+
+                    // 随机颜色
+                    const color = colors[Math.floor(Math.random() * colors.length)];
+                    sparkle.style.backgroundColor = color;
+                    sparkle.style.boxShadow = `0 0 10px ${color}`;
+
+                    container.appendChild(sparkle);
+
+                    // 自动移除
+                    safeSetTimeout(() => {
+                        if (sparkle.parentElement) {
+                            sparkle.remove();
+                        }
+                    }, 2000);
+                }, Math.random() * 1000);
+            }
+        }
+
+        // 显示庆祝文字
+        function showCelebrationText() {
+            const messages = ['太棒了！', '很好！', '继续加油！', '真厉害！', '完美！'];
+            const message = messages[Math.floor(Math.random() * messages.length)];
+
+            const text = document.createElement('div');
+            text.className = 'celebration-text';
+            text.textContent = message;
+            document.body.appendChild(text);
+
+            setTimeout(() => {
+                if (text.parentElement) {
+                    text.remove();
+                }
+            }, 1000);
+        }
+
+        // 初始化关卡数据
+        function initLevelData() {
+            const currentData = gameState.currentTab === 'shengmu' ? allShengmuData : allYunmuData;
+            gameState.allData = [...currentData];
+
+            // 计算总关卡数（每关8对，向上取整）
+            gameState.totalLevels = Math.ceil(currentData.length / 8);
+            gameState.currentLevel = 1;
+            gameState.completedLevels = 0;
+
+            // 获取当前关卡数据
+            updateCurrentLevelData();
+        }
+
+        // 更新当前关卡数据
+        function updateCurrentLevelData() {
+            const startIndex = (gameState.currentLevel - 1) * 8;
+            const endIndex = Math.min(startIndex + 8, gameState.allData.length);
+            gameState.currentLevelData = gameState.allData.slice(startIndex, endIndex);
+            gameState.totalPairs = gameState.currentLevelData.length;
+        }
+
+        // 更新关卡进度显示
+        function updateLevelProgress() {
+            const prefix = gameState.currentTab;
+            const progressPercent = (gameState.completedLevels / gameState.totalLevels) * 100;
+
+            document.getElementById(`${prefix}-level-title`).textContent = `第${gameState.currentLevel}关`;
+            document.getElementById(`${prefix}-level-counter`).textContent = `${gameState.currentLevel}/${gameState.totalLevels}`;
+            document.getElementById(`${prefix}-progress-fill`).style.width = `${progressPercent}%`;
+        }
+
+        // 显示关卡完成消息
+        function showLevelCompleteMessage() {
+            const message = document.createElement('div');
+            message.className = 'level-complete-message';
+
+            if (gameState.currentLevel < gameState.totalLevels) {
+                // 还有下一关
+                message.innerHTML = `
+                    <div>🎉 第${gameState.currentLevel}关完成！</div>
+                    <div style="font-size: 1rem; margin: 15px 0;">
+                        得分: ${gameState.score} 分 | 步数: ${gameState.moves} 步
+                    </div>
+                    <button onclick="nextLevel()"
+                            style="margin: 10px 5px; padding: 10px 20px; border: none;
+                                   border-radius: 10px; background: white; color: #4CAF50;
+                                   cursor: pointer; font-weight: bold; font-size: 1rem;">
+                        下一关
+                    </button>
+                    <button onclick="resetGame()"
+                            style="margin: 10px 5px; padding: 10px 20px; border: none;
+                                   border-radius: 10px; background: rgba(255,255,255,0.3); color: white;
+                                   cursor: pointer; font-weight: bold; font-size: 1rem;">
+                        重新开始
+                    </button>
+                `;
+            } else {
+                // 全部完成
+                const totalScore = gameState.score;
+                const totalMoves = gameState.moves;
+                message.innerHTML = `
+                    <div>🏆 恭喜通关！</div>
+                    <div style="font-size: 1.2rem; margin: 15px 0;">
+                        🎊 所有${gameState.currentTab === 'shengmu' ? '声母' : '韵母'}学习完成！
+                    </div>
+                    <div style="font-size: 1rem; margin: 10px 0;">
+                        总得分: ${totalScore} 分<br>
+                        总步数: ${totalMoves} 步
+                    </div>
+                    <button onclick="resetGame()"
+                            style="margin-top: 20px; padding: 10px 20px; border: none;
+                                   border-radius: 10px; background: white; color: #4CAF50;
+                                   cursor: pointer; font-weight: bold; font-size: 1rem;">
+                        重新挑战
+                    </button>
+                `;
+            }
+
+            document.body.appendChild(message);
+
+            setTimeout(() => {
+                if (message.parentElement) {
+                    message.remove();
+                }
+            }, 10000);
+        }
+
+        // 进入下一关
+        function nextLevel() {
+            // 移除完成消息
+            document.querySelectorAll('.level-complete-message').forEach(msg => msg.remove());
+
+            gameState.currentLevel++;
+            gameState.completedLevels++;
+            updateCurrentLevelData();
+
+            // 重置当前关卡状态
+            gameState.flippedCards = [];
+            gameState.matchedPairs = [];
+            gameState.moves = 0;
+            gameState.isProcessing = false;
+
+            // 渲染新关卡
+            renderGame();
+        }
+
+        // 备用TTS方案（改进的Web Speech API）
+        function playPinyinWithTTS(pinyin) {
+            if (!window.speechSynthesis) {
+                showAudioTip();
+                return;
+            }
+
+            speechSynthesis.cancel();
+
+            // 对特殊拼音进行处理，使发音更准确
+            let processedPinyin = processPinyinForTTS(pinyin);
+
+            const utterance = new SpeechSynthesisUtterance(processedPinyin);
+
+            // 获取最佳中文语音
+            const voices = speechSynthesis.getVoices();
+            const chineseVoice = voices.find(voice =>
+                voice.lang === 'zh-CN' ||
+                voice.lang === 'zh' ||
+                voice.name.includes('Chinese') ||
+                voice.name.includes('中文') ||
+                voice.name.includes('Mandarin')
+            );
+
+            if (chineseVoice) {
+                utterance.voice = chineseVoice;
+            }
+
+            utterance.lang = 'zh-CN';
+            utterance.rate = 0.6;  // 更慢的语速
+            utterance.pitch = 1.1; // 适中的音调
+            utterance.volume = 1;
+
+            speechSynthesis.speak(utterance);
+        }
+
+        // 处理拼音以改善TTS发音
+        function processPinyinForTTS(pinyin) {
+            const pinyinMap = {
+                'zh': '知',
+                'ch': '吃',
+                'sh': '诗',
+                'r': '日',
+                'z': '资',
+                'c': '次',
+                's': '思',
+                'ü': '鱼',
+                'üe': '月',
+                'ün': '云',
+                'er': '儿'
+            };
+
+            return pinyinMap[pinyin] || pinyin;
+        }
+
+        // 显示音频权限提示
+        function showAudioPermissionTip() {
+            const tip = document.createElement('div');
+            tip.style.cssText = `
+                position: fixed;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+                background: #ff9800;
+                color: white;
+                padding: 20px;
+                border-radius: 10px;
+                font-size: 1.1rem;
+                text-align: center;
+                z-index: 1000;
+                box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+                max-width: 400px;
+            `;
+            tip.innerHTML = `
+                <div>🔊 需要音频播放权限</div>
+                <div style="font-size: 0.9rem; margin: 15px 0;">
+                    浏览器阻止了自动音频播放。<br>
+                    请点击下面的按钮启用音频播放功能。
+                </div>
+                <button onclick="enableAudio(this.parentElement)"
+                        style="margin: 10px 5px; padding: 10px 20px; border: none;
+                               border-radius: 5px; background: white; color: #ff9800;
+                               cursor: pointer; font-weight: bold;">
+                    启用音频播放
+                </button>
+                <button onclick="this.parentElement.remove()"
+                        style="margin: 10px 5px; padding: 10px 20px; border: none;
+                               border-radius: 5px; background: rgba(255,255,255,0.3); color: white;
+                               cursor: pointer;">
+                    稍后再说
+                </button>
+            `;
+            document.body.appendChild(tip);
+        }
+
+        // 启用音频播放
+        function enableAudio(tipElement) {
+            // 播放一个静音音频来获取播放权限
+            const silentAudio = new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwhBSuBzvLZiTYIG2m98OScTgwOUarm7blmGgU7k9n1unEiBC13yO/eizEIHWq+8+OWT');
+            silentAudio.volume = 0;
+            silentAudio.play().then(() => {
+                console.log('音频播放权限已获取');
+                tipElement.remove();
+                // 显示成功提示
+                const successTip = document.createElement('div');
+                successTip.style.cssText = `
+                    position: fixed;
+                    top: 20px;
+                    right: 20px;
+                    background: #4CAF50;
+                    color: white;
+                    padding: 15px;
+                    border-radius: 8px;
+                    z-index: 1000;
+                    font-weight: bold;
+                `;
+                successTip.textContent = '✅ 音频播放已启用！现在可以点击拼音卡片听发音了';
+                document.body.appendChild(successTip);
+                setTimeout(() => successTip.remove(), 3000);
+            }).catch(error => {
+                console.error('无法获取音频播放权限:', error);
+            });
+        }
+
+        // 显示音频提示
+        function showAudioTip() {
+            const tip = document.createElement('div');
+            tip.style.cssText = `
+                position: fixed;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+                background: #ff6b6b;
+                color: white;
+                padding: 20px;
+                border-radius: 10px;
+                font-size: 1.1rem;
+                text-align: center;
+                z-index: 1000;
+                box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+            `;
+            tip.innerHTML = `
+                <div>🔊 音频功能需要音频文件支持</div>
+                <div style="font-size: 0.9rem; margin-top: 10px;">
+                    请在项目根目录创建 audio 文件夹，<br>
+                    并添加对应的拼音音频文件（如 a.mp3, b.mp3 等）
+                </div>
+                <button onclick="this.parentElement.remove()"
+                        style="margin-top: 15px; padding: 8px 16px; border: none;
+                               border-radius: 5px; background: white; color: #ff6b6b;
+                               cursor: pointer; font-weight: bold;">
+                    知道了
+                </button>
+            `;
+            document.body.appendChild(tip);
+
+            setTimeout(() => {
+                if (tip.parentElement) {
+                    tip.remove();
+                }
+            }, 5000);
+        }
+
+        // 创建记忆卡片
+        function createMemoryCard(data, index, cardType) {
+            const card = document.createElement('div');
+            card.className = 'card';
+            card.dataset.index = index;
+            card.dataset.pinyin = data.pinyin;
+            card.dataset.type = cardType;
+
+
+
+            const cardInner = document.createElement('div');
+            cardInner.className = 'card-inner';
+
+            const cardFront = document.createElement('div');
+            cardFront.className = 'card-front';
+            cardFront.innerHTML = '<div class="card-question">?</div>';
+
+            const cardBack = document.createElement('div');
+            cardBack.className = 'card-back';
+
+            if (cardType === 'pinyin') {
+                cardBack.innerHTML = `<div class="pinyin">${data.pinyin}</div>`;
+            } else {
+                cardBack.innerHTML = `
+                    <div class="pinyin">${data.pinyin}</div>
+                    <div class="example">${data.example}</div>
+                `;
+            }
+
+            cardInner.appendChild(cardFront);
+            cardInner.appendChild(cardBack);
+            card.appendChild(cardInner);
+
+            card.addEventListener('click', function() {
+                handleCardClick(card, data);
+            });
+
+            return card;
+        }
+
+        // 处理卡片点击
+        function handleCardClick(card, data) {
+            // 如果正在处理或卡片已匹配或已翻开，不处理
+            if (gameState.isProcessing ||
+                card.classList.contains('matched') ||
+                card.classList.contains('flipped')) {
+                return;
+            }
+
+            // 翻开卡片
+            flipCard(card);
+
+            // 播放音频
+            playPinyin(data.pinyin);
+
+            // 添加到已翻开的卡片数组
+            gameState.flippedCards.push(card);
+
+            // 如果翻开了两张卡片，检查是否匹配
+            if (gameState.flippedCards.length === 2) {
+                gameState.moves++;
+                updateStats();
+
+                // 清理之前的匹配检查定时器（防止重复调用）
+                if (gameState.matchCheckTimer) {
+                    clearTimeout(gameState.matchCheckTimer);
+                }
+
+                gameState.matchCheckTimer = setTimeout(() => {
+                    checkMatch();
+                    gameState.matchCheckTimer = null;
+                }, 1000);
+            }
+        }
+
+        // 翻开卡片
+        function flipCard(card) {
+            card.classList.add('flipped');
+        }
+
+        // 翻回卡片
+        function flipBackCard(card) {
+            card.classList.remove('flipped');
+        }
+
+        // 检查匹配
+        function checkMatch() {
+            gameState.isProcessing = true;
+
+            const [card1, card2] = gameState.flippedCards;
+            const pinyin1 = card1.dataset.pinyin;
+            const pinyin2 = card2.dataset.pinyin;
+            const type1 = card1.dataset.type;
+            const type2 = card2.dataset.type;
+
+
+
+            if (pinyin1 === pinyin2 && type1 !== type2) {
+                // 匹配成功
+                matchCards(card1, card2);
+            } else {
+                // 匹配失败
+                showWrongMatch(card1, card2);
+            }
+
+            // 清空已翻开的卡片数组
+            gameState.flippedCards = [];
+            gameState.isProcessing = false;
+        }
+
+        // 匹配成功
+        function matchCards(card1, card2) {
+            // 播放成功音效
+            playSuccessSound();
+
+            // 创建烟花效果
+            createFireworks();
+
+            // 标记为匹配
+            card1.classList.add('matched');
+            card2.classList.add('matched');
+
+            // 更新游戏状态
+            gameState.matchedPairs.push({card1, card2});
+            gameState.score += 20; // 消消乐得分更高
+
+            // 更新统计
+            updateStats();
+
+            // 检查是否完成当前关卡
+            if (gameState.matchedPairs.length === gameState.totalPairs) {
+                setTimeout(() => {
+                    showLevelCompleteMessage();
+                }, 500);
+            }
+        }
+
+        // 显示错误匹配
+        function showWrongMatch(card1, card2) {
+            // 播放错误音效
+            playErrorSound();
+
+            // 显示错误动画
+            card1.classList.add('wrong');
+            card2.classList.add('wrong');
+
+            safeSetTimeout(() => {
+                // 检查卡片是否仍然存在且未被匹配
+                if (card1.parentElement && card2.parentElement &&
+                    !card1.classList.contains('matched') &&
+                    !card2.classList.contains('matched')) {
+                    // 翻回卡片
+                    flipBackCard(card1);
+                    flipBackCard(card2);
+                    card1.classList.remove('wrong');
+                    card2.classList.remove('wrong');
+                }
+            }, 1000);
+        }
+
+        // 更新统计信息
+        function updateStats() {
+            const prefix = gameState.currentTab;
+            document.getElementById(`${prefix}-score`).textContent = gameState.score;
+            document.getElementById(`${prefix}-matched`).textContent = gameState.matchedPairs.length;
+            document.getElementById(`${prefix}-moves`).textContent = gameState.moves;
+            document.getElementById(`${prefix}-total`).textContent = gameState.totalPairs;
+
+            // 更新关卡进度
+            updateLevelProgress();
+        }
+
+        // 显示成功消息
+        function showSuccessMessage() {
+            const message = document.createElement('div');
+            message.className = 'success-message';
+
+            // 计算星级评分（基于步数）
+            const perfectMoves = gameState.totalPairs; // 完美步数
+            const stars = gameState.moves <= perfectMoves ? 3 :
+                         gameState.moves <= perfectMoves * 1.5 ? 2 : 1;
+            const starDisplay = '⭐'.repeat(stars) + '☆'.repeat(3 - stars);
+
+            message.innerHTML = `
+                <div>🎉 恭喜完成！</div>
+                <div style="font-size: 1.2rem; margin: 15px 0;">
+                    ${starDisplay}
+                </div>
+                <div style="font-size: 1rem; margin-top: 10px;">
+                    得分: ${gameState.score} 分<br>
+                    步数: ${gameState.moves} 步
+                </div>
+                <button onclick="resetGame()"
+                        style="margin-top: 20px; padding: 10px 20px; border: none;
+                               border-radius: 10px; background: white; color: #4CAF50;
+                               cursor: pointer; font-weight: bold; font-size: 1rem;">
+                    再玩一次
+                </button>
+            `;
+            document.body.appendChild(message);
+
+            setTimeout(() => {
+                if (message.parentElement) {
+                    message.remove();
+                }
+            }, 8000);
+        }
+
+        // 切换标签页
+        function switchTab(tabName) {
+            // 清理所有定时器和效果
+            clearAllTimers();
+
+            // 移除所有烟花容器
+            document.querySelectorAll('.fireworks-container').forEach(container => container.remove());
+
+            // 更新标签按钮状态
+            document.querySelectorAll('.tab-button').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            event.target.classList.add('active');
+
+            // 更新内容显示
+            document.querySelectorAll('.content').forEach(content => {
+                content.classList.remove('active');
+            });
+            document.getElementById(tabName).classList.add('active');
+
+            // 重置游戏状态
+            gameState.currentTab = tabName;
+            resetGame();
+        }
+
+        // 重置游戏
+        function resetGame() {
+            // 清理所有定时器
+            clearAllTimers();
+
+            // 移除所有消息
+            document.querySelectorAll('.level-complete-message').forEach(msg => msg.remove());
+
+            // 移除所有烟花容器
+            document.querySelectorAll('.fireworks-container').forEach(container => container.remove());
+
+            // 重置游戏状态
+            gameState.flippedCards = [];
+            gameState.matchedPairs = [];
+            gameState.score = 0;
+            gameState.moves = 0;
+            gameState.isProcessing = false;
+
+            // 初始化关卡数据
+            initLevelData();
+
+            // 渲染游戏
+            renderGame();
+        }
+
+        // 渲染游戏
+        function renderGame() {
+            // 创建卡片对：每个拼音数据创建两张卡片（拼音卡片和词汇卡片）
+            const cards = [];
+            gameState.currentLevelData.forEach((item, index) => {
+                cards.push({...item, cardType: 'pinyin', id: `${index}-pinyin`});
+                cards.push({...item, cardType: 'word', id: `${index}-word`});
+            });
+
+            // 打乱卡片顺序
+            const shuffledCards = cards.sort(() => Math.random() - 0.5);
+
+            // 渲染游戏区域
+            const gameArea = document.getElementById(`${gameState.currentTab}-game-area`);
+            gameArea.innerHTML = '';
+
+            shuffledCards.forEach((item, index) => {
+                const card = createMemoryCard(item, index, item.cardType);
+                gameArea.appendChild(card);
+            });
+
+            // 更新统计
+            updateStats();
+        }
+
+        // 初始化游戏
+        function initGame() {
+            // 预加载语音引擎
+            if (window.speechSynthesis) {
+                speechSynthesis.getVoices();
+                if (speechSynthesis.onvoiceschanged !== undefined) {
+                    speechSynthesis.onvoiceschanged = () => {
+                        speechSynthesis.getVoices();
+                    };
+                }
+            }
+
+            // 预初始化音频上下文（用户交互后）
+            document.addEventListener('click', initAudioContext, { once: true });
+            document.addEventListener('touchstart', initAudioContext, { once: true });
+
+            // 初始化游戏
+            resetGame();
+
+            console.log('拼音连连看游戏初始化完成！');
+
+            // 显示游戏说明
+            showGameInstructions();
+        }
+
+        // 初始化音频上下文
+        function initAudioContext() {
+            // 创建一个静音音频来初始化音频上下文
+            const silentAudio = new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwhBSuBzvLZiTYIG2m98OScTgwOUarm7blmGgU7k9n1unEiBC13yO/eizEIHWq+8+OWT');
+            silentAudio.volume = 0;
+            silentAudio.play().then(() => {
+                console.log('音频上下文已初始化');
+            }).catch(error => {
+                console.log('音频上下文初始化失败，这是正常的');
+            });
+        }
+
+        // 显示游戏说明
+        function showGameInstructions() {
+            const instructions = document.createElement('div');
+            instructions.style.cssText = `
+                position: fixed;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+                background: white;
+                padding: 30px;
+                border-radius: 20px;
+                font-size: 1.1rem;
+                max-width: 500px;
+                z-index: 1000;
+                box-shadow: 0 8px 30px rgba(0,0,0,0.3);
+                text-align: center;
+            `;
+            instructions.innerHTML = `
+                <div style="font-size: 1.5rem; font-weight: bold; color: #ff6b6b; margin-bottom: 20px;">
+                    � 游戏说明
+                </div>
+                <div style="text-align: left; line-height: 1.6; margin-bottom: 20px;">
+                    <div style="margin-bottom: 10px;">🎯 <strong>游戏目标：</strong>翻开卡片找到拼音字母和对应词汇的配对</div>
+                    <div style="margin-bottom: 10px;">🖱️ <strong>操作方法：</strong>点击卡片翻开，找到相同拼音的两张卡片</div>
+                    <div style="margin-bottom: 10px;">🎵 <strong>学习功能：</strong>翻开卡片时可以听到标准发音</div>
+                    <div style="margin-bottom: 10px;">🏆 <strong>得分规则：</strong>每找到一对得20分，步数越少星级越高</div>
+                    <div style="margin-bottom: 10px;">🎮 <strong>多轮挑战：</strong>声母23个分3关，韵母24个分3关</div>
+                    <div style="margin-bottom: 10px;">🎊 <strong>烟花奖励：</strong>每次配对成功都有精彩烟花庆祝</div>
+                </div>
+                <button onclick="this.parentElement.remove()"
+                        style="padding: 12px 30px; border: none; border-radius: 25px;
+                               background: linear-gradient(45deg, #ff6b6b, #ffa500); color: white;
+                               cursor: pointer; font-weight: bold; font-size: 1rem;">
+                    开始游戏
+                </button>
+            `;
+            document.body.appendChild(instructions);
+        }
+
+        // 页面加载完成后初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            initGame();
+        });
+
+        // 添加触摸设备支持
+        if ('ontouchstart' in window) {
+            document.addEventListener('touchstart', function() {}, {passive: true});
+        }
+    </script>
+</body>
+</html>

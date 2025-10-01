@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>拼音音频文件下载助手</title>
+    <style>
+        body {
+            font-family: 'Microsoft YaHei', Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: white;
+        }
+        
+        .container {
+            background: rgba(255,255,255,0.1);
+            padding: 30px;
+            border-radius: 15px;
+            backdrop-filter: blur(10px);
+        }
+        
+        h1 {
+            text-align: center;
+            margin-bottom: 30px;
+            color: #fff;
+        }
+        
+        .section {
+            margin-bottom: 30px;
+            background: rgba(255,255,255,0.1);
+            padding: 20px;
+            border-radius: 10px;
+        }
+        
+        .audio-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+            gap: 10px;
+            margin: 15px 0;
+        }
+        
+        .audio-item {
+            background: rgba(255,255,255,0.2);
+            padding: 10px;
+            border-radius: 5px;
+            text-align: center;
+            font-weight: bold;
+        }
+        
+        .download-btn {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: bold;
+            margin: 10px 5px;
+            transition: all 0.3s ease;
+        }
+        
+        .download-btn:hover {
+            background: #45a049;
+            transform: translateY(-2px);
+        }
+        
+        .instructions {
+            background: rgba(255,255,255,0.15);
+            padding: 20px;
+            border-radius: 10px;
+            margin-top: 20px;
+        }
+        
+        .step {
+            margin: 15px 0;
+            padding-left: 20px;
+        }
+        
+        code {
+            background: rgba(0,0,0,0.3);
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: 'Courier New', monospace;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎵 拼音音频文件下载助手</h1>
+        
+        <div class="section">
+            <h2>📁 需要的音频文件</h2>
+            <p>为了获得最佳的拼音发音效果，您需要准备以下音频文件：</p>
+            
+            <h3>声母音频文件 (23个)</h3>
+            <div class="audio-list">
+                <div class="audio-item">b.mp3</div>
+                <div class="audio-item">p.mp3</div>
+                <div class="audio-item">m.mp3</div>
+                <div class="audio-item">f.mp3</div>
+                <div class="audio-item">d.mp3</div>
+                <div class="audio-item">t.mp3</div>
+                <div class="audio-item">n.mp3</div>
+                <div class="audio-item">l.mp3</div>
+                <div class="audio-item">g.mp3</div>
+                <div class="audio-item">k.mp3</div>
+                <div class="audio-item">h.mp3</div>
+                <div class="audio-item">j.mp3</div>
+                <div class="audio-item">q.mp3</div>
+                <div class="audio-item">x.mp3</div>
+                <div class="audio-item">zh.mp3</div>
+                <div class="audio-item">ch.mp3</div>
+                <div class="audio-item">sh.mp3</div>
+                <div class="audio-item">r.mp3</div>
+                <div class="audio-item">z.mp3</div>
+                <div class="audio-item">c.mp3</div>
+                <div class="audio-item">s.mp3</div>
+                <div class="audio-item">y.mp3</div>
+                <div class="audio-item">w.mp3</div>
+            </div>
+            
+            <h3>韵母音频文件 (24个)</h3>
+            <div class="audio-list">
+                <div class="audio-item">a.mp3</div>
+                <div class="audio-item">o.mp3</div>
+                <div class="audio-item">e.mp3</div>
+                <div class="audio-item">i.mp3</div>
+                <div class="audio-item">u.mp3</div>
+                <div class="audio-item">ü.mp3</div>
+                <div class="audio-item">ai.mp3</div>
+                <div class="audio-item">ei.mp3</div>
+                <div class="audio-item">ui.mp3</div>
+                <div class="audio-item">ao.mp3</div>
+                <div class="audio-item">ou.mp3</div>
+                <div class="audio-item">iu.mp3</div>
+                <div class="audio-item">ie.mp3</div>
+                <div class="audio-item">üe.mp3</div>
+                <div class="audio-item">er.mp3</div>
+                <div class="audio-item">an.mp3</div>
+                <div class="audio-item">en.mp3</div>
+                <div class="audio-item">in.mp3</div>
+                <div class="audio-item">un.mp3</div>
+                <div class="audio-item">ün.mp3</div>
+                <div class="audio-item">ang.mp3</div>
+                <div class="audio-item">eng.mp3</div>
+                <div class="audio-item">ing.mp3</div>
+                <div class="audio-item">ong.mp3</div>
+            </div>
+        </div>
+        
+        <div class="section">
+            <h2>🛠 安装步骤</h2>
+            <div class="instructions">
+                <div class="step">
+                    <strong>步骤 1:</strong> 在项目根目录创建 <code>audio</code> 文件夹
+                </div>
+                <div class="step">
+                    <strong>步骤 2:</strong> 将所有拼音音频文件放入 <code>audio</code> 文件夹
+                </div>
+                <div class="step">
+                    <strong>步骤 3:</strong> 确保文件名与上面列表完全一致（包括扩展名）
+                </div>
+                <div class="step">
+                    <strong>步骤 4:</strong> 重新打开拼音学习游戏即可享受标准发音
+                </div>
+            </div>
+        </div>
+        
+        <div class="section">
+            <h2>🎯 音频文件获取建议</h2>
+            <p>您可以通过以下方式获取拼音音频文件：</p>
+            <ul>
+                <li>使用在线TTS工具生成（如百度语音、讯飞语音等）</li>
+                <li>录制标准普通话发音</li>
+                <li>从教育资源网站下载</li>
+                <li>使用专业的语音合成软件</li>
+            </ul>
+            
+            <p><strong>音频要求：</strong></p>
+            <ul>
+                <li>格式：MP3</li>
+                <li>时长：1-3秒</li>
+                <li>音质：清晰，无杂音</li>
+                <li>语速：适中，适合儿童学习</li>
+            </ul>
+        </div>
+        
+        <div class="section">
+            <h2>� 一键下载拼音音频</h2>
+            <p>我们发现了一个优质的拼音音频资源网站，可以直接下载标准的拼音发音文件！</p>
+
+            <div style="background: rgba(255,255,255,0.2); padding: 15px; border-radius: 8px; margin: 15px 0;">
+                <h3>📍 音频来源：du.hanyupinyin.cn</h3>
+                <p>该网站提供标准的拼音发音，音质清晰，非常适合儿童学习。</p>
+            </div>
+
+            <button class="download-btn" onclick="downloadAllAudio()" id="downloadBtn">
+                🎵 开始下载所有拼音音频
+            </button>
+
+            <div id="downloadProgress" style="display: none; margin-top: 20px;">
+                <div style="background: rgba(255,255,255,0.2); padding: 15px; border-radius: 8px;">
+                    <h4>下载进度</h4>
+                    <div id="progressBar" style="background: rgba(255,255,255,0.3); height: 20px; border-radius: 10px; overflow: hidden; margin: 10px 0;">
+                        <div id="progressFill" style="background: #4CAF50; height: 100%; width: 0%; transition: width 0.3s ease;"></div>
+                    </div>
+                    <div id="progressText">准备下载...</div>
+                    <div id="downloadList" style="max-height: 200px; overflow-y: auto; margin-top: 10px; font-size: 0.9rem;"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>�🔧 备用方案：在线TTS生成工具</h2>
+            <p>如果自动下载遇到问题，可以使用以下在线工具手动生成拼音音频：</p>
+            <button class="download-btn" onclick="window.open('https://tts.baidu.com/', '_blank')">
+                百度语音合成
+            </button>
+            <button class="download-btn" onclick="window.open('https://www.xfyun.cn/services/online_tts', '_blank')">
+                讯飞语音合成
+            </button>
+            <button class="download-btn" onclick="window.open('https://azure.microsoft.com/zh-cn/services/cognitive-services/text-to-speech/', '_blank')">
+                微软语音服务
+            </button>
+        </div>
+        
+        <div style="text-align: center; margin-top: 30px;">
+            <button class="download-btn" onclick="window.close()">
+                返回游戏
+            </button>
+        </div>
+    </div>
+
+    <script>
+        // 拼音列表
+        const pinyinList = [
+            // 声母
+            'b', 'p', 'm', 'f', 'd', 't', 'n', 'l', 'g', 'k', 'h', 'j', 'q', 'x',
+            'zh', 'ch', 'sh', 'r', 'z', 'c', 's', 'y', 'w',
+            // 韵母
+            'a', 'o', 'e', 'i', 'u', 'ü', 'ai', 'ei', 'ui', 'ao', 'ou', 'iu',
+            'ie', 'üe', 'er', 'an', 'en', 'in', 'un', 'ün', 'ang', 'eng', 'ing', 'ong'
+        ];
+
+        // 下载单个音频文件
+        async function downloadAudio(pinyin) {
+            try {
+                const url = `http://du.hanyupinyin.cn/du/pinyin/${pinyin}.mp3`;
+                const response = await fetch(url);
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const blob = await response.blob();
+                const downloadUrl = window.URL.createObjectURL(blob);
+
+                const a = document.createElement('a');
+                a.style.display = 'none';
+                a.href = downloadUrl;
+                a.download = `${pinyin}.mp3`;
+                document.body.appendChild(a);
+                a.click();
+                window.URL.revokeObjectURL(downloadUrl);
+                document.body.removeChild(a);
+
+                return true;
+            } catch (error) {
+                console.error(`下载 ${pinyin}.mp3 失败:`, error);
+                return false;
+            }
+        }
+
+        // 下载所有音频文件
+        async function downloadAllAudio() {
+            const downloadBtn = document.getElementById('downloadBtn');
+            const progressDiv = document.getElementById('downloadProgress');
+            const progressFill = document.getElementById('progressFill');
+            const progressText = document.getElementById('progressText');
+            const downloadList = document.getElementById('downloadList');
+
+            // 显示进度条
+            downloadBtn.disabled = true;
+            downloadBtn.textContent = '下载中...';
+            progressDiv.style.display = 'block';
+            downloadList.innerHTML = '';
+
+            let successCount = 0;
+            let failCount = 0;
+            const total = pinyinList.length;
+
+            // 创建audio文件夹提示
+            const folderTip = document.createElement('div');
+            folderTip.style.cssText = `
+                background: #ff9800; color: white; padding: 10px; border-radius: 5px;
+                margin-bottom: 15px; font-weight: bold; text-align: center;
+            `;
+            folderTip.innerHTML = '💡 请确保在项目根目录创建了 "audio" 文件夹来保存下载的文件';
+            downloadList.appendChild(folderTip);
+
+            for (let i = 0; i < pinyinList.length; i++) {
+                const pinyin = pinyinList[i];
+                progressText.textContent = `正在下载: ${pinyin}.mp3 (${i + 1}/${total})`;
+
+                const success = await downloadAudio(pinyin);
+
+                // 更新进度条
+                const progress = ((i + 1) / total) * 100;
+                progressFill.style.width = `${progress}%`;
+
+                // 添加到下载列表
+                const item = document.createElement('div');
+                item.style.cssText = `
+                    padding: 5px; margin: 2px 0; border-radius: 3px;
+                    background: ${success ? 'rgba(76, 175, 80, 0.3)' : 'rgba(244, 67, 54, 0.3)'};
+                `;
+                item.innerHTML = `${success ? '✅' : '❌'} ${pinyin}.mp3`;
+                downloadList.appendChild(item);
+
+                if (success) {
+                    successCount++;
+                } else {
+                    failCount++;
+                }
+
+                // 滚动到最新项目
+                downloadList.scrollTop = downloadList.scrollHeight;
+
+                // 添加延迟避免请求过快
+                await new Promise(resolve => setTimeout(resolve, 500));
+            }
+
+            // 完成提示
+            progressText.innerHTML = `
+                下载完成！成功: ${successCount} 个，失败: ${failCount} 个
+                ${failCount > 0 ? '<br><small>失败的文件可能需要手动下载或使用备用方案</small>' : ''}
+            `;
+
+            downloadBtn.disabled = false;
+            downloadBtn.textContent = '🎵 重新下载';
+
+            // 显示完成提示
+            if (successCount > 0) {
+                const completeTip = document.createElement('div');
+                completeTip.style.cssText = `
+                    background: #4CAF50; color: white; padding: 15px; border-radius: 8px;
+                    margin-top: 15px; text-align: center; font-weight: bold;
+                `;
+                completeTip.innerHTML = `
+                    🎉 下载完成！<br>
+                    <small>请将下载的音频文件移动到项目的 audio 文件夹中</small><br>
+                    <button onclick="window.close()" style="margin-top: 10px; padding: 8px 16px;
+                            border: none; border-radius: 5px; background: white; color: #4CAF50;
+                            cursor: pointer; font-weight: bold;">
+                        返回游戏
+                    </button>
+                `;
+                downloadList.appendChild(completeTip);
+            }
+        }
+
+        // 页面加载完成后的提示
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('拼音音频下载助手已加载');
+
+            // 检查浏览器兼容性
+            if (!window.fetch) {
+                alert('您的浏览器不支持自动下载功能，请使用现代浏览器或手动下载音频文件。');
+            }
+        });
+    </script>
+</body>
+</html>

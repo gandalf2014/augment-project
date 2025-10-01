@@ -1,0 +1,72 @@
+# 新闻API配置
+news_apis:
+  newsapi:
+    url: "https://newsapi.org/v2/everything"
+    api_key: "YOUR_NEWSAPI_KEY"  # 请在 .env 文件中设置
+    params:
+      q: "AI OR artificial intelligence OR machine learning OR tech OR technology"
+      language: "en"
+      sortBy: "publishedAt"
+      pageSize: 20
+  
+  hackernews:
+    url: "https://hacker-news.firebaseio.com/v0"
+    top_stories: "/topstories.json"
+    item: "/item/{}.json"
+    max_stories: 10
+
+# RSS源配置
+rss_feeds:
+  - name: "TechCrunch AI"
+    url: "https://techcrunch.com/category/artificial-intelligence/feed/"
+  - name: "MIT Technology Review"
+    url: "https://www.technologyreview.com/feed/"
+  - name: "VentureBeat AI"
+    url: "https://venturebeat.com/ai/feed/"
+
+# 内容重写配置
+rewriter:
+  min_content_length: 200
+  max_content_length: 2000
+  target_reading_time: "3-5分钟"
+  style: "自媒体"
+  tone: "专业但通俗"
+
+# 翻译配置
+translation:
+  enabled: true
+  service: "simple"  # simple, baidu
+  target_language: "zh"
+  auto_detect: true
+  
+# 图片建议配置
+images:
+  suggestions_per_article: 4
+  types:
+    - "封面图"
+    - "内容配图"
+    - "数据图表"
+    - "产品截图"
+
+# 输出配置
+output:
+  format: "markdown"
+  directory: "output"
+  filename_pattern: "{date}_{title_slug}.md"
+  
+# 过滤配置
+filters:
+  keywords_include:
+    - "AI"
+    - "人工智能"
+    - "机器学习"
+    - "深度学习"
+    - "ChatGPT"
+    - "OpenAI"
+    - "科技"
+    - "创新"
+  
+  keywords_exclude:
+    - "广告"
+    - "推广"
+    - "营销"

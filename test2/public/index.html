@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Memo App - Beautiful Notes & Ideas</title>
+    <meta name="description" content="A beautiful and powerful memo application for capturing your thoughts and ideas">
+    <link rel="stylesheet" href="style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📝</text></svg>">
+</head>
+<body>
+    <div class="app">
+        <!-- Header -->
+        <header class="header">
+            <div class="header-content">
+                <div class="logo">
+                    <span class="logo-icon">📝</span>
+                    <h1>Memo</h1>
+                </div>
+                <div class="header-actions">
+                    <button class="btn btn-icon" id="themeToggle" title="Toggle theme">
+                        <span class="theme-icon">☀️</span>
+                    </button>
+                    <button class="btn btn-icon" id="exportBtn" title="Export memos">
+                        <span>📤</span>
+                    </button>
+                    <button class="btn btn-primary" id="newMemoBtn">
+                        <span>+</span> New Memo
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <!-- Search and Filter Bar -->
+        <div class="search-bar">
+            <div class="search-container">
+                <input type="text" id="searchInput" placeholder="Search memos..." class="search-input">
+                <button class="search-clear" id="searchClear">×</button>
+            </div>
+            <div class="filter-container">
+                <select id="tagFilter" class="tag-filter">
+                    <option value="">All Tags</option>
+                </select>
+                <button class="btn btn-outline" id="favoritesFilter">
+                    <span>⭐</span> Favorites
+                </button>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <main class="main">
+            <!-- Sidebar -->
+            <aside class="sidebar">
+                <div class="stats">
+                    <div class="stat-item">
+                        <span class="stat-number" id="totalMemos">0</span>
+                        <span class="stat-label">Total Memos</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-number" id="totalTags">0</span>
+                        <span class="stat-label">Tags</span>
+                    </div>
+                </div>
+                
+                <div class="tags-section">
+                    <h3>Tags</h3>
+                    <div class="tags-list" id="tagsList"></div>
+                    <button class="btn btn-outline btn-small" id="newTagBtn">+ New Tag</button>
+                </div>
+            </aside>
+
+            <!-- Content Area -->
+            <div class="content">
+                <div class="memos-grid" id="memosGrid">
+                    <!-- Memos will be loaded here -->
+                </div>
+                
+                <div class="empty-state" id="emptyState" style="display: none;">
+                    <div class="empty-icon">📝</div>
+                    <h3>No memos yet</h3>
+                    <p>Create your first memo to get started!</p>
+                    <button class="btn btn-primary" onclick="openMemoModal()">Create Memo</button>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Memo Modal -->
+    <div class="modal" id="memoModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modalTitle">New Memo</h2>
+                <button class="modal-close" id="modalClose">×</button>
+            </div>
+            <form id="memoForm" class="modal-body">
+                <div class="form-group">
+                    <label for="memoTitle">Title <span class="optional">(optional)</span></label>
+                    <input type="text" id="memoTitle" placeholder="Enter memo title (leave empty to auto-generate)...">
+                </div>
+                <div class="form-group">
+                    <label for="memoContent">Content</label>
+                    <div class="content-editor">
+                        <div class="editor-tabs">
+                            <button type="button" class="editor-tab active" data-tab="write">✏️ Write</button>
+                            <button type="button" class="editor-tab" data-tab="preview">👁️ Preview</button>
+                        </div>
+                        <div class="editor-toolbar">
+                            <button type="button" class="toolbar-btn" onclick="insertMarkdownSyntax('**', '**')" title="Bold (Ctrl+B)">
+                                <strong>B</strong>
+                            </button>
+                            <button type="button" class="toolbar-btn" onclick="insertMarkdownSyntax('*', '*')" title="Italic (Ctrl+I)">
+                                <em>I</em>
+                            </button>
+                            <button type="button" class="toolbar-btn" onclick="insertMarkdownSyntax('`', '`')" title="Code">
+                                &lt;/&gt;
+                            </button>
+                            <button type="button" class="toolbar-btn" onclick="insertMarkdownSyntax('[', '](url)')" title="Link (Ctrl+K)">
+                                🔗
+                            </button>
+                            <button type="button" class="toolbar-btn" onclick="insertMarkdownSyntax('- ', '')" title="List">
+                                📋
+                            </button>
+                            <button type="button" class="toolbar-btn" onclick="insertMarkdownSyntax('> ', '')" title="Quote">
+                                💬
+                            </button>
+                            <button type="button" class="toolbar-btn" onclick="insertMarkdownSyntax('# ', '')" title="Heading">
+                                H1
+                            </button>
+                        </div>
+                        <div class="editor-content">
+                            <textarea id="memoContent" required placeholder="Write your memo here... (Markdown supported)" rows="8"></textarea>
+                            <div id="markdownPreview" class="markdown-preview" style="display: none;"></div>
+                        </div>
+                        <div class="markdown-help">
+                            <details>
+                                <summary>📝 Markdown Help & Shortcuts</summary>
+                                <div class="markdown-syntax">
+                                    <p><strong>Syntax:</strong></p>
+                                    <p><strong>**bold**</strong> • <em>*italic*</em> • <code>`code`</code></p>
+                                    <p># Heading 1 • ## Heading 2 • ### Heading 3</p>
+                                    <p>- List item • 1. Numbered list • > Quote</p>
+                                    <p>[Link](url) • ![Image](url) • ```code block```</p>
+                                    <p><strong>Shortcuts:</strong></p>
+                                    <p>Ctrl+B: Bold • Ctrl+I: Italic • Ctrl+K: Link • Tab: Indent</p>
+                                </div>
+                            </details>
+                        </div>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="memoTags">Tags</label>
+                    <div class="tags-input-container">
+                        <input type="text" id="memoTags" placeholder="Add tags (comma separated)...">
+                        <div class="available-tags" id="availableTags"></div>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="checkbox-label">
+                        <input type="checkbox" id="memoFavorite">
+                        <span class="checkmark"></span>
+                        Mark as favorite
+                    </label>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-outline" id="cancelBtn">Cancel</button>
+                    <button type="submit" class="btn btn-primary" id="saveBtn">Save Memo</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Tag Modal -->
+    <div class="modal" id="tagModal">
+        <div class="modal-content modal-small">
+            <div class="modal-header">
+                <h2>New Tag</h2>
+                <button class="modal-close" onclick="closeTagModal()">×</button>
+            </div>
+            <form id="tagForm" class="modal-body">
+                <div class="form-group">
+                    <label for="tagName">Tag Name</label>
+                    <input type="text" id="tagName" required placeholder="Enter tag name...">
+                </div>
+                <div class="form-group">
+                    <label for="tagColor">Color</label>
+                    <div class="color-picker">
+                        <input type="color" id="tagColor" value="#3b82f6">
+                        <div class="color-presets">
+                            <button type="button" class="color-preset" data-color="#ef4444" style="background: #ef4444;"></button>
+                            <button type="button" class="color-preset" data-color="#10b981" style="background: #10b981;"></button>
+                            <button type="button" class="color-preset" data-color="#f59e0b" style="background: #f59e0b;"></button>
+                            <button type="button" class="color-preset" data-color="#8b5cf6" style="background: #8b5cf6;"></button>
+                            <button type="button" class="color-preset" data-color="#06b6d4" style="background: #06b6d4;"></button>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-outline" onclick="closeTagModal()">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Create Tag</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Loading Spinner -->
+    <div class="loading" id="loading">
+        <div class="spinner"></div>
+    </div>
+
+    <!-- Toast Notifications -->
+    <div class="toast-container" id="toastContainer"></div>
+
+    <script src="script.js"></script>
+</body>
+</html>

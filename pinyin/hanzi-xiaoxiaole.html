@@ -1,0 +1,1053 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>汉字消消乐游戏</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'KaiTi', '楷体', 'Microsoft YaHei', Arial, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            min-height: 100vh;
+            padding: 20px;
+            overflow-x: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .container {
+            max-width: 800px;
+            width: 100%;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .title {
+            font-size: 2.5rem;
+            color: #e8eaf6;
+            text-shadow: 2px 2px 8px rgba(0,0,0,0.5);
+            margin-bottom: 10px;
+        }
+
+        .game-info {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: rgba(30, 30, 60, 0.9);
+            padding: 15px 25px;
+            border-radius: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .score, .level, .time {
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: #e8eaf6;
+        }
+
+        .score-value, .level-value, .time-value {
+            color: #7c4dff;
+            margin-left: 5px;
+        }
+
+        .time-toggle {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .toggle-switch {
+            position: relative;
+            width: 50px;
+            height: 24px;
+            background: #424242;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: background 0.3s ease;
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+
+        .toggle-switch.active {
+            background: #7c4dff;
+        }
+
+        .toggle-slider {
+            position: absolute;
+            top: 2px;
+            left: 2px;
+            width: 20px;
+            height: 20px;
+            background: #e8eaf6;
+            border-radius: 50%;
+            transition: transform 0.3s ease;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.4);
+        }
+
+        .toggle-switch.active .toggle-slider {
+            transform: translateX(26px);
+        }
+
+        .toggle-label {
+            font-size: 0.9rem;
+            color: #b0bec5;
+            user-select: none;
+        }
+
+        .game-board {
+            background: rgba(30, 30, 60, 0.95);
+            border-radius: 20px;
+            padding: 25px;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.4);
+            margin-bottom: 20px;
+            overflow: hidden; /* 防止内容溢出 */
+            border: 1px solid rgba(255,255,255,0.1);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 15px;
+            max-width: 520px;
+            margin: 0 auto;
+            padding: 10px;
+            justify-content: center;
+            align-content: center;
+        }
+
+        .cell {
+            width: 120px;
+            height: 120px;
+            border: 3px solid #424242;
+            border-radius: 20px;
+            cursor: pointer;
+            user-select: none;
+            position: relative;
+            transform-style: preserve-3d;
+            transition: transform 0.6s ease;
+            justify-self: center;
+            align-self: center;
+        }
+
+        .cell:hover {
+            transform: scale(1.05);
+            box-shadow: 0 6px 20px rgba(124, 77, 255, 0.3);
+            border-color: #7c4dff;
+        }
+
+        .cell.flipped {
+            transform: rotateY(180deg);
+        }
+
+        .cell-inner {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            transform-style: preserve-3d;
+        }
+
+        .cell-front, .cell-back {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            backface-visibility: hidden;
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .cell-front {
+            background: linear-gradient(135deg, #37474f 0%, #455a64 100%);
+            font-size: 6rem;
+            font-weight: bold;
+            font-family: 'KaiTi', '楷体', 'Microsoft YaHei', serif;
+            color: #e8eaf6;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .cell-back {
+            background: linear-gradient(135deg, #7c4dff 0%, #651fff 100%);
+            transform: rotateY(180deg);
+            position: relative;
+            font-size: 4rem;
+            font-weight: bold;
+            font-family: 'Arial', sans-serif;
+            color: #ffffff;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+
+
+
+        .cell.selected {
+            border-color: #00bcd4;
+            transform: scale(1.05) rotateY(180deg);
+            box-shadow: 0 8px 25px rgba(0, 188, 212, 0.6);
+        }
+
+        .cell.selected .cell-front {
+            background: linear-gradient(45deg, #00bcd4, #0097a7);
+            color: white;
+        }
+
+        .cell.matched {
+            animation: matchAnimation 0.6s ease;
+        }
+
+        @keyframes matchAnimation {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.3) rotate(10deg); background: #4CAF50; box-shadow: 0 0 30px rgba(76, 175, 80, 0.8); }
+            100% { transform: scale(0); opacity: 0; }
+        }
+
+        .controls {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .btn {
+            padding: 12px 25px;
+            font-size: 1.1rem;
+            border: 1px solid rgba(255,255,255,0.2);
+            border-radius: 25px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+        }
+
+        .btn-primary {
+            background: linear-gradient(45deg, #7c4dff, #651fff);
+            color: white;
+        }
+
+        .btn-secondary {
+            background: linear-gradient(45deg, #ff4081, #e91e63);
+            color: white;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(124, 77, 255, 0.4);
+        }
+
+        .btn-secondary:hover {
+            box-shadow: 0 6px 20px rgba(255, 64, 129, 0.4);
+        }
+
+        .game-over {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.9);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+
+        .game-over-content {
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            padding: 40px;
+            border-radius: 20px;
+            text-align: center;
+            max-width: 400px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .game-over h2 {
+            color: #e8eaf6;
+            margin-bottom: 20px;
+            font-size: 2rem;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+        }
+
+        .final-score {
+            font-size: 1.5rem;
+            color: #7c4dff;
+            margin-bottom: 30px;
+            font-weight: bold;
+        }
+
+        @media (max-width: 768px) {
+            .title {
+                font-size: 2rem;
+            }
+
+            .game-info {
+                flex-direction: column;
+                gap: 15px;
+                padding: 20px;
+            }
+
+            .time-toggle {
+                flex-direction: column;
+                gap: 8px;
+                align-items: center;
+            }
+
+            .grid {
+                max-width: 480px;
+                gap: 12px;
+            }
+
+            .cell {
+                width: 110px;
+                height: 110px;
+            }
+
+            .cell-front {
+                font-size: 4.5rem;
+            }
+
+            .cell-back {
+                font-size: 3rem;
+            }
+
+            .controls {
+                flex-direction: column;
+                align-items: center;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .grid {
+                max-width: 360px;
+                gap: 10px;
+            }
+
+            .cell {
+                width: 80px;
+                height: 80px;
+            }
+
+            .cell-front {
+                font-size: 3.5rem;
+            }
+
+            .cell-back {
+                font-size: 2.5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1 class="title">🀄 汉字消消乐 🀄</h1>
+        </div>
+
+        <div class="game-info">
+            <div class="score">得分: <span class="score-value" id="score">0</span></div>
+            <div class="level">关卡: <span class="level-value" id="level">1</span></div>
+            <div class="time-toggle">
+                <span class="toggle-label">计时模式</span>
+                <div class="toggle-switch" id="timeToggle" onclick="toggleTimer()">
+                    <div class="toggle-slider"></div>
+                </div>
+                <div class="time" id="timeDisplay" style="display: none;">
+                    时间: <span class="time-value" id="time">60</span>s
+                </div>
+            </div>
+        </div>
+
+        <div class="game-board">
+            <div class="grid" id="gameGrid"></div>
+        </div>
+
+        <div class="controls">
+            <button class="btn btn-primary" onclick="startNewGame()">新游戏</button>
+            <button class="btn btn-secondary" onclick="shuffleBoard()">重新排列</button>
+        </div>
+    </div>
+
+    <div class="game-over" id="gameOver">
+        <div class="game-over-content">
+            <h2>游戏结束！</h2>
+            <div class="final-score">最终得分: <span id="finalScore">0</span></div>
+            <button class="btn btn-primary" onclick="startNewGame()">再来一局</button>
+        </div>
+    </div>
+
+    <script>
+        // 常用汉字库 - 按关卡分组，每关8个汉字（每个出现2次，总共16个）
+        const hanziSets = [
+            // 第1关 - 基础汉字
+            [
+                {hanzi: '人', pinyin: 'rén'},
+                {hanzi: '大', pinyin: 'dà'},
+                {hanzi: '小', pinyin: 'xiǎo'},
+                {hanzi: '山', pinyin: 'shān'},
+                {hanzi: '水', pinyin: 'shuǐ'},
+                {hanzi: '火', pinyin: 'huǒ'},
+                {hanzi: '日', pinyin: 'rì'},
+                {hanzi: '月', pinyin: 'yuè'}
+            ],
+            // 第2关 - 动物汉字
+            [
+                {hanzi: '猫', pinyin: 'māo'},
+                {hanzi: '狗', pinyin: 'gǒu'},
+                {hanzi: '鸟', pinyin: 'niǎo'},
+                {hanzi: '鱼', pinyin: 'yú'},
+                {hanzi: '马', pinyin: 'mǎ'},
+                {hanzi: '牛', pinyin: 'niú'},
+                {hanzi: '虎', pinyin: 'hǔ'},
+                {hanzi: '兔', pinyin: 'tù'}
+            ],
+            // 第3关 - 颜色汉字
+            [
+                {hanzi: '红', pinyin: 'hóng'},
+                {hanzi: '黄', pinyin: 'huáng'},
+                {hanzi: '蓝', pinyin: 'lán'},
+                {hanzi: '绿', pinyin: 'lǜ'},
+                {hanzi: '白', pinyin: 'bái'},
+                {hanzi: '黑', pinyin: 'hēi'},
+                {hanzi: '紫', pinyin: 'zǐ'},
+                {hanzi: '橙', pinyin: 'chéng'}
+            ],
+            // 第4关 - 数字汉字
+            [
+                {hanzi: '一', pinyin: 'yī'},
+                {hanzi: '二', pinyin: 'èr'},
+                {hanzi: '三', pinyin: 'sān'},
+                {hanzi: '四', pinyin: 'sì'},
+                {hanzi: '五', pinyin: 'wǔ'},
+                {hanzi: '六', pinyin: 'liù'},
+                {hanzi: '七', pinyin: 'qī'},
+                {hanzi: '八', pinyin: 'bā'}
+            ],
+            // 第5关 - 家庭汉字
+            [
+                {hanzi: '爸', pinyin: 'bà'},
+                {hanzi: '妈', pinyin: 'mā'},
+                {hanzi: '爷', pinyin: 'yé'},
+                {hanzi: '奶', pinyin: 'nǎi'},
+                {hanzi: '哥', pinyin: 'gē'},
+                {hanzi: '姐', pinyin: 'jiě'},
+                {hanzi: '弟', pinyin: 'dì'},
+                {hanzi: '妹', pinyin: 'mèi'}
+            ],
+            // 第6关 - 身体汉字
+            [
+                {hanzi: '头', pinyin: 'tóu'},
+                {hanzi: '手', pinyin: 'shǒu'},
+                {hanzi: '脚', pinyin: 'jiǎo'},
+                {hanzi: '眼', pinyin: 'yǎn'},
+                {hanzi: '耳', pinyin: 'ěr'},
+                {hanzi: '口', pinyin: 'kǒu'},
+                {hanzi: '鼻', pinyin: 'bí'},
+                {hanzi: '心', pinyin: 'xīn'}
+            ],
+            // 第7关 - 食物汉字
+            [
+                {hanzi: '米', pinyin: 'mǐ'},
+                {hanzi: '面', pinyin: 'miàn'},
+                {hanzi: '肉', pinyin: 'ròu'},
+                {hanzi: '菜', pinyin: 'cài'},
+                {hanzi: '果', pinyin: 'guǒ'},
+                {hanzi: '茶', pinyin: 'chá'},
+                {hanzi: '奶', pinyin: 'nǎi'},
+                {hanzi: '蛋', pinyin: 'dàn'}
+            ],
+            // 第8关 - 自然汉字
+            [
+                {hanzi: '风', pinyin: 'fēng'},
+                {hanzi: '雨', pinyin: 'yǔ'},
+                {hanzi: '雪', pinyin: 'xuě'},
+                {hanzi: '云', pinyin: 'yún'},
+                {hanzi: '星', pinyin: 'xīng'},
+                {hanzi: '树', pinyin: 'shù'},
+                {hanzi: '花', pinyin: 'huā'},
+                {hanzi: '草', pinyin: 'cǎo'}
+            ]
+        ];
+
+        let gameState = {
+            grid: [],
+            score: 0,
+            level: 1,
+            timeLeft: 60,
+            selectedCells: [],
+            gameTimer: null,
+            currentHanziSet: [],
+            timerEnabled: false  // 默认不开启计时器
+        };
+
+        // 语音播放相关
+        let currentAudio = null;
+        let isPlaying = false;
+
+        // 播放汉字读音
+        function playHanziSound(hanzi) {
+            // 停止当前播放的音频
+            if (currentAudio) {
+                currentAudio.pause();
+                currentAudio.currentTime = 0;
+            }
+
+            // 使用Web Speech API播放汉字读音
+            if ('speechSynthesis' in window) {
+                // 取消之前的语音
+                speechSynthesis.cancel();
+
+                // 短暂延迟确保之前的语音完全停止
+                setTimeout(() => {
+                    isPlaying = true;
+
+                    const utterance = new SpeechSynthesisUtterance(hanzi);
+
+                    // 获取中文语音
+                    const voices = speechSynthesis.getVoices();
+                    const chineseVoice = voices.find(voice =>
+                        voice.lang === 'zh-CN' ||
+                        voice.lang === 'zh' ||
+                        voice.name.includes('Chinese') ||
+                        voice.name.includes('中文') ||
+                        voice.name.includes('Mandarin')
+                    );
+
+                    if (chineseVoice) {
+                        utterance.voice = chineseVoice;
+                    }
+
+                    utterance.lang = 'zh-CN';
+                    utterance.rate = 0.8;  // 语速
+                    utterance.pitch = 1.0; // 音调
+                    utterance.volume = 1.0; // 音量
+
+                    // 播放完成后重置状态
+                    utterance.onend = () => {
+                        isPlaying = false;
+                    };
+
+                    utterance.onerror = () => {
+                        isPlaying = false;
+                    };
+
+                    speechSynthesis.speak(utterance);
+                }, 50); // 50ms延迟
+            }
+        }
+
+        // 初始化语音引擎
+        function initSpeechSynthesis() {
+            if ('speechSynthesis' in window) {
+                // 预加载语音引擎
+                speechSynthesis.getVoices();
+                if (speechSynthesis.onvoiceschanged !== undefined) {
+                    speechSynthesis.onvoiceschanged = () => {
+                        speechSynthesis.getVoices();
+                    };
+                }
+            }
+        }
+
+        // 切换计时器开关
+        function toggleTimer() {
+            gameState.timerEnabled = !gameState.timerEnabled;
+            const toggleSwitch = document.getElementById('timeToggle');
+            const timeDisplay = document.getElementById('timeDisplay');
+
+            if (gameState.timerEnabled) {
+                toggleSwitch.classList.add('active');
+                timeDisplay.style.display = 'block';
+                // 如果游戏正在进行，启动计时器
+                if (gameState.timeLeft > 0) {
+                    startTimer();
+                }
+            } else {
+                toggleSwitch.classList.remove('active');
+                timeDisplay.style.display = 'none';
+                // 停止计时器
+                if (gameState.gameTimer) {
+                    clearInterval(gameState.gameTimer);
+                    gameState.gameTimer = null;
+                }
+            }
+
+            updateDisplay();
+        }
+
+        // 初始化游戏
+        function initGame() {
+            createGrid();
+            updateDisplay();
+            // 初始化时间开关显示状态
+            const toggleSwitch = document.getElementById('timeToggle');
+            const timeDisplay = document.getElementById('timeDisplay');
+            if (gameState.timerEnabled) {
+                toggleSwitch.classList.add('active');
+                timeDisplay.style.display = 'block';
+                startTimer();
+            } else {
+                toggleSwitch.classList.remove('active');
+                timeDisplay.style.display = 'none';
+            }
+            initSpeechSynthesis();
+        }
+
+        // 创建游戏网格
+        function createGrid() {
+            const gridElement = document.getElementById('gameGrid');
+            gridElement.innerHTML = '';
+            gameState.grid = [];
+
+            // 获取当前关卡的汉字集合
+            const levelIndex = Math.min(gameState.level - 1, hanziSets.length - 1);
+            gameState.currentHanziSet = [...hanziSets[levelIndex]];
+
+            // 如果超过最大关卡，显示恭喜信息
+            if (gameState.level > hanziSets.length) {
+                setTimeout(() => {
+                    alert('🎉 恭喜您完成了所有关卡！\n您已经掌握了所有汉字！');
+                    // 重置到第一关继续游戏
+                    gameState.level = 1;
+                    createGrid();
+                    updateDisplay();
+                }, 500);
+                return;
+            }
+
+            // 创建4x4网格，每个汉字出现2次，总共16个汉字
+            const gridSize = 16;
+
+            // 生成汉字数组，每个汉字出现2次
+            let hanziArray = [];
+            gameState.currentHanziSet.forEach(hanziData => {
+                hanziArray.push(hanziData);
+                hanziArray.push(hanziData);
+            });
+
+            // 打乱数组
+            shuffleArray(hanziArray);
+
+            // 创建4x4网格
+            for (let i = 0; i < 4; i++) {
+                gameState.grid[i] = [];
+                for (let j = 0; j < 4; j++) {
+                    const index = i * 4 + j;
+                    const hanziData = hanziArray[index];
+
+                    const cell = document.createElement('div');
+                    cell.className = 'cell';
+                    cell.dataset.row = i;
+                    cell.dataset.col = j;
+                    cell.addEventListener('click', () => selectCell(i, j));
+
+                    // 创建卡片内部结构
+                    const cellInner = document.createElement('div');
+                    cellInner.className = 'cell-inner';
+
+                    const cellFront = document.createElement('div');
+                    cellFront.className = 'cell-front';
+                    cellFront.textContent = hanziData.hanzi;
+
+                    const cellBack = document.createElement('div');
+                    cellBack.className = 'cell-back';
+                    cellBack.textContent = hanziData.pinyin;
+
+                    cellInner.appendChild(cellFront);
+                    cellInner.appendChild(cellBack);
+                    cell.appendChild(cellInner);
+
+                    gridElement.appendChild(cell);
+                    gameState.grid[i][j] = {
+                        hanzi: hanziData.hanzi,
+                        pinyin: hanziData.pinyin,
+                        element: cell
+                    };
+                }
+            }
+        }
+
+        // 打乱数组
+        function shuffleArray(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+        }
+
+        // 选择单元格
+        function selectCell(row, col) {
+            // 检查边界
+            if (row < 0 || row >= 4 || col < 0 || col >= 4) return;
+            if (!gameState.grid[row] || !gameState.grid[row][col]) return;
+
+            const cell = gameState.grid[row][col];
+            if (!cell || !cell.hanzi) return;
+
+            const cellElement = cell.element;
+            const cellId = `${row}-${col}`;
+
+            // 播放汉字读音
+            playHanziSound(cell.hanzi);
+
+            // 如果已经选中，取消选中
+            if (gameState.selectedCells.includes(cellId)) {
+                gameState.selectedCells = gameState.selectedCells.filter(id => id !== cellId);
+                cellElement.classList.remove('selected');
+                // 翻转回正面
+                setTimeout(() => {
+                    if (!cellElement.classList.contains('selected')) {
+                        cellElement.classList.remove('flipped');
+                    }
+                }, 100);
+                return;
+            }
+
+            // 如果选中的单元格少于2个，添加选中
+            if (gameState.selectedCells.length < 2) {
+                gameState.selectedCells.push(cellId);
+                cellElement.classList.add('selected');
+                // 翻转到背面显示拼音
+                cellElement.classList.add('flipped');
+
+                // 如果选中了2个单元格，检查是否可以消除
+                if (gameState.selectedCells.length === 2) {
+                    setTimeout(() => checkMatch(), 800);
+                }
+            }
+        }
+
+        // 检查匹配
+        function checkMatch() {
+            if (gameState.selectedCells.length !== 2) return;
+
+            const [cell1Id, cell2Id] = gameState.selectedCells;
+            const [row1, col1] = cell1Id.split('-').map(Number);
+            const [row2, col2] = cell2Id.split('-').map(Number);
+
+            // 检查边界和有效性
+            if (!gameState.grid[row1] || !gameState.grid[row1][col1] ||
+                !gameState.grid[row2] || !gameState.grid[row2][col2]) {
+                gameState.selectedCells = [];
+                return;
+            }
+
+            const cell1 = gameState.grid[row1][col1];
+            const cell2 = gameState.grid[row2][col2];
+
+            // 检查汉字是否相同
+            if (cell1.hanzi === cell2.hanzi) {
+                // 匹配成功
+                matchCells(row1, col1, row2, col2);
+            } else {
+                // 匹配失败，取消选中并翻转回正面
+                cell1.element.classList.remove('selected');
+                cell2.element.classList.remove('selected');
+                setTimeout(() => {
+                    cell1.element.classList.remove('flipped');
+                    cell2.element.classList.remove('flipped');
+                }, 300);
+            }
+
+            gameState.selectedCells = [];
+        }
+
+        // 消除匹配的单元格
+        function matchCells(row1, col1, row2, col2) {
+            const cell1 = gameState.grid[row1][col1];
+            const cell2 = gameState.grid[row2][col2];
+
+            // 添加匹配动画
+            cell1.element.classList.add('matched');
+            cell2.element.classList.add('matched');
+
+            // 更新分数
+            gameState.score += 10;
+            updateDisplay();
+
+            setTimeout(() => {
+                // 清空单元格
+                cell1.hanzi = '';
+                cell1.element.classList.remove('selected', 'matched', 'flipped');
+                cell1.element.style.visibility = 'hidden';
+
+                cell2.hanzi = '';
+                cell2.element.classList.remove('selected', 'matched', 'flipped');
+                cell2.element.style.visibility = 'hidden';
+
+                // 检查是否完成关卡
+                checkLevelComplete();
+            }, 600);
+        }
+
+        // 检查关卡是否完成
+        function checkLevelComplete() {
+            let remainingCells = 0;
+            for (let i = 0; i < 4; i++) {
+                for (let j = 0; j < 4; j++) {
+                    if (gameState.grid[i][j].hanzi) {
+                        remainingCells++;
+                    }
+                }
+            }
+
+            if (remainingCells === 0) {
+                // 关卡完成
+                gameState.level++;
+                let bonusMessage = `恭喜完成第${gameState.level - 1}关！`;
+
+                if (gameState.timerEnabled) {
+                    gameState.timeLeft += 30; // 奖励时间
+                    gameState.score += gameState.timeLeft * 2; // 时间奖励
+                    bonusMessage += `\n获得时间奖励：30秒\n奖励分数：${gameState.timeLeft * 2}分`;
+                } else {
+                    bonusMessage += `\n获得完成奖励：100分`;
+                    gameState.score += 100;
+                }
+
+                setTimeout(() => {
+                    alert(bonusMessage);
+                    createGrid();
+                    updateDisplay();
+                    // 重新启动计时器（如果开启）
+                    if (gameState.timerEnabled) {
+                        startTimer();
+                    }
+                }, 1000);
+            }
+        }
+
+        // 开始新游戏
+        function startNewGame() {
+            clearInterval(gameState.gameTimer);
+
+            // 停止语音播放
+            if ('speechSynthesis' in window) {
+                speechSynthesis.cancel();
+            }
+            isPlaying = false;
+
+            const currentTimerEnabled = gameState.timerEnabled; // 保持计时器开关状态
+            gameState = {
+                grid: [],
+                score: 0,
+                level: 1,
+                timeLeft: 60,
+                selectedCells: [],
+                gameTimer: null,
+                currentHanziSet: [],
+                timerEnabled: currentTimerEnabled
+            };
+
+            document.getElementById('gameOver').style.display = 'none';
+            initGame();
+        }
+
+        // 重新排列棋盘
+        function shuffleBoard() {
+            if (gameState.timerEnabled && gameState.timeLeft <= 0) return;
+
+            // 收集所有剩余的汉字数据
+            let remainingHanziData = [];
+            for (let i = 0; i < 4; i++) {
+                for (let j = 0; j < 4; j++) {
+                    if (gameState.grid[i][j].hanzi) {
+                        remainingHanziData.push({
+                            hanzi: gameState.grid[i][j].hanzi,
+                            pinyin: gameState.grid[i][j].pinyin
+                        });
+                    }
+                }
+            }
+
+            // 打乱汉字数据
+            shuffleArray(remainingHanziData);
+
+            // 重新分配到网格
+            let hanziIndex = 0;
+            for (let i = 0; i < 4; i++) {
+                for (let j = 0; j < 4; j++) {
+                    const cell = gameState.grid[i][j];
+                    if (cell.hanzi) {
+                        const hanziData = remainingHanziData[hanziIndex];
+                        cell.hanzi = hanziData.hanzi;
+                        cell.pinyin = hanziData.pinyin;
+
+                        // 更新显示
+                        const cellFront = cell.element.querySelector('.cell-front');
+                        const cellBack = cell.element.querySelector('.cell-back');
+                        cellFront.textContent = hanziData.hanzi;
+                        cellBack.textContent = hanziData.pinyin;
+
+                        cell.element.style.visibility = 'visible';
+                        hanziIndex++;
+                    }
+                }
+            }
+
+            // 清除选中状态和翻转状态
+            gameState.selectedCells = [];
+            document.querySelectorAll('.cell.selected, .cell.flipped').forEach(cell => {
+                cell.classList.remove('selected', 'flipped');
+            });
+        }
+
+        // 开始计时器
+        function startTimer() {
+            // 只有在计时器开启时才启动
+            if (!gameState.timerEnabled) return;
+
+            // 清除之前的计时器
+            if (gameState.gameTimer) {
+                clearInterval(gameState.gameTimer);
+            }
+
+            gameState.gameTimer = setInterval(() => {
+                gameState.timeLeft--;
+                updateDisplay();
+
+                if (gameState.timeLeft <= 0) {
+                    endGame();
+                }
+            }, 1000);
+        }
+
+        // 结束游戏
+        function endGame() {
+            clearInterval(gameState.gameTimer);
+
+            // 清理选中状态
+            gameState.selectedCells.forEach(cellId => {
+                const [row, col] = cellId.split('-').map(Number);
+                if (gameState.grid[row] && gameState.grid[row][col]) {
+                    const cellElement = gameState.grid[row][col].element;
+                    cellElement.classList.remove('selected', 'flipped');
+                }
+            });
+            gameState.selectedCells = [];
+
+            document.getElementById('finalScore').textContent = gameState.score;
+            document.getElementById('gameOver').style.display = 'flex';
+        }
+
+        // 更新显示
+        function updateDisplay() {
+            document.getElementById('score').textContent = gameState.score;
+            document.getElementById('level').textContent = gameState.level;
+            document.getElementById('time').textContent = gameState.timeLeft;
+        }
+
+        // 显示语音功能提示
+        function showVoiceTip() {
+            const tip = document.createElement('div');
+            tip.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                background: linear-gradient(45deg, #4CAF50, #45a049);
+                color: white;
+                padding: 15px;
+                border-radius: 10px;
+                font-size: 0.9rem;
+                max-width: 300px;
+                z-index: 1000;
+                box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+                animation: slideIn 0.5s ease;
+            `;
+            tip.innerHTML = `
+                <div style="font-weight: bold; margin-bottom: 8px;">🔊 语音功能已启用</div>
+                <div>点击汉字卡片可以听到标准读音！</div>
+                <button onclick="this.parentElement.remove()"
+                        style="margin-top: 10px; padding: 5px 10px; border: none;
+                               border-radius: 3px; background: white; color: #4CAF50;
+                               cursor: pointer; font-size: 0.8rem;">
+                    知道了
+                </button>
+            `;
+
+            // 添加动画样式
+            const style = document.createElement('style');
+            style.textContent = `
+                @keyframes slideIn {
+                    from { transform: translateX(100%); opacity: 0; }
+                    to { transform: translateX(0); opacity: 1; }
+                }
+            `;
+            document.head.appendChild(style);
+
+            document.body.appendChild(tip);
+
+            setTimeout(() => {
+                if (tip.parentElement) {
+                    tip.style.animation = 'slideIn 0.5s ease reverse';
+                    setTimeout(() => tip.remove(), 500);
+                }
+            }, 5000);
+        }
+
+        // 页面加载完成后初始化游戏
+        document.addEventListener('DOMContentLoaded', function() {
+            initGame();
+
+            // 延迟显示语音提示
+            setTimeout(() => {
+                if ('speechSynthesis' in window) {
+                    showVoiceTip();
+                }
+            }, 1000);
+        });
+
+        // 添加键盘支持
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                // ESC键取消选中
+                gameState.selectedCells.forEach(cellId => {
+                    const [row, col] = cellId.split('-').map(Number);
+                    const cellElement = gameState.grid[row][col].element;
+                    cellElement.classList.remove('selected');
+                    // 翻转回正面
+                    setTimeout(() => {
+                        cellElement.classList.remove('flipped');
+                    }, 100);
+                });
+                gameState.selectedCells = [];
+            } else if (e.key === ' ') {
+                // 空格键重新排列
+                e.preventDefault();
+                shuffleBoard();
+            }
+        });
+
+        // 添加触摸设备支持
+        if ('ontouchstart' in window) {
+            document.addEventListener('touchstart', function() {}, {passive: true});
+        }
+
+        // 页面可见性变化时处理语音
+        document.addEventListener('visibilitychange', function() {
+            if (document.hidden) {
+                // 页面隐藏时停止语音
+                if ('speechSynthesis' in window) {
+                    speechSynthesis.cancel();
+                }
+                isPlaying = false;
+            }
+        });
+    </script>
+</body>
+</html>
