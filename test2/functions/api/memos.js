@@ -1,33 +1,5 @@
-// Helper function to generate title from content
-function generateTitleFromContent(content) {
-  if (!content) return 'Untitled Memo';
-
-  // Remove markdown formatting for title generation
-  let plainText = content
-    .replace(/```[\s\S]*?```/g, '') // Remove code blocks
-    .replace(/`([^`]+)`/g, '$1') // Remove inline code
-    .replace(/\*\*\*(.*?)\*\*\*/g, '$1') // Remove bold+italic
-    .replace(/\*\*(.*?)\*\*/g, '$1') // Remove bold
-    .replace(/\*(.*?)\*/g, '$1') // Remove italic
-    .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1') // Remove links, keep text
-    .replace(/!\[([^\]]*)\]\([^)]+\)/g, '') // Remove images
-    .replace(/^#{1,6}\s+/gm, '') // Remove headers
-    .replace(/^>\s+/gm, '') // Remove blockquotes
-    .replace(/^[-*+]\s+/gm, '') // Remove list markers
-    .replace(/^\d+\.\s+/gm, '') // Remove numbered list markers
-    .replace(/\n+/g, ' ') // Replace newlines with spaces
-    .trim();
-
-  // Get first meaningful line/sentence
-  const firstLine = plainText.split(/[.!?]|\n/)[0].trim();
-
-  // Limit length and add ellipsis if needed
-  if (firstLine.length > 50) {
-    return firstLine.substring(0, 47) + '...';
-  }
-
-  return firstLine || 'Untitled Memo';
-}
+import { generateTitleFromContent, ApiResponse } from '../_shared/utils.js';
+import { MemoSchema, PaginationSchema, validateBody, validateQuery } from '../_shared/validation.js';
 
 export async function onRequestGet(context) {
   const { env, request } = context;
@@ -36,64 +8,92 @@ export async function onRequestGet(context) {
   const tag = url.searchParams.get('tag') || '';
   const favorite = url.searchParams.get('favorite') === 'true';
 
+  // Validate pagination parameters
+  const paginationResult = validateQuery(url.searchParams, PaginationSchema);
+  if (!paginationResult.success) {
+    return ApiResponse.error(paginationResult.error, 400, 'VALIDATION_ERROR');
+  }
+  const { page, limit } = paginationResult.data;
+  const offset = (page - 1) * limit;
+
   try {
-    let query = `
-      SELECT id, title, content, tags, is_favorite, created_at, updated_at 
-      FROM memos 
+    // Count query for pagination
+    let countQuery = `SELECT COUNT(*) as total FROM memos WHERE 1=1`;
+    const countParams = [];
+
+    // Data query with pagination
+    let dataQuery = `
+      SELECT id, title, content, tags, is_favorite, created_at, updated_at
+      FROM memos
       WHERE 1=1
     `;
-    const params = [];
+    const dataParams = [];
 
     if (search) {
-      query += ` AND (title LIKE ? OR content LIKE ?)`;
-      params.push(`%${search}%`, `%${search}%`);
+      countQuery += ` AND (title LIKE ? OR content LIKE ?)`;
+      dataQuery += ` AND (title LIKE ? OR content LIKE ?)`;
+      countParams.push(`%${search}%`, `%${search}%`);
+      dataParams.push(`%${search}%`, `%${search}%`);
     }
 
     if (tag) {
-      query += ` AND tags LIKE ?`;
-      params.push(`%${tag}%`);
+      countQuery += ` AND tags LIKE ?`;
+      dataQuery += ` AND tags LIKE ?`;
+      countParams.push(`%${tag}%`);
+      dataParams.push(`%${tag}%`);
     }
 
     if (favorite) {
-      query += ` AND is_favorite = 1`;
+      countQuery += ` AND is_favorite = 1`;
+      dataQuery += ` AND is_favorite = 1`;
     }
 
-    query += ` ORDER BY updated_at DESC`;
+    // Get total count
+    const countResult = await env.DB.prepare(countQuery).bind(...countParams).first();
+    const total = countResult?.total || 0;
 
-    const { results } = await env.DB.prepare(query).bind(...params).all();
-    
-    return new Response(JSON.stringify(results), {
-      headers: { 'Content-Type': 'application/json' }
+    // Get paginated data
+    dataQuery += ` ORDER BY updated_at DESC LIMIT ? OFFSET ?`;
+    dataParams.push(limit, offset);
+
+    const { results } = await env.DB.prepare(dataQuery).bind(...dataParams).all();
+
+    return ApiResponse.success({
+      memos: results,
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit),
+        hasMore: offset + results.length < total
+      }
     });
   } catch (error) {
-    return new Response(JSON.stringify({ error: error.message }), {
-      status: 500,
-      headers: { 'Content-Type': 'application/json' }
-    });
+    console.error('Error fetching memos:', error);
+    return ApiResponse.error(error.message, 500, 'DATABASE_ERROR');
   }
 }
 
 export async function onRequestPost(context) {
   const { env, request } = context;
 
+  // Validate input
+  const validation = await validateBody(request, MemoSchema);
+  if (!validation.success) {
+    return ApiResponse.error(validation.error, 400, 'VALIDATION_ERROR');
+  }
+
+  const { title, content, tags, is_favorite } = validation.data;
+
   try {
-    const { title, content, tags, is_favorite } = await request.json();
-
-    if (!content) {
-      return new Response(JSON.stringify({ error: 'Content is required' }), {
-        status: 400,
-        headers: { 'Content-Type': 'application/json' }
-      });
-    }
-
-    // If no title provided, generate one from content
-    const finalTitle = title && title.trim() ? title.trim() : generateTitleFromContent(content);
+    // Generate title if not provided
+    const finalTitle = title || generateTitleFromContent(content);
 
     // Insert the memo
     const insertResult = await env.DB.prepare(`
       INSERT INTO memos (title, content, tags, is_favorite, created_at, updated_at)
       VALUES (?, ?, ?, ?, datetime('now'), datetime('now'))
-    `).bind(finalTitle, content, tags || '', is_favorite || false).run();
+    `).bind(finalTitle, content, tags, is_favorite).run();
 
     if (!insertResult.success) {
       throw new Error('Failed to insert memo');
@@ -106,16 +106,10 @@ export async function onRequestPost(context) {
       WHERE id = ?
     `).bind(insertResult.meta.last_row_id).all();
 
-    return new Response(JSON.stringify(results[0]), {
-      status: 201,
-      headers: { 'Content-Type': 'application/json' }
-    });
+    return ApiResponse.success(results[0], 201);
   } catch (error) {
     console.error('Error creating memo:', error);
-    return new Response(JSON.stringify({ error: error.message }), {
-      status: 500,
-      headers: { 'Content-Type': 'application/json' }
-    });
+    return ApiResponse.error(error.message, 500, 'DATABASE_ERROR');
   }
 }
 
@@ -123,30 +117,39 @@ export async function onRequestPut(context) {
   const { env, request, params } = context;
   const url = new URL(request.url);
 
-  // Try to get ID from params first, then from URL
+  // Get ID from params or URL
   let id = params?.id;
   if (!id) {
     const pathParts = url.pathname.split('/');
     id = pathParts[pathParts.length - 1];
   }
 
-  console.log('PUT request - ID:', id, 'URL:', url.pathname);
+  // Validate ID
+  if (!id || id === 'memos' || isNaN(parseInt(id))) {
+    return ApiResponse.error('Invalid memo ID', 400, 'VALIDATION_ERROR');
+  }
+
+  // Validate input
+  const validation = await validateBody(request, MemoSchema);
+  if (!validation.success) {
+    return ApiResponse.error(validation.error, 400, 'VALIDATION_ERROR');
+  }
+
+  const { title, content, tags, is_favorite } = validation.data;
 
   try {
-    const { title, content, tags, is_favorite } = await request.json();
+    // Generate title if not provided
+    const finalTitle = title || generateTitleFromContent(content);
 
     // Update the memo
     const updateResult = await env.DB.prepare(`
       UPDATE memos
       SET title = ?, content = ?, tags = ?, is_favorite = ?, updated_at = datetime('now')
       WHERE id = ?
-    `).bind(title, content, tags || '', is_favorite || false, id).run();
+    `).bind(finalTitle, content, tags, is_favorite, id).run();
 
     if (!updateResult.success || updateResult.meta.changes === 0) {
-      return new Response(JSON.stringify({ error: 'Memo not found' }), {
-        status: 404,
-        headers: { 'Content-Type': 'application/json' }
-      });
+      return ApiResponse.error('Memo not found', 404, 'NOT_FOUND');
     }
 
     // Get the updated memo
@@ -156,15 +159,10 @@ export async function onRequestPut(context) {
       WHERE id = ?
     `).bind(id).all();
 
-    return new Response(JSON.stringify(results[0]), {
-      headers: { 'Content-Type': 'application/json' }
-    });
+    return ApiResponse.success(results[0]);
   } catch (error) {
     console.error('Error updating memo:', error);
-    return new Response(JSON.stringify({ error: error.message }), {
-      status: 500,
-      headers: { 'Content-Type': 'application/json' }
-    });
+    return ApiResponse.error(error.message, 500, 'DATABASE_ERROR');
   }
 }
 
@@ -172,46 +170,31 @@ export async function onRequestDelete(context) {
   const { env, request, params } = context;
   const url = new URL(request.url);
 
-  // Try to get ID from params first, then from URL
+  // Get ID from params or URL
   let id = params?.id;
   if (!id) {
     const pathParts = url.pathname.split('/');
     id = pathParts[pathParts.length - 1];
   }
 
-  console.log('DELETE request - ID:', id, 'URL:', url.pathname);
-
-  if (!id || id === 'memos') {
-    return new Response(JSON.stringify({ error: 'Invalid memo ID' }), {
-      status: 400,
-      headers: { 'Content-Type': 'application/json' }
-    });
+  // Validate ID
+  if (!id || id === 'memos' || isNaN(parseInt(id))) {
+    return ApiResponse.error('Invalid memo ID', 400, 'VALIDATION_ERROR');
   }
 
   try {
     const result = await env.DB.prepare(`DELETE FROM memos WHERE id = ?`).bind(id).run();
 
-    console.log('Delete result:', result);
-
     if (!result.success || result.meta.changes === 0) {
-      return new Response(JSON.stringify({ error: 'Memo not found or could not be deleted' }), {
-        status: 404,
-        headers: { 'Content-Type': 'application/json' }
-      });
+      return ApiResponse.error('Memo not found', 404, 'NOT_FOUND');
     }
 
-    return new Response(JSON.stringify({
+    return ApiResponse.success({
       message: 'Memo deleted successfully',
-      deletedId: id,
-      changes: result.meta.changes
-    }), {
-      headers: { 'Content-Type': 'application/json' }
+      deletedId: parseInt(id)
     });
   } catch (error) {
     console.error('Error deleting memo:', error);
-    return new Response(JSON.stringify({ error: error.message }), {
-      status: 500,
-      headers: { 'Content-Type': 'application/json' }
-    });
+    return ApiResponse.error(error.message, 500, 'DATABASE_ERROR');
   }
 }

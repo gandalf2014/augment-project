@@ -1,40 +1,38 @@
+import { ApiResponse } from '../_shared/utils.js';
+import { TagSchema, validateBody } from '../_shared/validation.js';
+
 export async function onRequestGet(context) {
   const { env } = context;
-  
+
   try {
     const { results } = await env.DB.prepare(`
-      SELECT * FROM tags ORDER BY name ASC
+      SELECT id, name, color, created_at FROM tags ORDER BY name ASC
     `).all();
-    
-    return new Response(JSON.stringify(results), {
-      headers: { 'Content-Type': 'application/json' }
-    });
+
+    return ApiResponse.success(results);
   } catch (error) {
-    return new Response(JSON.stringify({ error: error.message }), {
-      status: 500,
-      headers: { 'Content-Type': 'application/json' }
-    });
+    console.error('Error fetching tags:', error);
+    return ApiResponse.error(error.message, 500, 'DATABASE_ERROR');
   }
 }
 
 export async function onRequestPost(context) {
   const { env, request } = context;
 
+  // Validate input
+  const validation = await validateBody(request, TagSchema);
+  if (!validation.success) {
+    return ApiResponse.error(validation.error, 400, 'VALIDATION_ERROR');
+  }
+
+  const { name, color } = validation.data;
+
   try {
-    const { name, color } = await request.json();
-
-    if (!name) {
-      return new Response(JSON.stringify({ error: 'Tag name is required' }), {
-        status: 400,
-        headers: { 'Content-Type': 'application/json' }
-      });
-    }
-
     // Insert the tag
     const insertResult = await env.DB.prepare(`
       INSERT INTO tags (name, color, created_at)
       VALUES (?, ?, datetime('now'))
-    `).bind(name, color || '#3b82f6').run();
+    `).bind(name, color).run();
 
     if (!insertResult.success) {
       throw new Error('Failed to insert tag');
@@ -45,48 +43,44 @@ export async function onRequestPost(context) {
       SELECT id, name, color, created_at FROM tags WHERE id = ?
     `).bind(insertResult.meta.last_row_id).all();
 
-    return new Response(JSON.stringify(results[0]), {
-      status: 201,
-      headers: { 'Content-Type': 'application/json' }
-    });
+    return ApiResponse.success(results[0], 201);
   } catch (error) {
     console.error('Error creating tag:', error);
+
+    // Handle unique constraint violation
     if (error.message.includes('UNIQUE constraint failed')) {
-      return new Response(JSON.stringify({ error: 'Tag already exists' }), {
-        status: 409,
-        headers: { 'Content-Type': 'application/json' }
-      });
+      return ApiResponse.error('Tag already exists', 409, 'DUPLICATE_TAG');
     }
 
-    return new Response(JSON.stringify({ error: error.message }), {
-      status: 500,
-      headers: { 'Content-Type': 'application/json' }
-    });
+    return ApiResponse.error(error.message, 500, 'DATABASE_ERROR');
   }
 }
 
 export async function onRequestDelete(context) {
-  const { env, request } = context;
+  const { env, request, params } = context;
   const url = new URL(request.url);
-  const id = url.pathname.split('/').pop();
-  
+
+  // Get ID from params or URL
+  let id = params?.id;
+  if (!id) {
+    id = url.pathname.split('/').pop();
+  }
+
+  // Validate ID
+  if (!id || isNaN(parseInt(id))) {
+    return ApiResponse.error('Invalid tag ID', 400, 'VALIDATION_ERROR');
+  }
+
   try {
-    const { success } = await env.DB.prepare(`DELETE FROM tags WHERE id = ?`).bind(id).run();
-    
-    if (!success) {
-      return new Response(JSON.stringify({ error: 'Tag not found' }), {
-        status: 404,
-        headers: { 'Content-Type': 'application/json' }
-      });
+    const result = await env.DB.prepare(`DELETE FROM tags WHERE id = ?`).bind(id).run();
+
+    if (!result.success || result.meta.changes === 0) {
+      return ApiResponse.error('Tag not found', 404, 'NOT_FOUND');
     }
 
-    return new Response(JSON.stringify({ message: 'Tag deleted successfully' }), {
-      headers: { 'Content-Type': 'application/json' }
-    });
+    return ApiResponse.success({ message: 'Tag deleted successfully' });
   } catch (error) {
-    return new Response(JSON.stringify({ error: error.message }), {
-      status: 500,
-      headers: { 'Content-Type': 'application/json' }
-    });
+    console.error('Error deleting tag:', error);
+    return ApiResponse.error(error.message, 500, 'DATABASE_ERROR');
   }
 }
