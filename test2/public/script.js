@@ -99,9 +99,10 @@ function setupEvents() {
     }
   });
 
-  dom.memoModal.addEventListener('click', e => {
-    if (e.target === dom.memoModal) closeMemoModal();
-  });
+  // 编辑模态框不响应点击外部关闭，防止误操作丢失内容
+  // dom.memoModal.addEventListener('click', e => {
+  //   if (e.target === dom.memoModal) closeMemoModal();
+  // });
 
   dom.tagModal.addEventListener('click', e => {
     if (e.target === dom.tagModal) closeTagModal();
