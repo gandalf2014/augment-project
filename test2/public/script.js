@@ -95,7 +95,8 @@ function toggleTheme() {
 }
 
 function updateThemeIcon(theme) {
-  dom.themeToggle.querySelector('.theme-icon').textContent = theme === 'dark' ? '☀️' : '🌙';
+  const use = dom.themeToggle.querySelector('use');
+  use.setAttribute('href', theme === 'dark' ? '#icon-sun' : '#icon-moon');
 }
 
 // Scroll - throttled for performance
@@ -490,6 +491,18 @@ function renderMemos(append = false) {
   updateLoadMore();
 }
 
+// Random border colors for memo cards
+const memoColors = [
+  '#ef4444', '#f97316', '#f59e0b', '#eab308', '#84cc16',
+  '#22c55e', '#10b981', '#14b8a6', '#06b6d4', '#0ea5e9',
+  '#3b82f6', '#6366f1', '#8b5cf6', '#a855f7', '#d946ef',
+  '#ec4899', '#f43f5e'
+];
+
+function getRandomMemoColor() {
+  return memoColors[Math.floor(Math.random() * memoColors.length)];
+}
+
 function createMemoCard(memo) {
   const memoTags = (memo.tags || '').split(',').map(t => t.trim()).filter(Boolean);
   const tagHtml = memoTags.map(name => {
@@ -499,15 +512,22 @@ function createMemoCard(memo) {
 
   const date = new Date(memo.created_at).toLocaleDateString('zh-CN');
   const content = parseMarkdown(memo.content);
+  const borderColor = getRandomMemoColor();
 
   return `
-    <article class="memo-card" data-memo-id="${memo.id}" tabindex="0" role="listitem">
+    <article class="memo-card" data-memo-id="${memo.id}" tabindex="0" role="listitem" style="border-left: 4px solid ${borderColor}">
       <div class="memo-header">
         <h3 class="memo-title">${escapeHtml(memo.title)}</h3>
         <div class="memo-actions">
-          <button class="memo-action" onclick="openMemoModal(${memo.id})" title="编辑">✏️</button>
-          <button class="memo-action ${memo.is_favorite ? 'favorite' : ''}" onclick="toggleFavorite(${memo.id})" title="${memo.is_favorite ? '取消收藏' : '收藏'}">${memo.is_favorite ? '⭐' : '☆'}</button>
-          <button class="memo-action" onclick="deleteMemo(${memo.id})" title="删除">🗑️</button>
+          <button class="memo-action" onclick="openMemoModal(${memo.id})" title="编辑">
+            <svg class="icon small"><use href="#icon-edit"/></svg>
+          </button>
+          <button class="memo-action ${memo.is_favorite ? 'favorite' : ''}" onclick="toggleFavorite(${memo.id})" title="${memo.is_favorite ? '取消收藏' : '收藏'}">
+            <svg class="icon small"><use href="#icon-star${memo.is_favorite ? '' : '-empty'}"/></svg>
+          </button>
+          <button class="memo-action" onclick="deleteMemo(${memo.id})" title="删除">
+            <svg class="icon small"><use href="#icon-trash"/></svg>
+          </button>
         </div>
       </div>
       <div class="memo-content">${content}</div>
