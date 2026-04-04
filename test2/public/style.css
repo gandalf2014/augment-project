@@ -326,18 +326,19 @@ body {
   max-width: 1090px;
 }
 
-/* Memo cards */
+/* Memo cards - optimized for performance */
 .memo-card {
   background: var(--bg-primary);
   border-radius: var(--radius-lg);
   padding: 1.25rem;
   box-shadow: var(--shadow-sm);
-  transition: var(--transition);
   border: 1px solid var(--border-color);
   margin-bottom: 1rem;
   break-inside: avoid;
   page-break-inside: avoid;
   overflow: hidden;
+  will-change: transform, box-shadow;
+  contain: layout style;
 }
 
 .memo-card:hover {
@@ -644,7 +645,7 @@ body {
   font-size: 0.75rem;
 }
 
-/* Modal styles */
+/* Modal styles - optimized */
 .modal {
   display: none;
   position: fixed;
@@ -655,6 +656,8 @@ body {
   background: var(--bg-modal);
   z-index: 1000;
   backdrop-filter: blur(4px);
+  will-change: opacity;
+  contain: layout style size;
 }
 
 .modal.active {
@@ -669,10 +672,12 @@ body {
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-lg);
   width: 90%;
-  max-width: 600px;
+  max-width: 1200px;
   max-height: 90vh;
   overflow-y: auto;
   animation: slideUp 0.2s ease-out;
+  will-change: transform, opacity;
+  contain: layout style;
 }
 
 .modal-small {
@@ -961,6 +966,7 @@ body {
   border-top: 4px solid var(--primary-color);
   border-radius: 50%;
   animation: spin 1s linear infinite;
+  will-change: transform;
 }
 
 /* Toast */
@@ -1083,6 +1089,7 @@ body {
   border-top-color: var(--primary-color);
   border-radius: 50%;
   animation: spin 0.8s linear infinite;
+  will-change: transform;
 }
 
 /* Skeleton loading */

@@ -17,30 +17,62 @@ const DRAFT_DELAY = 1000;
 let lastDeleted = null;
 const UNDO_TIMEOUT = 5000;
 
-// DOM
-const $ = id => document.getElementById(id);
+// Performance: Cache for parsed markdown
+const markdownCache = new Map();
+const MARKDOWN_CACHE_MAX_SIZE = 100;
+
+// DOM cache
+const $ = (() => {
+  const cache = {};
+  return id => {
+    if (!cache[id]) cache[id] = document.getElementById(id);
+    return cache[id];
+  };
+})();
 const dom = {
-  memosGrid: $('memosGrid'),
-  emptyState: $('emptyState'),
-  searchInput: $('searchInput'),
-  searchClear: $('searchClear'),
-  tagFilter: $('tagFilter'),
-  favoritesFilter: $('favoritesFilter'),
-  newMemoBtn: $('newMemoBtn'),
-  newTagBtn: $('newTagBtn'),
-  themeToggle: $('themeToggle'),
-  exportBtn: $('exportBtn'),
-  totalMemos: $('totalMemos'),
-  totalTags: $('totalTags'),
-  tagsList: $('tagsList'),
-  memoModal: $('memoModal'),
-  tagModal: $('tagModal'),
-  loading: $('loading'),
-  toastContainer: $('toastContainer')
+  memosGrid: null,
+  emptyState: null,
+  searchInput: null,
+  searchClear: null,
+  tagFilter: null,
+  favoritesFilter: null,
+  newMemoBtn: null,
+  newTagBtn: null,
+  themeToggle: null,
+  exportBtn: null,
+  totalMemos: null,
+  totalTags: null,
+  tagsList: null,
+  memoModal: null,
+  tagModal: null,
+  loading: null,
+  toastContainer: null
 };
+
+// Initialize DOM cache
+function initDomCache() {
+  dom.memosGrid = $('memosGrid');
+  dom.emptyState = $('emptyState');
+  dom.searchInput = $('searchInput');
+  dom.searchClear = $('searchClear');
+  dom.tagFilter = $('tagFilter');
+  dom.favoritesFilter = $('favoritesFilter');
+  dom.newMemoBtn = $('newMemoBtn');
+  dom.newTagBtn = $('newTagBtn');
+  dom.themeToggle = $('themeToggle');
+  dom.exportBtn = $('exportBtn');
+  dom.totalMemos = $('totalMemos');
+  dom.totalTags = $('totalTags');
+  dom.tagsList = $('tagsList');
+  dom.memoModal = $('memoModal');
+  dom.tagModal = $('tagModal');
+  dom.loading = $('loading');
+  dom.toastContainer = $('toastContainer');
+}
 
 // Initialize
 document.addEventListener('DOMContentLoaded', async () => {
+  initDomCache();
   initTheme();
   loadDraft();
   setupEvents();
@@ -66,10 +98,11 @@ function updateThemeIcon(theme) {
   dom.themeToggle.querySelector('.theme-icon').textContent = theme === 'dark' ? '☀️' : '🌙';
 }
 
-// Events
+// Scroll - throttled for performance
+const throttledHandleScroll = throttle(handleScroll, 150);
 function setupEvents() {
   dom.themeToggle.addEventListener('click', toggleTheme);
-  dom.searchInput.addEventListener('input', debounce(handleSearch, 300));
+  dom.searchInput.addEventListener('input', debounce(handleSearch, 300, 'search'));
   dom.searchClear.addEventListener('click', clearSearch);
   dom.tagFilter.addEventListener('change', handleTagFilter);
   dom.favoritesFilter.addEventListener('click', toggleFavoriteFilter);
@@ -99,11 +132,6 @@ function setupEvents() {
     }
   });
 
-  // 编辑模态框不响应点击外部关闭，防止误操作丢失内容
-  // dom.memoModal.addEventListener('click', e => {
-  //   if (e.target === dom.memoModal) closeMemoModal();
-  // });
-
   dom.tagModal.addEventListener('click', e => {
     if (e.target === dom.tagModal) closeTagModal();
   });
@@ -125,14 +153,33 @@ function setupEvents() {
     }
   });
 
-  window.addEventListener('scroll', handleScroll);
+  window.addEventListener('scroll', throttledHandleScroll, { passive: true });
 }
 
-function debounce(fn, wait) {
-  let timeout;
+// Debounce with unique ID for cleanup
+const timers = new Map();
+function debounce(fn, wait, id = 'default') {
   return (...args) => {
-    clearTimeout(timeout);
-    timeout = setTimeout(() => fn(...args), wait);
+    const existing = timers.get(id);
+    if (existing) clearTimeout(existing);
+    timers.set(id, setTimeout(() => {
+      timers.delete(id);
+      fn(...args);
+    }, wait));
+  };
+}
+
+// Throttle for scroll events
+function throttle(fn, wait) {
+  let timeout = null;
+  let lastArgs = null;
+  return (...args) => {
+    lastArgs = args;
+    if (timeout) return;
+    timeout = setTimeout(() => {
+      timeout = null;
+      fn(...lastArgs);
+    }, wait);
   };
 }
 
@@ -654,13 +701,21 @@ function exportMemos() {
   showToast('导出成功', 'success');
 }
 
-// Markdown parser
+// Markdown parser with caching
 function parseMarkdown(text) {
   if (!text) return '';
 
+  // Check cache first (use full text as key for short content, truncated for long)
+  const cacheKey = text.length > 500 ? text.substring(0, 500) + '___' : text;
+  if (markdownCache.has(cacheKey)) {
+    return markdownCache.get(cacheKey);
+  }
+
+  let result = text;
+
   // Code blocks first
   const codeBlocks = [];
-  text = text.replace(/```([\s\S]*?)```/g, (_, code) => {
+  result = result.replace(/```([\s\S]*?)```/g, (_, code) => {
     const i = codeBlocks.length;
     codeBlocks[i] = `<pre><code>${escapeHtml(code.trim())}</code></pre>`;
     return `__CODE${i}__`;
@@ -668,45 +723,52 @@ function parseMarkdown(text) {
 
   // Inline code
   const inlineCodes = [];
-  text = text.replace(/`([^`]+)`/g, (_, code) => {
+  result = result.replace(/`([^`]+)`/g, (_, code) => {
     const i = inlineCodes.length;
     inlineCodes[i] = `<code>${escapeHtml(code)}</code>`;
     return `__INLINE${i}__`;
   });
 
   // Escape HTML
-  text = text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  result = result.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 
   // Headers
-  text = text.replace(/^### (.+)$/gm, '<h3>$1</h3>');
-  text = text.replace(/^## (.+)$/gm, '<h2>$1</h2>');
-  text = text.replace(/^# (.+)$/gm, '<h1>$1</h1>');
+  result = result.replace(/^### (.+)$/gm, '<h3>$1</h3>');
+  result = result.replace(/^## (.+)$/gm, '<h2>$1</h2>');
+  result = result.replace(/^# (.+)$/gm, '<h1>$1</h1>');
 
   // Bold & Italic
-  text = text.replace(/\*\*\*(.+?)\*\*\*/g, '<strong><em>$1</em></strong>');
-  text = text.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
-  text = text.replace(/\*(.+?)\*/g, '<em>$1</em>');
+  result = result.replace(/\*\*\*(.+?)\*\*\*/g, '<strong><em>$1</em></strong>');
+  result = result.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+  result = result.replace(/\*(.+?)\*/g, '<em>$1</em>');
 
   // Links
-  text = text.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank">$1</a>');
+  result = result.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank">$1</a>');
 
   // Blockquotes
-  text = text.replace(/^> (.+)$/gm, '<blockquote>$1</blockquote>');
+  result = result.replace(/^> (.+)$/gm, '<blockquote>$1</blockquote>');
 
   // Lists
-  text = text.replace(/^- (.+)$/gm, '<li>$1</li>');
-  text = text.replace(/(<li>.*<\/li>\n?)+/g, '<ul>$&</ul>');
+  result = result.replace(/^- (.+)$/gm, '<li>$1</li>');
+  result = result.replace(/(<li>.*<\/li>\n?)+/g, '<ul>$&</ul>');
 
   // Paragraphs
-  text = text.replace(/\n\n/g, '</p><p>');
-  text = text.replace(/\n/g, '<br>');
-  text = `<p>${text}</p>`;
+  result = result.replace(/\n\n/g, '</p><p>');
+  result = result.replace(/\n/g, '<br>');
+  result = `<p>${result}</p>`;
 
   // Restore code
-  codeBlocks.forEach((c, i) => text = text.replace(`__CODE${i}__`, c));
-  inlineCodes.forEach((c, i) => text = text.replace(`__INLINE${i}__`, c));
+  codeBlocks.forEach((c, i) => result = result.replace(`__CODE${i}__`, c));
+  inlineCodes.forEach((c, i) => result = result.replace(`__INLINE${i}__`, c));
 
-  return text;
+  // Cache result (limit cache size)
+  if (markdownCache.size >= MARKDOWN_CACHE_MAX_SIZE) {
+    const firstKey = markdownCache.keys().next().value;
+    markdownCache.delete(firstKey);
+  }
+  markdownCache.set(cacheKey, result);
+
+  return result;
 }
 
 // Utilities
