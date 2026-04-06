@@ -272,10 +272,11 @@ function clearDraft() {
 async function loadData() {
   showLoading(true);
   try {
-    await Promise.all([loadMemos(), loadTags()]);
+    await Promise.all([loadMemos(), loadTags(), loadNotebooks()]);
     updateStats();
     renderMemos();
     renderTags();
+    renderNotebooks();
   } catch (e) {
     showToast('加载失败', 'error');
   } finally {
@@ -290,6 +291,12 @@ async function loadMemos(append = false) {
   if (currentFilter.search) params.set('search', currentFilter.search);
   if (currentFilter.tag) params.set('tag', currentFilter.tag);
   if (currentFilter.favorite) params.set('favorite', 'true');
+  if (currentFilter.notebook && currentFilter.notebook !== 'all') {
+    params.set('notebook', currentFilter.notebook);
+  }
+  if (currentFilter.archived) {
+    params.set('archived', 'true');
+  }
 
   const res = await fetch(`/api/memos?${params}`);
   const data = await res.json();
@@ -414,6 +421,83 @@ async function restoreMemo(id, notebook_id) {
 
 function updateNotebookCounts() {
   loadNotebooks().then(() => renderNotebooks());
+}
+
+function renderNotebooks() {
+  // Calculate archived count
+  const archivedCount = memos.filter(m => m.is_archived).length;
+
+  // Build notebooks HTML
+  let html = `
+    <div class="notebook-section">
+      <div class="sidebar-label">笔记本</div>
+      <div class="notebook-item ${currentNotebook === 'all' ? 'active' : ''}"
+           onclick="selectNotebook('all')" tabindex="0">
+        <span class="notebook-icon">📁</span>
+        <span class="notebook-name">全部笔记</span>
+        <span class="notebook-count">${pagination.total}</span>
+      </div>
+      ${notebooks.filter(n => n.id !== 1).map(n => `
+        <div class="notebook-item ${currentNotebook === n.id ? 'active' : ''}"
+             data-id="${n.id}" onclick="selectNotebook(${n.id})" tabindex="0"
+             oncontextmenu="showNotebookMenu(event, ${n.id})">
+          <span class="notebook-icon">${escapeHtml(n.icon)}</span>
+          <span class="notebook-name">${escapeHtml(n.name)}</span>
+          <span class="notebook-count">${n.memo_count || 0}</span>
+        </div>
+      `).join('')}
+      <button class="btn btn-outline btn-small notebook-new" onclick="openNotebookModal()">
+        + 新建笔记本
+      </button>
+    </div>
+  `;
+
+  // Add archived section
+  if (archivedCount > 0 || currentNotebook === 'archived') {
+    html += `
+      <div class="notebook-section archived-section">
+        <div class="notebook-item ${currentNotebook === 'archived' ? 'active' : ''}"
+             onclick="selectNotebook('archived')" tabindex="0">
+          <span class="notebook-icon">📦</span>
+          <span class="notebook-name">已归档</span>
+          <span class="notebook-count">${archivedCount}</span>
+        </div>
+      </div>
+    `;
+  }
+
+  dom.notebooksList.innerHTML = html;
+}
+
+function selectNotebook(notebook) {
+  currentNotebook = notebook;
+  currentFilter.notebook = notebook;
+  currentFilter.archived = notebook === 'archived';
+
+  resetAndLoad();
+  renderNotebooks();
+}
+
+function showNotebookMenu(event, id) {
+  event.preventDefault();
+  const notebook = notebooks.find(n => n.id === id);
+  if (!notebook || notebook.is_default) return;
+
+  const action = prompt('输入操作: rename 或 delete');
+  if (action === 'rename') {
+    const newName = prompt('新名称:', notebook.name);
+    if (newName && newName !== notebook.name) {
+      updateNotebook(id, { name: newName });
+    }
+  } else if (action === 'delete') {
+    deleteNotebook(id);
+  }
+}
+
+function openNotebookModal() {
+  $('notebookForm')?.reset();
+  dom.notebookModal.classList.add('active');
+  $('notebookName')?.focus();
 }
 
 // Scroll
