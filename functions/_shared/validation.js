@@ -44,6 +44,21 @@ export const TagSchema = z.object({
 });
 
 /**
+ * Notebook validation schema
+ */
+export const NotebookSchema = z.object({
+  name: z.string()
+    .min(1, 'Notebook name is required')
+    .max(50, 'Notebook name must be 50 characters or less')
+    .transform(val => val.trim()),
+
+  icon: z.string()
+    .max(10, 'Icon must be 10 characters or less')
+    .optional()
+    .default('📁')
+});
+
+/**
  * Pagination query schema
  */
 export const PaginationSchema = z.object({
