@@ -809,20 +809,34 @@ function createMemoCard(memo) {
   const content = parseMarkdown(memo.content);
   const borderColor = getRandomMemoColor();
 
+  // Archive or restore button based on state
+  const archiveBtn = memo.is_archived
+    ? `<button class="memo-action" onclick="openRestoreModal(${memo.id})" title="恢复">
+         <svg class="icon small"><use href="#icon-upload"/></svg>
+       </button>`
+    : `<button class="memo-action" onclick="archiveMemo(${memo.id})" title="归档">
+         <svg class="icon small"><use href="#icon-archive"/></svg>
+       </button>`;
+
   return `
-    <article class="memo-card" data-memo-id="${memo.id}" tabindex="0" role="listitem" style="border-left: 4px solid ${borderColor}">
+    <article class="memo-card ${memo.is_archived ? 'archived' : ''}" data-memo-id="${memo.id}" tabindex="0" role="listitem" style="border-left: 4px solid ${borderColor}">
       <div class="memo-header">
         <h3 class="memo-title">${escapeHtml(memo.title)}</h3>
         <div class="memo-actions">
+          ${!memo.is_archived ? `
           <button class="memo-action" onclick="openMemoModal(${memo.id})" title="编辑">
             <svg class="icon small"><use href="#icon-edit"/></svg>
           </button>
+          ` : ''}
           <button class="memo-action ${memo.is_favorite ? 'favorite' : ''}" onclick="toggleFavorite(${memo.id})" title="${memo.is_favorite ? '取消收藏' : '收藏'}">
             <svg class="icon small"><use href="#icon-star${memo.is_favorite ? '' : '-empty'}"/></svg>
           </button>
+          ${archiveBtn}
+          ${!memo.is_archived ? `
           <button class="memo-action" onclick="deleteMemo(${memo.id})" title="删除">
             <svg class="icon small"><use href="#icon-trash"/></svg>
           </button>
+          ` : ''}
         </div>
       </div>
       <div class="memo-content">${content}</div>
@@ -887,6 +901,17 @@ function openMemoModal(id = null) {
   $('memoContent').style.display = 'block';
   $('markdownPreview').style.display = 'none';
   isPreviewMode = false;
+
+  // Populate notebook select
+  const notebookSelect = $('memoNotebook');
+  notebookSelect.innerHTML = notebooks.map(n =>
+    `<option value="${n.id}" ${currentMemo?.notebook_id === n.id ? 'selected' : ''}>${escapeHtml(n.icon)} ${escapeHtml(n.name)}</option>`
+  ).join('');
+
+  // Default to current filter notebook or first notebook
+  if (!currentMemo && currentNotebook !== 'all' && currentNotebook !== 'archived') {
+    notebookSelect.value = currentNotebook;
+  }
 
   if (currentMemo) {
     $('memoTitle').value = currentMemo.title;
@@ -953,7 +978,8 @@ async function handleMemoSubmit(e) {
     title: $('memoTitle').value.trim(),
     content: $('memoContent').value.trim(),
     tags: $('memoTags').value.trim(),
-    is_favorite: $('memoFavorite').checked
+    is_favorite: $('memoFavorite').checked,
+    notebook_id: parseInt($('memoNotebook').value) || 1
   };
 
   if (!data.content) {
