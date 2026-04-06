@@ -167,6 +167,11 @@ CREATE TABLE saved_filters (
 CREATE INDEX idx_saved_filters_sort_order ON saved_filters(sort_order);
 ```
 
+**sort_order 说明：**
+- 新建预设默认 `sort_order = 0`
+- 列表按 `sort_order ASC, created_at DESC` 排序
+- M2 不实现拖拽重排，后续版本可添加
+
 ### 新增迁移文件
 
 `migrations/0003_saved_filters.sql`
@@ -197,6 +202,7 @@ CREATE INDEX idx_saved_filters_sort_order ON saved_filters(sort_order);
 ### 批量操作 Schema
 
 ```javascript
+// 主 schema 用于基础验证
 export const BatchSchema = z.object({
   action: z.enum(['archive', 'restore', 'delete', 'move', 'tags']),
   memo_ids: z.array(z.number().int().positive()).min(1).max(100),
@@ -207,7 +213,10 @@ export const BatchSchema = z.object({
   }).optional()
 });
 
-// 根据 action 校验 params
+// 根据 action 使用不同的 schema
+// archive/restore/delete: params 可选
+// move: params.notebook_id 必填
+// tags: params.mode + params.tags 必填
 export const BatchMoveSchema = z.object({
   action: z.literal('move'),
   memo_ids: z.array(z.number().int().positive()).min(1).max(100),
@@ -226,6 +235,20 @@ export const BatchTagsSchema = z.object({
 });
 ```
 
+**后端验证逻辑：**
+```javascript
+// 根据 action 选择对应 schema
+const schemas = {
+  move: BatchMoveSchema,
+  tags: BatchTagsSchema,
+  archive: BatchSchema,
+  restore: BatchSchema,
+  delete: BatchSchema
+};
+const schema = schemas[body.action];
+const validated = schema.parse(body);
+```
+
 ### 筛选预设 Schema
 
 ```javascript
@@ -240,6 +263,27 @@ export const SavedFilterSchema = z.object({
     search: z.string().max(100).nullable()
   })
 });
+```
+
+**后端处理：**
+- 前端发送 `filter_config` 为 JSON 对象
+- 后端直接存储为 JSON 字符串到 TEXT 字段
+- 读取时解析为 JSON 对象
+
+```javascript
+// 创建/更新时
+const validated = SavedFilterSchema.parse(body);
+await db.query(
+  'INSERT INTO saved_filters (name, icon, filter_config) VALUES (?, ?, ?)',
+  [validated.name, validated.icon, JSON.stringify(validated.filter_config)]
+);
+
+// 读取时
+const filters = await db.query('SELECT * FROM saved_filters ORDER BY sort_order');
+return filters.map(f => ({
+  ...f,
+  filter_config: JSON.parse(f.filter_config)
+}));
 ```
 
 ---
@@ -302,6 +346,14 @@ function openSaveFilterModal() {}
 function saveFilterPreset() {}
 function applyFilterPreset(id) {}
 function deleteFilterPreset(id) {}
+function setupIconPresets() {
+  document.querySelectorAll('.icon-preset').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const input = document.getElementById(btn.closest('.modal').id === 'saveFilterModal' ? 'filterIcon' : 'notebookIcon');
+      if (input) input.value = btn.dataset.icon;
+    });
+  });
+}
 ```
 
 ### 新增 DOM 元素
@@ -459,6 +511,15 @@ function deleteFilterPreset(id) {}
   opacity: 1;
   background: var(--primary-color);
   border-color: var(--primary-color);
+}
+
+.memo-card.selected .select-circle::after {
+  content: '✓';
+  color: white;
+  font-size: 0.75rem;
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
 ```
 
