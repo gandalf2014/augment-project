@@ -22,12 +22,11 @@ test.describe('Archive Feature', () => {
   });
 
   test('查看已归档备忘录', async ({ page }) => {
-    // First archive a memo
+    // Archive a memo first
     const firstMemo = page.locator('.memo-card').first();
-    if (await firstMemo.isVisible()) {
-      await firstMemo.locator('.memo-action[title="归档"]').click();
-      await expect(page.locator('.toast', { hasText: '已归档' })).toBeVisible();
-    }
+    await expect(firstMemo).toBeVisible();
+    await firstMemo.locator('.memo-action[title="归档"]').click();
+    await expect(page.locator('.toast', { hasText: '已归档' })).toBeVisible();
     
     // Click archived notebook
     await page.click('.notebook-item:has-text("已归档")');
@@ -37,20 +36,24 @@ test.describe('Archive Feature', () => {
   });
 
   test('恢复已归档备忘录', async ({ page }) => {
-    // Go to archived
-    await page.click('.notebook-item:has-text("已归档")');
+    // Setup: Archive a memo first
+    const firstMemo = page.locator('.memo-card').first();
+    await expect(firstMemo).toBeVisible();
+    await firstMemo.locator('.memo-action[title="归档"]').click();
+    await expect(page.locator('.toast', { hasText: '已归档' })).toBeVisible();
     
-    // Find archived memo
+    // Now test restore
+    await page.click('.notebook-item:has-text("已归档")');
     const archivedMemo = page.locator('.memo-card.archived').first();
-    if (await archivedMemo.isVisible()) {
-      // Click restore button
-      await archivedMemo.locator('.memo-action[title="恢复"]').click();
-      
-      // Select notebook and confirm
-      await page.click('#restoreModal .btn-primary');
-      
-      // Wait for toast
-      await expect(page.locator('.toast', { hasText: '已恢复' })).toBeVisible();
-    }
+    await expect(archivedMemo).toBeVisible();
+    
+    // Click restore button
+    await archivedMemo.locator('.memo-action[title="恢复"]').click();
+    
+    // Select notebook and confirm
+    await page.click('#restoreModal .btn-primary');
+    
+    // Wait for toast
+    await expect(page.locator('.toast', { hasText: '已恢复' })).toBeVisible();
   });
 });
