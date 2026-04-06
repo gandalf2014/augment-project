@@ -51,11 +51,12 @@ export async function onRequestGet(context) {
     }
 
     // Notebook filter
-    if (notebook && notebook !== 'all') {
+    const notebookId = parseInt(notebook);
+    if (notebook && notebook !== 'all' && !isNaN(notebookId)) {
       countQuery += ` AND notebook_id = ?`;
       dataQuery += ` AND notebook_id = ?`;
-      countParams.push(parseInt(notebook));
-      dataParams.push(parseInt(notebook));
+      countParams.push(notebookId);
+      dataParams.push(notebookId);
     }
 
     // Archive filter (default: exclude archived)
