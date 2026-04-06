@@ -12,7 +12,10 @@ export async function onRequestPost(context) {
   try {
     const body = await request.json();
     if (body.notebook_id) {
-      notebook_id = parseInt(body.notebook_id);
+      const parsed = parseInt(body.notebook_id);
+      if (!isNaN(parsed) && parsed > 0) {
+        notebook_id = parsed;
+      }
     }
   } catch {
     // Use default notebook
