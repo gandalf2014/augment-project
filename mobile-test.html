@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mobile Layout Test</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        .test-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 1rem;
+        }
+        .viewport-info {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            background: rgba(0,0,0,0.8);
+            color: white;
+            padding: 0.5rem;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            z-index: 1000;
+        }
+        .test-section {
+            margin: 2rem 0;
+            padding: 1rem;
+            border: 2px dashed #ccc;
+        }
+    </style>
+</head>
+<body>
+    <div class="viewport-info" id="viewportInfo">
+        Viewport: <span id="dimensions"></span>
+    </div>
+    
+    <div class="test-container">
+        <h1>Mobile Layout Test</h1>
+        
+        <div class="test-section">
+            <h2>Memo Grid Test</h2>
+            <div class="memos-grid">
+                <div class="memo-card">
+                    <div class="memo-header">
+                        <h3 class="memo-title" title="Short Title">Short Title</h3>
+                        <div class="memo-actions">
+                            <button class="memo-action" title="Edit memo">✏️</button>
+                            <button class="memo-action" title="Toggle favorite">☆</button>
+                            <button class="memo-action" title="Delete memo">🗑️</button>
+                        </div>
+                    </div>
+                    <div class="memo-content markdown">
+                        <p>This is a simple memo with <strong>bold text</strong> and <em>italic text</em>.</p>
+                        <ul>
+                            <li>First item</li>
+                            <li>Second item</li>
+                        </ul>
+                    </div>
+                    <div class="memo-footer">
+                        <div class="memo-tags">
+                            <span class="memo-tag" style="background-color: #ef4444">Work</span>
+                            <span class="memo-tag" style="background-color: #10b981">Personal</span>
+                        </div>
+                        <div class="memo-date">12/25/2024</div>
+                    </div>
+                </div>
+                
+                <div class="memo-card">
+                    <div class="memo-header">
+                        <h3 class="memo-title" title="This is a very long title that should be truncated with ellipsis when it becomes too long">This is a very long title that should be truncated with ellipsis when it becomes too long</h3>
+                        <div class="memo-actions">
+                            <button class="memo-action" title="Edit memo">✏️</button>
+                            <button class="memo-action favorite" title="Toggle favorite">⭐</button>
+                            <button class="memo-action" title="Delete memo">🗑️</button>
+                        </div>
+                    </div>
+                    <div class="memo-content markdown">
+                        <h2>Markdown Content</h2>
+                        <p>This memo contains more complex markdown content:</p>
+                        <pre><code>function example() {
+  console.log("Hello World");
+}</code></pre>
+                        <blockquote>This is a quote that demonstrates blockquote styling.</blockquote>
+                        <ol>
+                            <li>Numbered list item 1</li>
+                            <li>Numbered list item 2</li>
+                            <li>Numbered list item 3</li>
+                        </ol>
+                    </div>
+                    <div class="memo-footer">
+                        <div class="memo-tags">
+                            <span class="memo-tag" style="background-color: #f59e0b">Ideas</span>
+                            <span class="memo-tag" style="background-color: #8b5cf6">Important</span>
+                        </div>
+                        <div class="memo-date">12/24/2024</div>
+                    </div>
+                </div>
+                
+                <div class="memo-card">
+                    <div class="memo-header">
+                        <h3 class="memo-title" title="Mobile Test">Mobile Test</h3>
+                        <div class="memo-actions">
+                            <button class="memo-action" title="Edit memo">✏️</button>
+                            <button class="memo-action" title="Toggle favorite">☆</button>
+                            <button class="memo-action" title="Delete memo">🗑️</button>
+                        </div>
+                    </div>
+                    <div class="memo-content markdown">
+                        <p>This memo is designed to test mobile responsiveness. The buttons should be easily tappable on mobile devices, and the content should be readable without horizontal scrolling.</p>
+                        <p>Long words should wrap properly: supercalifragilisticexpialidocious</p>
+                        <p>URLs should also wrap: https://this-is-a-very-long-url-that-should-wrap-properly-on-mobile-devices.example.com/path/to/resource</p>
+                    </div>
+                    <div class="memo-footer">
+                        <div class="memo-tags">
+                            <span class="memo-tag" style="background-color: #06b6d4">Testing</span>
+                        </div>
+                        <div class="memo-date">12/23/2024</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="test-section">
+            <h2>Card Width Consistency Test</h2>
+            <div class="memos-grid">
+                <div class="memo-card">
+                    <div class="memo-header">
+                        <h3 class="memo-title">Short</h3>
+                        <div class="memo-actions">
+                            <button class="memo-action">✏️</button>
+                            <button class="memo-action">☆</button>
+                            <button class="memo-action">🗑️</button>
+                        </div>
+                    </div>
+                    <div class="memo-content markdown">
+                        <p>Short content.</p>
+                    </div>
+                    <div class="memo-footer">
+                        <div class="memo-tags">
+                            <span class="memo-tag" style="background-color: #ef4444">Test</span>
+                        </div>
+                        <div class="memo-date">12/25/2024</div>
+                    </div>
+                </div>
+
+                <div class="memo-card">
+                    <div class="memo-header">
+                        <h3 class="memo-title">Medium Length Content</h3>
+                        <div class="memo-actions">
+                            <button class="memo-action">✏️</button>
+                            <button class="memo-action">☆</button>
+                            <button class="memo-action">🗑️</button>
+                        </div>
+                    </div>
+                    <div class="memo-content markdown">
+                        <p>This is a medium length memo with some more content to test how cards with different content lengths maintain consistent width.</p>
+                        <ul>
+                            <li>Item 1</li>
+                            <li>Item 2</li>
+                        </ul>
+                    </div>
+                    <div class="memo-footer">
+                        <div class="memo-tags">
+                            <span class="memo-tag" style="background-color: #10b981">Medium</span>
+                        </div>
+                        <div class="memo-date">12/24/2024</div>
+                    </div>
+                </div>
+
+                <div class="memo-card">
+                    <div class="memo-header">
+                        <h3 class="memo-title">Very Long Content Example</h3>
+                        <div class="memo-actions">
+                            <button class="memo-action">✏️</button>
+                            <button class="memo-action">☆</button>
+                            <button class="memo-action">🗑️</button>
+                        </div>
+                    </div>
+                    <div class="memo-content markdown">
+                        <h2>Long Content Test</h2>
+                        <p>This memo contains a lot of content to test how the grid layout handles cards with varying content lengths. All cards should maintain the same width regardless of content length.</p>
+                        <pre><code>function test() {
+  console.log("Code block test");
+  return "success";
+}</code></pre>
+                        <blockquote>This is a quote to add more content and test the layout consistency.</blockquote>
+                        <ol>
+                            <li>First item in a numbered list</li>
+                            <li>Second item with more text</li>
+                            <li>Third item to make it longer</li>
+                            <li>Fourth item for good measure</li>
+                        </ol>
+                        <p>Additional paragraph to make this card significantly taller than the others, testing the grid's ability to maintain consistent widths.</p>
+                    </div>
+                    <div class="memo-footer">
+                        <div class="memo-tags">
+                            <span class="memo-tag" style="background-color: #f59e0b">Long</span>
+                            <span class="memo-tag" style="background-color: #8b5cf6">Test</span>
+                        </div>
+                        <div class="memo-date">12/23/2024</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h2>Responsive Breakpoints</h2>
+            <p>Test at different screen sizes:</p>
+            <ul>
+                <li>Extra Large: ≥ 1600px</li>
+                <li>Large Desktop: 1200px - 1599px</li>
+                <li>Desktop: 992px - 1199px</li>
+                <li>Small Desktop: 769px - 991px</li>
+                <li>Tablet: 481px - 768px</li>
+                <li>Mobile: ≤ 480px</li>
+            </ul>
+            <p><strong>All cards should have the same width within each breakpoint.</strong></p>
+        </div>
+    </div>
+
+    <script>
+        function updateViewportInfo() {
+            const width = window.innerWidth;
+            const height = window.innerHeight;
+            document.getElementById('dimensions').textContent = `${width}x${height}`;
+        }
+        
+        window.addEventListener('resize', updateViewportInfo);
+        updateViewportInfo();
+    </script>
+</body>
+</html>

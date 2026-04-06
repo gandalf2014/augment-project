@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Theme Test - Memo App</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        .test-container {
+            max-width: 800px;
+            margin: 2rem auto;
+            padding: 2rem;
+        }
+        .theme-demo {
+            display: grid;
+            gap: 2rem;
+            margin: 2rem 0;
+        }
+        .demo-section {
+            padding: 1.5rem;
+            background: var(--bg-primary);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-sm);
+        }
+        .color-palette {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 1rem;
+            margin: 1rem 0;
+        }
+        .color-item {
+            padding: 1rem;
+            border-radius: var(--radius-md);
+            text-align: center;
+            font-size: 0.875rem;
+        }
+        .bg-primary { background: var(--bg-primary); color: var(--text-primary); border: 1px solid var(--border-color); }
+        .bg-secondary { background: var(--bg-secondary); color: var(--text-primary); }
+        .bg-tertiary { background: var(--bg-tertiary); color: var(--text-primary); }
+        .text-primary { color: var(--text-primary); }
+        .text-secondary { color: var(--text-secondary); }
+        .text-muted { color: var(--text-muted); }
+        .current-theme {
+            font-weight: 600;
+            color: var(--primary-color);
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <div class="demo-section">
+            <h1>Theme Test Page</h1>
+            <p>Current theme: <span class="current-theme" id="currentTheme">Loading...</span></p>
+            
+            <div style="margin: 1rem 0;">
+                <button class="btn btn-primary" onclick="toggleTheme()">
+                    <span id="themeIcon">🌙</span> Toggle Theme
+                </button>
+                <button class="btn btn-outline" onclick="setTheme('dark')">Set Dark</button>
+                <button class="btn btn-outline" onclick="setTheme('light')">Set Light</button>
+            </div>
+        </div>
+
+        <div class="demo-section">
+            <h2>Color Palette Test</h2>
+            <div class="color-palette">
+                <div class="color-item bg-primary">
+                    <strong>Primary BG</strong><br>
+                    var(--bg-primary)
+                </div>
+                <div class="color-item bg-secondary">
+                    <strong>Secondary BG</strong><br>
+                    var(--bg-secondary)
+                </div>
+                <div class="color-item bg-tertiary">
+                    <strong>Tertiary BG</strong><br>
+                    var(--bg-tertiary)
+                </div>
+            </div>
+            
+            <div style="margin: 1rem 0;">
+                <p class="text-primary">Primary text color</p>
+                <p class="text-secondary">Secondary text color</p>
+                <p class="text-muted">Muted text color</p>
+            </div>
+        </div>
+
+        <div class="demo-section">
+            <h2>Component Test</h2>
+            <div class="memo-card" style="max-width: 400px; margin: 1rem 0;">
+                <div class="memo-header">
+                    <h3 class="memo-title">Sample Memo Card</h3>
+                    <div class="memo-actions">
+                        <button class="memo-action">✏️</button>
+                        <button class="memo-action favorite">⭐</button>
+                        <button class="memo-action">🗑️</button>
+                    </div>
+                </div>
+                <div class="memo-content markdown">
+                    <p>This is a sample memo card to test the theme colors and styling.</p>
+                    <ul>
+                        <li>Dark theme should be the default</li>
+                        <li>Light theme should be available as alternative</li>
+                        <li>All colors should be properly contrasted</li>
+                    </ul>
+                    <pre><code>console.log("Theme test");</code></pre>
+                </div>
+                <div class="memo-footer">
+                    <div class="memo-tags">
+                        <span class="memo-tag" style="background-color: #3b82f6;">Test</span>
+                        <span class="memo-tag" style="background-color: #10b981;">Theme</span>
+                    </div>
+                    <div class="memo-date">12/25/2024</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="demo-section">
+            <h2>Form Elements Test</h2>
+            <div class="form-group">
+                <label for="testInput">Test Input</label>
+                <input type="text" id="testInput" placeholder="Test input field" value="Sample text">
+            </div>
+            <div class="form-group">
+                <label for="testTextarea">Test Textarea</label>
+                <textarea id="testTextarea" rows="3" placeholder="Test textarea">Sample content with **markdown** formatting.</textarea>
+            </div>
+            <div class="form-group">
+                <button class="btn btn-primary">Primary Button</button>
+                <button class="btn btn-outline">Outline Button</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function getCurrentTheme() {
+            return document.documentElement.getAttribute('data-theme') || 'dark';
+        }
+
+        function updateThemeDisplay() {
+            const theme = getCurrentTheme();
+            document.getElementById('currentTheme').textContent = theme.charAt(0).toUpperCase() + theme.slice(1);
+            document.getElementById('themeIcon').textContent = theme === 'dark' ? '☀️' : '🌙';
+        }
+
+        function setTheme(theme) {
+            document.documentElement.setAttribute('data-theme', theme);
+            localStorage.setItem('theme', theme);
+            updateThemeDisplay();
+        }
+
+        function toggleTheme() {
+            const currentTheme = getCurrentTheme();
+            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+            setTheme(newTheme);
+        }
+
+        // Initialize theme
+        function initTheme() {
+            const savedTheme = localStorage.getItem('theme') || 'dark';
+            setTheme(savedTheme);
+        }
+
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            initTheme();
+            updateThemeDisplay();
+        });
+    </script>
+</body>
+</html>

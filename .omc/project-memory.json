@@ -1,0 +1,141 @@
+{
+  "version": "1.0.0",
+  "lastScanned": 1775485069735,
+  "projectRoot": "C:\\Users\\Administrator\\Documents\\augment-projects\\test2",
+  "techStack": {
+    "languages": [
+      {
+        "name": "JavaScript/TypeScript",
+        "version": null,
+        "confidence": "high",
+        "markers": [
+          "package.json"
+        ]
+      }
+    ],
+    "frameworks": [
+      {
+        "name": "@playwright/test",
+        "version": "1.58.2",
+        "category": "testing"
+      }
+    ],
+    "packageManager": "npm",
+    "runtime": null
+  },
+  "build": {
+    "buildCommand": null,
+    "testCommand": "npm test",
+    "lintCommand": null,
+    "devCommand": "npm run dev",
+    "scripts": {
+      "dev": "wrangler pages dev public --compatibility-date=2024-01-01",
+      "deploy": "wrangler pages deploy public",
+      "db:migrate": "wrangler d1 migrations apply memo-db",
+      "db:create": "wrangler d1 create memo-db",
+      "test": "playwright test",
+      "test:ui": "playwright test --ui",
+      "test:headed": "playwright test --headed",
+      "test:debug": "playwright test --debug",
+      "test:report": "playwright show-report"
+    }
+  },
+  "conventions": {
+    "namingStyle": null,
+    "importStyle": null,
+    "testPattern": null,
+    "fileOrganization": null
+  },
+  "structure": {
+    "isMonorepo": false,
+    "workspaces": [],
+    "mainDirectories": [
+      "public"
+    ],
+    "gitBranches": null
+  },
+  "customNotes": [],
+  "directoryMap": {
+    "e2e": {
+      "path": "e2e",
+      "purpose": null,
+      "fileCount": 5,
+      "lastAccessed": 1775485069577,
+      "keyFiles": [
+        "accessibility.spec.ts",
+        "app.spec.ts",
+        "memo.spec.ts",
+        "search.spec.ts",
+        "tag.spec.ts"
+      ]
+    },
+    "functions": {
+      "path": "functions",
+      "purpose": null,
+      "fileCount": 0,
+      "lastAccessed": 1775485069578,
+      "keyFiles": []
+    },
+    "migrations": {
+      "path": "migrations",
+      "purpose": "Database migrations",
+      "fileCount": 1,
+      "lastAccessed": 1775485069624,
+      "keyFiles": [
+        "0001_initial.sql"
+      ]
+    },
+    "playwright-report": {
+      "path": "playwright-report",
+      "purpose": null,
+      "fileCount": 1,
+      "lastAccessed": 1775485069634,
+      "keyFiles": [
+        "index.html"
+      ]
+    },
+    "public": {
+      "path": "public",
+      "purpose": "Public files",
+      "fileCount": 7,
+      "lastAccessed": 1775485069637,
+      "keyFiles": [
+        "index.html",
+        "index.html.backup",
+        "script.js",
+        "script.js.backup",
+        "style.css"
+      ]
+    },
+    "test-results": {
+      "path": "test-results",
+      "purpose": null,
+      "fileCount": 1,
+      "lastAccessed": 1775485069639,
+      "keyFiles": []
+    },
+    "functions\\api": {
+      "path": "functions\\api",
+      "purpose": "API routes",
+      "fileCount": 2,
+      "lastAccessed": 1775485069657,
+      "keyFiles": [
+        "memos.js",
+        "tags.js"
+      ]
+    },
+    "playwright-report\\data": {
+      "path": "playwright-report\\data",
+      "purpose": "Data files",
+      "fileCount": 28,
+      "lastAccessed": 1775485069687,
+      "keyFiles": [
+        "24746dab6785d44cee755e503c983b7e87f0fb3e.webm",
+        "2494fcf4481c9a5b5110acb5dddd5f65336c7984.webm",
+        "2ae29c97d3326b59cec4418fa96e42d97cd0f5fb.png"
+      ]
+    }
+  },
+  "hotPaths": [],
+  "userDirectives": []
+}

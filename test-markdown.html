@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Markdown Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .test-container { display: flex; gap: 20px; }
+        .input, .output { flex: 1; }
+        textarea { width: 100%; height: 400px; font-family: monospace; }
+        .output { border: 1px solid #ccc; padding: 10px; }
+        h3 { margin-top: 0; }
+    </style>
+</head>
+<body>
+    <h1>Markdown Parser Test</h1>
+    <div class="test-container">
+        <div class="input">
+            <h3>Input (Markdown)</h3>
+            <textarea id="input"># Welcome to Markdown Support! 🎉
+
+This memo demonstrates the **Markdown support** that has been added to your memo application.
+
+## Features
+
+- **Bold text** with `**bold**`
+- *Italic text* with `*italic*`
+- `Inline code` with backticks
+- [Links](https://example.com) with `[text](url)`
+
+### Lists
+
+You can create:
+1. Numbered lists
+2. With multiple items
+3. Like this one
+
+Or bullet lists:
+- First item
+- Second item
+- Third item
+
+### Code Blocks
+
+```javascript
+function parseMarkdown(text) {
+  // Your markdown parsing logic here
+  return html;
+}
+```
+
+### Quotes
+
+> This is a blockquote. Perfect for highlighting important information or quotes from other sources.
+
+---
+
+## Keyboard Shortcuts
+
+- **Ctrl+B**: Make text bold
+- **Ctrl+I**: Make text italic  
+- **Ctrl+K**: Insert link
+- **Tab**: Indent text
+
+Try editing this memo to see the live preview feature!</textarea>
+        </div>
+        <div class="output">
+            <h3>Output (HTML)</h3>
+            <div id="output"></div>
+        </div>
+    </div>
+
+    <script>
+        // Copy the parseMarkdown functions from your main script
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        function parseInlineMarkdown(text) {
+            if (!text) return '';
+            
+            const inlineCodes = [];
+            let codeIndex = 0;
+            
+            text = text.replace(/`([^`]+)`/g, (match, code) => {
+                const placeholder = `__INLINE_CODE_${codeIndex}__`;
+                inlineCodes[codeIndex] = `<code>${escapeHtml(code)}</code>`;
+                codeIndex++;
+                return placeholder;
+            });
+            
+            text = text
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;');
+            
+            text = text
+                .replace(/\*\*\*(.*?)\*\*\*/g, '<strong><em>$1</em></strong>')
+                .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                .replace(/\*(.*?)\*/g, '<em>$1</em>')
+                .replace(/__(.*?)__/g, '<strong>$1</strong>')
+                .replace(/_(.*?)_/g, '<em>$1</em>')
+                .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener">$1</a>')
+                .replace(/!\[([^\]]*)\]\(([^)]+)\)/g, '<img src="$2" alt="$1" />');
+            
+            inlineCodes.forEach((code, index) => {
+                text = text.replace(`__INLINE_CODE_${index}__`, code);
+            });
+            
+            return text;
+        }
+
+        function parseMarkdown(text) {
+            if (!text) return '';
+            
+            const codeBlocks = [];
+            let codeBlockIndex = 0;
+            
+            text = text.replace(/```([\s\S]*?)```/g, (match, code) => {
+                const placeholder = `__CODE_BLOCK_${codeBlockIndex}__`;
+                codeBlocks[codeBlockIndex] = `<pre><code>${escapeHtml(code.trim())}</code></pre>`;
+                codeBlockIndex++;
+                return placeholder;
+            });
+            
+            const lines = text.split('\n');
+            const result = [];
+            let inList = false;
+            let listType = '';
+            let currentParagraph = [];
+            
+            const flushParagraph = () => {
+                if (currentParagraph.length > 0) {
+                    const content = currentParagraph.join('<br>');
+                    if (content.trim()) {
+                        result.push(`<p>${parseInlineMarkdown(content)}</p>`);
+                    }
+                    currentParagraph = [];
+                }
+            };
+            
+            for (let i = 0; i < lines.length; i++) {
+                let line = lines[i];
+                
+                const listMatch = line.match(/^(\s*)([-*+]|\d+\.)\s+(.*)$/);
+                if (listMatch) {
+                    flushParagraph();
+                    
+                    const marker = listMatch[2];
+                    const content = listMatch[3];
+                    const currentListType = /\d+\./.test(marker) ? 'ol' : 'ul';
+                    
+                    if (!inList) {
+                        result.push(`<${currentListType}>`);
+                        inList = true;
+                        listType = currentListType;
+                    } else if (listType !== currentListType) {
+                        result.push(`</${listType}>`);
+                        result.push(`<${currentListType}>`);
+                        listType = currentListType;
+                    }
+                    
+                    result.push(`<li>${parseInlineMarkdown(content)}</li>`);
+                    continue;
+                }
+                
+                if (inList) {
+                    result.push(`</${listType}>`);
+                    inList = false;
+                    listType = '';
+                }
+                
+                if (line.match(/^#{1,6}\s/)) {
+                    flushParagraph();
+                    const level = line.match(/^#+/)[0].length;
+                    const content = line.substring(level + 1);
+                    result.push(`<h${level}>${parseInlineMarkdown(content)}</h${level}>`);
+                    continue;
+                }
+                
+                if (line.startsWith('> ')) {
+                    flushParagraph();
+                    result.push(`<blockquote>${parseInlineMarkdown(line.substring(2))}</blockquote>`);
+                    continue;
+                }
+                
+                if (line.trim() === '---' || line.trim() === '***') {
+                    flushParagraph();
+                    result.push('<hr>');
+                    continue;
+                }
+                
+                if (line.trim() === '') {
+                    flushParagraph();
+                    continue;
+                }
+                
+                currentParagraph.push(line);
+            }
+            
+            flushParagraph();
+            
+            if (inList) {
+                result.push(`</${listType}>`);
+            }
+            
+            let html = result.join('\n');
+            codeBlocks.forEach((codeBlock, index) => {
+                html = html.replace(`__CODE_BLOCK_${index}__`, codeBlock);
+            });
+            
+            return html;
+        }
+
+        // Test the parser
+        const input = document.getElementById('input');
+        const output = document.getElementById('output');
+
+        function updateOutput() {
+            const markdown = input.value;
+            const html = parseMarkdown(markdown);
+            output.innerHTML = html;
+        }
+
+        input.addEventListener('input', updateOutput);
+        updateOutput(); // Initial render
+    </script>
+</body>
+</html>

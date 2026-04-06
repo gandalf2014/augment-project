@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Memo App - 记录你的想法</title>
+    <meta name="description" content="一个简洁优雅的备忘录应用，支持 Markdown、标签和收藏功能">
+    <link rel="stylesheet" href="style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📝</text></svg>">
+</head>
+<body>
+    <a href="#main-content" class="skip-link">跳转到主内容</a>
+
+    <div class="app">
+        <!-- Header -->
+        <header class="header" role="banner">
+            <div class="header-content">
+                <div class="logo">
+                    <span class="logo-icon" aria-hidden="true">📝</span>
+                    <h1>Memo</h1>
+                </div>
+                <div class="header-actions">
+                    <button class="btn btn-icon" id="themeToggle"
+                            aria-label="切换主题" aria-pressed="false">
+                        <span class="theme-icon" aria-hidden="true">☀️</span>
+                    </button>
+                    <button class="btn btn-icon" id="exportBtn"
+                            aria-label="导出备忘录">
+                        <span aria-hidden="true">📤</span>
+                    </button>
+                    <button class="btn btn-primary" id="newMemoBtn"
+                            aria-label="新建备忘录">
+                        <span aria-hidden="true">+</span> 新建
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <!-- Search and Filter Bar -->
+        <div class="search-bar" role="search">
+            <div class="search-container">
+                <label for="searchInput" class="visually-hidden">搜索备忘录</label>
+                <input type="text" id="searchInput"
+                       placeholder="搜索备忘录..."
+                       class="search-input"
+                       aria-describedby="search-hint">
+                <span id="search-hint" class="visually-hidden">输入关键词搜索标题或内容</span>
+                <button class="search-clear" id="searchClear"
+                        aria-label="清除搜索"
+                        style="display: none;">×</button>
+            </div>
+            <div class="filter-container">
+                <label for="tagFilter" class="visually-hidden">按标签筛选</label>
+                <select id="tagFilter" class="tag-filter" aria-label="标签筛选">
+                    <option value="">全部标签</option>
+                </select>
+                <button class="btn btn-outline" id="favoritesFilter"
+                        aria-pressed="false">
+                    <span aria-hidden="true">⭐</span> 收藏
+                </button>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <main class="main" id="main-content" tabindex="-1">
+            <!-- Sidebar -->
+            <aside class="sidebar" role="complementary" aria-label="侧边栏">
+                <div class="stats" role="region" aria-label="统计信息">
+                    <div class="stat-item">
+                        <span class="stat-number" id="totalMemos" aria-live="polite">0</span>
+                        <span class="stat-label">备忘录</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-number" id="totalTags" aria-live="polite">0</span>
+                        <span class="stat-label">标签</span>
+                    </div>
+                </div>
+
+                <div class="tags-section" role="region" aria-label="标签列表">
+                    <h2 id="tags-heading">标签</h2>
+                    <div class="tags-list" id="tagsList" role="list" aria-labelledby="tags-heading"></div>
+                    <button class="btn btn-outline btn-small" id="newTagBtn"
+                            aria-label="创建新标签">
+                        + 新标签
+                    </button>
+                </div>
+            </aside>
+
+            <!-- Content Area -->
+            <div class="content">
+                <div class="memos-grid" id="memosGrid" role="list" aria-label="备忘录列表">
+                    <!-- Memos will be loaded here -->
+                </div>
+
+                <div class="empty-state" id="emptyState" style="display: none;" role="status">
+                    <div class="empty-icon" aria-hidden="true">📝</div>
+                    <h3>还没有备忘录</h3>
+                    <p>创建你的第一条备忘录开始吧！</p>
+                    <button class="btn btn-primary" onclick="openMemoModal()">创建备忘录</button>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Memo Modal -->
+    <div class="modal" id="memoModal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modalTitle">新建备忘录</h2>
+                <button class="modal-close" id="modalClose"
+                        aria-label="关闭">
+                    <span aria-hidden="true">×</span>
+                </button>
+            </div>
+            <form id="memoForm" class="modal-body">
+                <div class="form-group">
+                    <label for="memoTitle">标题 <span class="optional">(可选)</span></label>
+                    <input type="text" id="memoTitle"
+                           placeholder="留空将自动生成..."
+                           aria-describedby="title-hint">
+                    <span id="title-hint" class="visually-hidden">留空将根据内容自动生成标题</span>
+                </div>
+                <div class="form-group">
+                    <label for="memoContent" id="memoContent-label">内容 <span class="required">*</span></label>
+                    <div class="content-editor">
+                        <div class="editor-tabs" role="tablist" aria-label="编辑器视图">
+                            <button type="button" class="editor-tab active"
+                                    role="tab" id="write-tab"
+                                    aria-selected="true"
+                                    aria-controls="memoContent"
+                                    data-tab="write">
+                                ✏️ 编辑
+                            </button>
+                            <button type="button" class="editor-tab"
+                                    role="tab" id="preview-tab"
+                                    aria-selected="false"
+                                    aria-controls="markdownPreview"
+                                    data-tab="preview">
+                                👁️ 预览
+                            </button>
+                        </div>
+                        <div class="editor-toolbar" role="toolbar" aria-label="Markdown 格式工具">
+                            <button type="button" class="toolbar-btn"
+                                    onclick="insertMarkdownSyntax('**', '**')"
+                                    title="粗体 (Ctrl+B)" aria-label="粗体">
+                                <strong>B</strong>
+                            </button>
+                            <button type="button" class="toolbar-btn"
+                                    onclick="insertMarkdownSyntax('*', '*')"
+                                    title="斜体 (Ctrl+I)" aria-label="斜体">
+                                <em>I</em>
+                            </button>
+                            <button type="button" class="toolbar-btn"
+                                    onclick="insertMarkdownSyntax('`', '`')"
+                                    title="代码" aria-label="行内代码">
+                                &lt;/&gt;
+                            </button>
+                            <button type="button" class="toolbar-btn"
+                                    onclick="insertMarkdownSyntax('[', '](url)')"
+                                    title="链接 (Ctrl+K)" aria-label="插入链接">
+                                🔗
+                            </button>
+                            <button type="button" class="toolbar-btn"
+                                    onclick="insertMarkdownSyntax('- ', '')"
+                                    title="列表" aria-label="无序列表">
+                                📋
+                            </button>
+                            <button type="button" class="toolbar-btn"
+                                    onclick="insertMarkdownSyntax('> ', '')"
+                                    title="引用" aria-label="引用块">
+                                💬
+                            </button>
+                            <button type="button" class="toolbar-btn"
+                                    onclick="insertMarkdownSyntax('# ', '')"
+                                    title="标题" aria-label="一级标题">
+                                H1
+                            </button>
+                        </div>
+                        <div class="editor-content">
+                            <textarea id="memoContent" required
+                                      placeholder="在这里写下你的备忘录... (支持 Markdown)"
+                                      rows="8"
+                                      aria-labelledby="memoContent-label"
+                                      aria-required="true"></textarea>
+                            <div id="markdownPreview" class="markdown-preview"
+                                 role="tabpanel" aria-labelledby="preview-tab"
+                                 style="display: none;"></div>
+                        </div>
+                        <div class="markdown-help">
+                            <details>
+                                <summary>📝 Markdown 帮助</summary>
+                                <div class="markdown-syntax">
+                                    <p><strong>语法：</strong></p>
+                                    <p><strong>**粗体**</strong> • <em>*斜体*</em> • <code>`代码`</code></p>
+                                    <p># 标题 • - 列表 • > 引用</p>
+                                    <p>[链接](url) • ```代码块```</p>
+                                    <p><strong>快捷键：</strong></p>
+                                    <p>Ctrl+B 粗体 • Ctrl+I 斜体 • Ctrl+K 链接</p>
+                                </div>
+                            </details>
+                        </div>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="memoTags">标签</label>
+                    <div class="tags-input-container">
+                        <input type="text" id="memoTags"
+                               placeholder="添加标签 (逗号分隔)..."
+                               aria-describedby="tags-hint">
+                        <span id="tags-hint" class="visually-hidden">多个标签用逗号分隔</span>
+                        <div class="available-tags" id="availableTags" role="list" aria-label="可用标签"></div>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="checkbox-label">
+                        <input type="checkbox" id="memoFavorite">
+                        <span class="checkmark" aria-hidden="true"></span>
+                        <span>标记为收藏</span>
+                    </label>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-outline" id="cancelBtn">取消</button>
+                    <button type="submit" class="btn btn-primary" id="saveBtn">保存</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Tag Modal -->
+    <div class="modal" id="tagModal" role="dialog" aria-modal="true" aria-labelledby="tagModalTitle">
+        <div class="modal-content modal-small">
+            <div class="modal-header">
+                <h2 id="tagModalTitle">新建标签</h2>
+                <button class="modal-close" onclick="closeTagModal()"
+                        aria-label="关闭">
+                    <span aria-hidden="true">×</span>
+                </button>
+            </div>
+            <form id="tagForm" class="modal-body">
+                <div class="form-group">
+                    <label for="tagName">标签名称 <span class="required">*</span></label>
+                    <input type="text" id="tagName" required
+                           placeholder="输入标签名称..."
+                           aria-required="true">
+                </div>
+                <div class="form-group">
+                    <label for="tagColor">颜色</label>
+                    <div class="color-picker">
+                        <input type="color" id="tagColor" value="#3b82f6"
+                               aria-label="选择标签颜色">
+                        <div class="color-presets" role="group" aria-label="预设颜色">
+                            <button type="button" class="color-preset"
+                                    data-color="#dc2626"
+                                    style="background: #dc2626;"
+                                    aria-label="红色"></button>
+                            <button type="button" class="color-preset"
+                                    data-color="#059669"
+                                    style="background: #059669;"
+                                    aria-label="绿色"></button>
+                            <button type="button" class="color-preset"
+                                    data-color="#d97706"
+                                    style="background: #d97706;"
+                                    aria-label="橙色"></button>
+                            <button type="button" class="color-preset"
+                                    data-color="#7c3aed"
+                                    style="background: #7c3aed;"
+                                    aria-label="紫色"></button>
+                            <button type="button" class="color-preset"
+                                    data-color="#0891b2"
+                                    style="background: #0891b2;"
+                                    aria-label="青色"></button>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-outline" onclick="closeTagModal()">取消</button>
+                    <button type="submit" class="btn btn-primary">创建</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Loading Spinner -->
+    <div class="loading" id="loading" role="status" aria-live="polite">
+        <div class="spinner" aria-hidden="true"></div>
+        <span class="visually-hidden">加载中...</span>
+    </div>
+
+    <!-- Toast Notifications -->
+    <div class="toast-container" id="toastContainer"
+         role="region" aria-label="通知" aria-live="polite"></div>
+
+    <script src="script.js"></script>
+</body>
+</html>

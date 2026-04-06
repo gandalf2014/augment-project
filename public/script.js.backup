@@ -1,0 +1,1400 @@
+// Global state
+let memos = [];
+let tags = [];
+let currentMemo = null;
+let currentFilter = { search: '', tag: '', favorite: false };
+let isPreviewMode = false;
+
+// Pagination state
+let pagination = {
+  page: 1,
+  limit: 20,
+  total: 0,
+  totalPages: 0,
+  hasMore: false
+};
+
+// Auto-save state
+let draftTimer = null;
+const DRAFT_KEY = 'memo-draft';
+const DRAFT_DELAY = 1000;
+
+// Undo state for delete
+let lastDeleted = null;
+const UNDO_TIMEOUT = 5000; // 5 seconds to undo
+
+// DOM elements
+const elements = {
+  memosGrid: document.getElementById('memosGrid'),
+  emptyState: document.getElementById('emptyState'),
+  searchInput: document.getElementById('searchInput'),
+  searchClear: document.getElementById('searchClear'),
+  tagFilter: document.getElementById('tagFilter'),
+  favoritesFilter: document.getElementById('favoritesFilter'),
+  newMemoBtn: document.getElementById('newMemoBtn'),
+  newTagBtn: document.getElementById('newTagBtn'),
+  themeToggle: document.getElementById('themeToggle'),
+  exportBtn: document.getElementById('exportBtn'),
+  totalMemos: document.getElementById('totalMemos'),
+  totalTags: document.getElementById('totalTags'),
+  tagsList: document.getElementById('tagsList'),
+  memoModal: document.getElementById('memoModal'),
+  tagModal: document.getElementById('tagModal'),
+  loading: document.getElementById('loading'),
+  toastContainer: document.getElementById('toastContainer')
+};
+
+// Improved Markdown parser
+function parseMarkdown(text) {
+  if (!text) return '';
+
+  // First, handle code blocks to protect them from other processing
+  const codeBlocks = [];
+  let codeBlockIndex = 0;
+
+  // Extract code blocks and replace with placeholders
+  text = text.replace(/```([\s\S]*?)```/g, (match, code) => {
+    const placeholder = `__CODE_BLOCK_${codeBlockIndex}__`;
+    codeBlocks[codeBlockIndex] = `<pre><code>${escapeHtml(code.trim())}</code></pre>`;
+    codeBlockIndex++;
+    return placeholder;
+  });
+
+  // Split into lines for processing
+  const lines = text.split('\n');
+  const result = [];
+  let inList = false;
+  let listType = '';
+  let currentParagraph = [];
+
+  const flushParagraph = () => {
+    if (currentParagraph.length > 0) {
+      const content = currentParagraph.join('<br>');
+      if (content.trim()) {
+        result.push(`<p>${parseInlineMarkdown(content)}</p>`);
+      }
+      currentParagraph = [];
+    }
+  };
+
+  for (let i = 0; i < lines.length; i++) {
+    let line = lines[i];
+
+    // Handle lists
+    const listMatch = line.match(/^(\s*)([-*+]|\d+\.)\s+(.*)$/);
+    if (listMatch) {
+      flushParagraph();
+
+      const marker = listMatch[2];
+      const content = listMatch[3];
+      const currentListType = /\d+\./.test(marker) ? 'ol' : 'ul';
+
+      if (!inList) {
+        result.push(`<${currentListType}>`);
+        inList = true;
+        listType = currentListType;
+      } else if (listType !== currentListType) {
+        result.push(`</${listType}>`);
+        result.push(`<${currentListType}>`);
+        listType = currentListType;
+      }
+
+      result.push(`<li>${parseInlineMarkdown(content)}</li>`);
+      continue;
+    }
+
+    // Close list if we're not in a list item
+    if (inList) {
+      result.push(`</${listType}>`);
+      inList = false;
+      listType = '';
+    }
+
+    // Handle headers
+    if (line.match(/^#{1,6}\s/)) {
+      flushParagraph();
+      const level = line.match(/^#+/)[0].length;
+      const content = line.substring(level + 1);
+      result.push(`<h${level}>${parseInlineMarkdown(content)}</h${level}>`);
+      continue;
+    }
+
+    // Handle blockquotes
+    if (line.startsWith('> ')) {
+      flushParagraph();
+      result.push(`<blockquote>${parseInlineMarkdown(line.substring(2))}</blockquote>`);
+      continue;
+    }
+
+    // Handle horizontal rules
+    if (line.trim() === '---' || line.trim() === '***') {
+      flushParagraph();
+      result.push('<hr>');
+      continue;
+    }
+
+    // Handle empty lines
+    if (line.trim() === '') {
+      flushParagraph();
+      continue;
+    }
+
+    // Regular paragraph content
+    currentParagraph.push(line);
+  }
+
+  // Flush any remaining paragraph
+  flushParagraph();
+
+  // Close any open lists
+  if (inList) {
+    result.push(`</${listType}>`);
+  }
+
+  // Restore code blocks
+  let html = result.join('\n');
+  codeBlocks.forEach((codeBlock, index) => {
+    html = html.replace(`__CODE_BLOCK_${index}__`, codeBlock);
+  });
+
+  return html;
+}
+
+function parseInlineMarkdown(text) {
+  if (!text) return '';
+
+  // First, protect inline code from other processing
+  const inlineCodes = [];
+  let codeIndex = 0;
+
+  text = text.replace(/`([^`]+)`/g, (match, code) => {
+    const placeholder = `__INLINE_CODE_${codeIndex}__`;
+    inlineCodes[codeIndex] = `<code>${escapeHtml(code)}</code>`;
+    codeIndex++;
+    return placeholder;
+  });
+
+  // Escape HTML characters
+  text = text
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
+
+  // Process formatting (order matters)
+  text = text
+    // Bold and italic combinations
+    .replace(/\*\*\*(.*?)\*\*\*/g, '<strong><em>$1</em></strong>')
+    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+    .replace(/\*(.*?)\*/g, '<em>$1</em>')
+
+    // Alternative bold/italic syntax
+    .replace(/__(.*?)__/g, '<strong>$1</strong>')
+    .replace(/_(.*?)_/g, '<em>$1</em>')
+
+    // Links
+    .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener">$1</a>')
+
+    // Images
+    .replace(/!\[([^\]]*)\]\(([^)]+)\)/g, '<img src="$2" alt="$1" />');
+
+  // Restore inline code
+  inlineCodes.forEach((code, index) => {
+    text = text.replace(`__INLINE_CODE_${index}__`, code);
+  });
+
+  return text;
+}
+
+// Highlight search text in content
+function highlightText(text, searchTerm) {
+  if (!searchTerm || !text) return text;
+
+  // Escape HTML first
+  let escaped = escapeHtml(text);
+
+  // Create regex for case-insensitive match
+  const regex = new RegExp(`(${escapeRegex(searchTerm)})`, 'gi');
+
+  // Wrap matches in highlight span
+  return escaped.replace(regex, '<mark class="search-highlight">$1</mark>');
+}
+
+function escapeRegex(string) {
+  return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+// Initialize app
+document.addEventListener('DOMContentLoaded', async () => {
+  initializeTheme();
+  loadDraft();
+  setupEventListeners();
+  await loadData();
+});
+
+// Theme management
+function initializeTheme() {
+  const savedTheme = localStorage.getItem('theme') || 'dark';
+  document.documentElement.setAttribute('data-theme', savedTheme);
+  updateThemeIcon(savedTheme);
+  updateThemeButton(savedTheme);
+}
+
+function toggleTheme() {
+  const currentTheme = document.documentElement.getAttribute('data-theme');
+  const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+  document.documentElement.setAttribute('data-theme', newTheme);
+  localStorage.setItem('theme', newTheme);
+  updateThemeIcon(newTheme);
+  updateThemeButton(newTheme);
+}
+
+function updateThemeIcon(theme) {
+  const icon = elements.themeToggle.querySelector('.theme-icon');
+  icon.textContent = theme === 'dark' ? '☀️' : '🌙';
+}
+
+function updateThemeButton(theme) {
+  elements.themeToggle.setAttribute('aria-pressed', theme === 'light');
+}
+
+// Event listeners
+function setupEventListeners() {
+  // Theme toggle
+  elements.themeToggle.addEventListener('click', toggleTheme);
+
+  // Search and filter
+  elements.searchInput.addEventListener('input', debounce(handleSearch, 300));
+  elements.searchClear.addEventListener('click', clearSearch);
+  elements.tagFilter.addEventListener('change', handleTagFilter);
+  elements.favoritesFilter.addEventListener('click', toggleFavoritesFilter);
+
+  // Modal controls
+  elements.newMemoBtn.addEventListener('click', () => openMemoModal());
+  elements.newTagBtn.addEventListener('click', openTagModal);
+
+  // Export
+  elements.exportBtn.addEventListener('click', exportMemos);
+
+  // Modal close handlers
+  document.getElementById('modalClose').addEventListener('click', closeMemoModal);
+  document.getElementById('cancelBtn').addEventListener('click', closeMemoModal);
+
+  // Form submissions
+  document.getElementById('memoForm').addEventListener('submit', handleMemoSubmit);
+  document.getElementById('tagForm').addEventListener('submit', handleTagSubmit);
+
+  // Color preset clicks
+  document.querySelectorAll('.color-preset').forEach(preset => {
+    preset.addEventListener('click', (e) => {
+      document.getElementById('tagColor').value = e.target.dataset.color;
+    });
+  });
+
+  // Editor tab switching
+  document.addEventListener('click', (e) => {
+    if (e.target.classList.contains('editor-tab')) {
+      handleEditorTabSwitch(e.target);
+    }
+  });
+
+  // Real-time markdown preview, title generation, and auto-save
+  document.addEventListener('input', (e) => {
+    if (e.target.id === 'memoContent' || e.target.id === 'memoTitle' || e.target.id === 'memoTags') {
+      if (isPreviewMode) {
+        updateMarkdownPreview();
+      }
+      updateTitlePreview();
+      saveDraft();
+    }
+  });
+
+  // Modal backdrop clicks
+  elements.memoModal.addEventListener('click', (e) => {
+    if (e.target === elements.memoModal) closeMemoModal();
+  });
+
+  elements.tagModal.addEventListener('click', (e) => {
+    if (e.target === elements.tagModal) closeTagModal();
+  });
+
+  // Keyboard shortcuts
+  document.addEventListener('keydown', handleKeyboardShortcuts);
+
+  // Scroll detection for infinite scroll
+  window.addEventListener('scroll', handleScroll);
+
+  // Resize detection for masonry layout
+  let resizeTimeout;
+  window.addEventListener('resize', () => {
+    clearTimeout(resizeTimeout);
+    resizeTimeout = setTimeout(() => {
+      renderMemos();
+    }, 200);
+  });
+
+  // Focus trap for modals
+  setupFocusTrap(elements.memoModal);
+  setupFocusTrap(elements.tagModal);
+}
+
+// Focus trap for accessibility
+function setupFocusTrap(modal) {
+  modal.addEventListener('keydown', (e) => {
+    if (e.key !== 'Tab') return;
+
+    const focusable = modal.querySelectorAll(
+      'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+    );
+    const first = focusable[0];
+    const last = focusable[focusable.length - 1];
+
+    if (e.shiftKey) {
+      if (document.activeElement === first) {
+        last.focus();
+        e.preventDefault();
+      }
+    } else {
+      if (document.activeElement === last) {
+        first.focus();
+        e.preventDefault();
+      }
+    }
+  });
+}
+
+// Debounce utility
+function debounce(func, wait) {
+  let timeout;
+  return function executedFunction(...args) {
+    const later = () => {
+      clearTimeout(timeout);
+      func(...args);
+    };
+    clearTimeout(timeout);
+    timeout = setTimeout(later, wait);
+  };
+}
+
+// Scroll handler for infinite scroll
+function handleScroll() {
+  if (!pagination.hasMore) return;
+
+  const scrollTop = window.scrollY;
+  const windowHeight = window.innerHeight;
+  const documentHeight = document.documentElement.scrollHeight;
+
+  // Load more when user scrolls to 80% of the page
+  if (scrollTop + windowHeight >= documentHeight * 0.8) {
+    loadMoreMemos();
+  }
+}
+
+// Editor functions
+function handleEditorTabSwitch(tab) {
+  const tabContainer = tab.parentElement;
+  const contentContainer = tabContainer.nextElementSibling;
+  const textarea = contentContainer.querySelector('textarea');
+  const preview = contentContainer.querySelector('.markdown-preview');
+
+  // Update tab states
+  tabContainer.querySelectorAll('.editor-tab').forEach(t => {
+    t.classList.remove('active');
+    t.setAttribute('aria-selected', 'false');
+  });
+  tab.classList.add('active');
+  tab.setAttribute('aria-selected', 'true');
+
+  const tabType = tab.dataset.tab;
+
+  if (tabType === 'write') {
+    isPreviewMode = false;
+    textarea.style.display = 'block';
+    preview.style.display = 'none';
+  } else if (tabType === 'preview') {
+    isPreviewMode = true;
+    textarea.style.display = 'none';
+    preview.style.display = 'block';
+    updateMarkdownPreview();
+  }
+}
+
+function updateMarkdownPreview() {
+  const textarea = document.getElementById('memoContent');
+  const preview = document.getElementById('markdownPreview');
+
+  if (textarea && preview) {
+    const markdownText = textarea.value;
+    const htmlContent = parseMarkdown(markdownText);
+    preview.innerHTML = `<div class="markdown-content">${htmlContent}</div>`;
+  }
+}
+
+function updateTitlePreview() {
+  const titleInput = document.getElementById('memoTitle');
+  const contentInput = document.getElementById('memoContent');
+
+  if (titleInput && contentInput) {
+    const currentTitle = titleInput.value.trim();
+    const content = contentInput.value.trim();
+
+    if (!currentTitle && content) {
+      const generatedTitle = generateTitleFromContent(content);
+      titleInput.placeholder = `自动生成: ${generatedTitle}`;
+    } else {
+      titleInput.placeholder = '留空将自动生成...';
+    }
+  }
+}
+
+// Markdown editing helpers
+function insertMarkdown(textarea, before, after = '') {
+  const start = textarea.selectionStart;
+  const end = textarea.selectionEnd;
+  const selectedText = textarea.value.substring(start, end);
+  const replacement = before + selectedText + after;
+
+  textarea.value = textarea.value.substring(0, start) + replacement + textarea.value.substring(end);
+
+  // Set cursor position
+  const newCursorPos = start + before.length + selectedText.length;
+  textarea.setSelectionRange(newCursorPos, newCursorPos);
+  textarea.focus();
+
+  // Update preview if in preview mode
+  if (isPreviewMode) {
+    updateMarkdownPreview();
+  }
+
+  // Save draft
+  saveDraft();
+}
+
+// Toolbar function for inserting markdown syntax
+function insertMarkdownSyntax(before, after = '') {
+  const textarea = document.getElementById('memoContent');
+  if (textarea) {
+    insertMarkdown(textarea, before, after);
+  }
+}
+
+// Keyboard shortcuts
+function handleKeyboardShortcuts(e) {
+  const textarea = document.getElementById('memoContent');
+  const isInTextarea = e.target === textarea;
+
+  if (e.ctrlKey || e.metaKey) {
+    switch (e.key) {
+      case 'n':
+        e.preventDefault();
+        openMemoModal();
+        break;
+      case 'f':
+        e.preventDefault();
+        elements.searchInput.focus();
+        break;
+      case 'e':
+        e.preventDefault();
+        exportMemos();
+        break;
+      case 'b':
+        if (isInTextarea) {
+          e.preventDefault();
+          insertMarkdown(textarea, '**', '**');
+        }
+        break;
+      case 'i':
+        if (isInTextarea) {
+          e.preventDefault();
+          insertMarkdown(textarea, '*', '*');
+        }
+        break;
+      case 'k':
+        if (isInTextarea) {
+          e.preventDefault();
+          const url = prompt('输入链接 URL:');
+          if (url) {
+            insertMarkdown(textarea, '[', `](${url})`);
+          }
+        }
+        break;
+    }
+  }
+
+  // Tab key for indentation in textarea
+  if (e.key === 'Tab' && isInTextarea) {
+    e.preventDefault();
+    insertMarkdown(textarea, '  ');
+  }
+
+  if (e.key === 'Escape') {
+    closeMemoModal();
+    closeTagModal();
+  }
+}
+
+// Auto-save draft functions
+function saveDraft() {
+  clearTimeout(draftTimer);
+  draftTimer = setTimeout(() => {
+    const titleInput = document.getElementById('memoTitle');
+    const contentInput = document.getElementById('memoContent');
+    const tagsInput = document.getElementById('memoTags');
+    const favoriteInput = document.getElementById('memoFavorite');
+
+    if (!titleInput || !contentInput) return;
+
+    const draft = {
+      title: titleInput.value,
+      content: contentInput.value,
+      tags: tagsInput ? tagsInput.value : '',
+      is_favorite: favoriteInput ? favoriteInput.checked : false,
+      savedAt: new Date().toISOString()
+    };
+
+    // Only save if there's content
+    if (draft.content || draft.title) {
+      localStorage.setItem(DRAFT_KEY, JSON.stringify(draft));
+    }
+  }, DRAFT_DELAY);
+}
+
+function loadDraft() {
+  try {
+    const draftJson = localStorage.getItem(DRAFT_KEY);
+    if (!draftJson) return null;
+
+    const draft = JSON.parse(draftJson);
+
+    // Check if draft is less than 24 hours old
+    const savedAt = new Date(draft.savedAt);
+    const now = new Date();
+    const hoursDiff = (now - savedAt) / (1000 * 60 * 60);
+
+    if (hoursDiff > 24) {
+      localStorage.removeItem(DRAFT_KEY);
+      return null;
+    }
+
+    return draft;
+  } catch {
+    return null;
+  }
+}
+
+function clearDraft() {
+  localStorage.removeItem(DRAFT_KEY);
+}
+
+// Data loading
+async function loadData() {
+  showSkeletonLoading();
+  try {
+    await Promise.all([loadMemos(), loadTags()]);
+    updateStats();
+    renderMemos();
+    renderTags();
+  } catch (error) {
+    showToast('加载数据失败', 'error');
+    console.error('Error loading data:', error);
+  } finally {
+    hideLoading();
+  }
+}
+
+// Show skeleton loading
+function showSkeletonLoading() {
+  elements.loading.classList.add('active');
+  elements.memosGrid.innerHTML = Array(6).fill(`
+    <div class="memo-card skeleton">
+      <div class="skeleton skeleton-title"></div>
+      <div class="skeleton skeleton-content"></div>
+      <div class="skeleton skeleton-tags"></div>
+    </div>
+  `).join('');
+}
+
+function hideLoading() {
+  elements.loading.classList.remove('active');
+}
+
+async function loadMemos(append = false) {
+  try {
+    const params = new URLSearchParams();
+    params.set('page', pagination.page);
+    params.set('limit', pagination.limit);
+
+    if (currentFilter.search) {
+      params.set('search', currentFilter.search);
+    }
+    if (currentFilter.tag) {
+      params.set('tag', currentFilter.tag);
+    }
+    if (currentFilter.favorite) {
+      params.set('favorite', 'true');
+    }
+
+    const response = await fetch(`/api/memos?${params.toString()}`);
+    const result = await response.json();
+
+    if (!response.ok) {
+      throw new Error(result.error?.message || '获取备忘录失败');
+    }
+
+    if (append) {
+      memos = [...memos, ...result.data.memos];
+    } else {
+      memos = result.data.memos;
+    }
+
+    pagination = { ...pagination, ...result.data.pagination };
+  } catch (error) {
+    console.error('Error loading memos:', error);
+    memos = [];
+  }
+}
+
+async function loadMoreMemos() {
+  if (!pagination.hasMore) return;
+
+  pagination.page++;
+  showLoading(true);
+  try {
+    await loadMemos(true);
+    renderMemos(true);
+  } catch (error) {
+    console.error('Error loading more memos:', error);
+    pagination.page--;
+  } finally {
+    showLoading(false);
+  }
+}
+
+async function loadTags() {
+  try {
+    const response = await fetch('/api/tags');
+    const result = await response.json();
+
+    if (!response.ok) {
+      throw new Error(result.error?.message || '获取标签失败');
+    }
+
+    tags = result.data;
+    updateTagFilter();
+  } catch (error) {
+    console.error('Error loading tags:', error);
+    tags = [];
+  }
+}
+
+// Search and filter
+function handleSearch(e) {
+  currentFilter.search = e.target.value.toLowerCase();
+  elements.searchClear.style.display = e.target.value ? 'block' : 'none';
+  resetAndLoadMemos();
+}
+
+function clearSearch() {
+  elements.searchInput.value = '';
+  currentFilter.search = '';
+  elements.searchClear.style.display = 'none';
+  resetAndLoadMemos();
+}
+
+function handleTagFilter(e) {
+  currentFilter.tag = e.target.value;
+  resetAndLoadMemos();
+}
+
+function toggleFavoritesFilter() {
+  currentFilter.favorite = !currentFilter.favorite;
+  elements.favoritesFilter.classList.toggle('btn-primary', currentFilter.favorite);
+  elements.favoritesFilter.classList.toggle('btn-outline', !currentFilter.favorite);
+  elements.favoritesFilter.setAttribute('aria-pressed', currentFilter.favorite);
+  resetAndLoadMemos();
+}
+
+function resetAndLoadMemos() {
+  pagination.page = 1;
+  memos = [];
+  loadMemos().then(() => {
+    renderMemos();
+    updateStats();
+  });
+}
+
+// Memo operations
+async function createMemo(memoData) {
+  try {
+    const response = await fetch('/api/memos', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(memoData)
+    });
+
+    const result = await response.json();
+
+    if (!response.ok) {
+      throw new Error(result.error?.message || '创建备忘录失败');
+    }
+
+    const newMemo = result.data;
+    memos.unshift(newMemo);
+    pagination.total++;
+    renderMemos();
+    updateStats();
+    clearDraft();
+    showToast('备忘录已创建', 'success');
+    return newMemo;
+  } catch (error) {
+    showToast(error.message, 'error');
+    throw error;
+  }
+}
+
+async function updateMemo(id, memoData) {
+  try {
+    const response = await fetch(`/api/memos/${id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(memoData)
+    });
+
+    const result = await response.json();
+
+    if (!response.ok) {
+      throw new Error(result.error?.message || '更新备忘录失败');
+    }
+
+    const updatedMemo = result.data;
+    const index = memos.findIndex(m => m.id === parseInt(id));
+    if (index !== -1) {
+      memos[index] = updatedMemo;
+      renderMemos();
+      showToast('备忘录已更新', 'success');
+    }
+    clearDraft();
+    return updatedMemo;
+  } catch (error) {
+    showToast(error.message, 'error');
+    throw error;
+  }
+}
+
+async function deleteMemo(id) {
+  const memo = memos.find(m => m.id === id);
+  if (!memo) return;
+
+  // Store for undo
+  lastDeleted = { id, memo: { ...memo } };
+
+  // Remove from local state immediately
+  memos = memos.filter(m => m.id !== id);
+  pagination.total--;
+  renderMemos();
+  updateStats();
+
+  // Show toast with undo option
+  showToastWithAction('已删除', 'warning', '撤销', () => undoDelete());
+
+  // Actually delete from server after timeout
+  setTimeout(async () => {
+    if (lastDeleted && lastDeleted.id === id) {
+      try {
+        const response = await fetch(`/api/memos/${id}`, { method: 'DELETE' });
+        if (!response.ok) {
+          throw new Error('删除失败');
+        }
+        lastDeleted = null;
+      } catch (error) {
+        // Restore on error
+        memos.unshift(lastDeleted.memo);
+        pagination.total++;
+        renderMemos();
+        updateStats();
+        showToast('删除失败，已恢复', 'error');
+      }
+    }
+  }, UNDO_TIMEOUT);
+}
+
+function undoDelete() {
+  if (!lastDeleted) return;
+
+  // Restore the memo
+  memos.unshift(lastDeleted.memo);
+  pagination.total++;
+  renderMemos();
+  updateStats();
+
+  // Clear the pending delete
+  lastDeleted = null;
+
+  showToast('已恢复', 'success');
+}
+
+async function toggleFavorite(id) {
+  const memo = memos.find(m => m.id === id);
+  if (!memo) return;
+
+  try {
+    await updateMemo(id, { ...memo, is_favorite: !memo.is_favorite });
+
+    // Add animation
+    const card = document.querySelector(`[data-memo-id="${id}"]`);
+    if (card) {
+      const starBtn = card.querySelector('.memo-action.favorite');
+      if (starBtn) {
+        starBtn.classList.add('starred');
+        setTimeout(() => starBtn.classList.remove('starred'), 300);
+      }
+    }
+  } catch (error) {
+    console.error('Error toggling favorite:', error);
+  }
+}
+
+// Tag operations
+async function createTag(tagData) {
+  try {
+    const response = await fetch('/api/tags', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(tagData)
+    });
+
+    const result = await response.json();
+
+    if (!response.ok) {
+      throw new Error(result.error?.message || '创建标签失败');
+    }
+
+    const newTag = result.data;
+    tags.push(newTag);
+    renderTags();
+    updateTagFilter();
+    updateStats();
+    showToast('标签已创建', 'success');
+    return newTag;
+  } catch (error) {
+    showToast(error.message, 'error');
+    throw error;
+  }
+}
+
+async function deleteTag(id) {
+  if (!confirm('确定要删除这个标签吗？')) return;
+
+  try {
+    const response = await fetch(`/api/tags/${id}`, { method: 'DELETE' });
+    const result = await response.json();
+
+    if (!response.ok) {
+      throw new Error(result.error?.message || '删除标签失败');
+    }
+
+    tags = tags.filter(t => t.id !== id);
+    renderTags();
+    updateTagFilter();
+    updateStats();
+    showToast('标签已删除', 'success');
+  } catch (error) {
+    showToast(error.message, 'error');
+  }
+}
+
+// Rendering functions
+function renderMemos(append = false) {
+  if (memos.length === 0) {
+    elements.memosGrid.style.display = 'none';
+    elements.emptyState.style.display = 'block';
+    return;
+  }
+
+  elements.memosGrid.style.display = 'block';
+  elements.emptyState.style.display = 'none';
+
+  const container = elements.memosGrid;
+
+  // Clear container
+  container.innerHTML = '';
+
+  // Create all card elements first
+  const cardElements = memos.map(memo => {
+    const card = document.createElement('article');
+    card.className = 'memo-card';
+    card.dataset.memoId = memo.id;
+    card.tabIndex = 0;
+    card.setAttribute('role', 'listitem');
+    card.setAttribute('aria-label', `备忘录: ${escapeHtml(memo.title)}`);
+    card.innerHTML = createMemoCardContent(memo);
+    return card;
+  });
+
+  // Append all cards to get them measured
+  cardElements.forEach(card => container.appendChild(card));
+
+  // Wait for DOM to be ready, then layout
+  setTimeout(() => {
+    layoutMasonry(container, cardElements);
+  }, 50);
+
+  // Add load more indicator if there's more data
+  updateLoadMoreIndicator();
+}
+
+function layoutMasonry(container, cards) {
+  const containerWidth = container.offsetWidth;
+
+  if (containerWidth === 0) {
+    // Container not ready, retry
+    setTimeout(() => layoutMasonry(container, cards), 100);
+    return;
+  }
+
+  const gap = 16; // 16px gap
+
+  // Calculate column count based on container width
+  const minColumnWidth = 260;
+  const columnCount = Math.max(1, Math.floor((containerWidth + gap) / (minColumnWidth + gap)));
+  const columnWidth = (containerWidth - gap * (columnCount - 1)) / columnCount;
+
+  // Track the bottom position of each column
+  const columnBottoms = new Array(columnCount).fill(0);
+
+  // Position each card
+  cards.forEach(card => {
+    // Find the column with the smallest bottom position
+    const minHeight = Math.min(...columnBottoms);
+    const columnIndex = columnBottoms.indexOf(minHeight);
+
+    // Set card width and position
+    card.style.position = 'absolute';
+    card.style.width = `${columnWidth}px`;
+    card.style.left = `${columnIndex * (columnWidth + gap)}px`;
+    card.style.top = `${minHeight}px`;
+
+    // Update the column bottom
+    columnBottoms[columnIndex] = minHeight + card.offsetHeight + gap;
+  });
+
+  // Set container height to accommodate all cards
+  container.style.height = `${Math.max(...columnBottoms)}px`;
+  container.style.position = 'relative';
+}
+
+function createMemoCardContent(memo) {
+  const memoTags = memo.tags ? memo.tags.split(',').map(t => t.trim()).filter(t => t) : [];
+  const tagElements = memoTags.map(tagName => {
+    const tag = tags.find(t => t.name === tagName);
+    const color = tag ? tag.color : '#64748b';
+    return `<span class="memo-tag" style="background-color: ${color}">${escapeHtml(tagName)}</span>`;
+  }).join('');
+
+  const date = new Date(memo.created_at).toLocaleDateString('zh-CN');
+
+  // Apply search highlighting
+  const searchTerm = currentFilter.search;
+  let titleHtml = escapeHtml(memo.title);
+  let contentHtml = parseMarkdown(memo.content);
+
+  if (searchTerm) {
+    titleHtml = highlightText(memo.title, searchTerm);
+    const tempDiv = document.createElement('div');
+    tempDiv.innerHTML = contentHtml;
+    highlightInElement(tempDiv, searchTerm);
+    contentHtml = tempDiv.innerHTML;
+  }
+
+  return `
+      <div class="memo-header">
+        <h3 class="memo-title" title="${escapeHtml(memo.title)}">${titleHtml}</h3>
+        <div class="memo-actions">
+          <button class="memo-action"
+                  onclick="openMemoModal(${memo.id})"
+                  title="编辑" aria-label="编辑备忘录">
+            ✏️
+          </button>
+          <button class="memo-action ${memo.is_favorite ? 'favorite' : ''}"
+                  onclick="toggleFavorite(${memo.id})"
+                  title="${memo.is_favorite ? '取消收藏' : '收藏'}"
+                  aria-label="${memo.is_favorite ? '取消收藏' : '收藏'}"
+                  aria-pressed="${memo.is_favorite ? 'true' : 'false'}">
+            ${memo.is_favorite ? '⭐' : '☆'}
+          </button>
+          <button class="memo-action"
+                  onclick="deleteMemo(${memo.id})"
+                  title="删除" aria-label="删除备忘录">
+            🗑️
+          </button>
+        </div>
+      </div>
+      <div class="memo-content markdown">${contentHtml}</div>
+      <div class="memo-footer">
+        <div class="memo-tags">${tagElements}</div>
+        <time class="memo-date" datetime="${memo.created_at}">${date}</time>
+      </div>
+  `;
+}
+
+function updateLoadMoreIndicator() {
+  const existing = document.getElementById('loadMoreIndicator');
+
+  if (pagination.hasMore) {
+    if (!existing) {
+      elements.memosGrid.insertAdjacentHTML('afterend', `
+        <div id="loadMoreIndicator" class="load-more" role="status">
+          <div class="spinner-small" aria-hidden="true"></div>
+          <span>加载更多...</span>
+        </div>
+      `);
+    }
+  } else if (existing) {
+    existing.remove();
+  }
+}
+
+// Highlight text in DOM element
+function highlightInElement(element, searchTerm) {
+  const walker = document.createTreeWalker(element, NodeFilter.SHOW_TEXT, null, false);
+  const textNodes = [];
+
+  while (walker.nextNode()) {
+    textNodes.push(walker.currentNode);
+  }
+
+  textNodes.forEach(node => {
+    const text = node.textContent;
+    if (text.toLowerCase().includes(searchTerm.toLowerCase())) {
+      const regex = new RegExp(`(${escapeRegex(searchTerm)})`, 'gi');
+      const span = document.createElement('span');
+      span.innerHTML = text.replace(regex, '<mark class="search-highlight">$1</mark>');
+      node.parentNode.replaceChild(span, node);
+    }
+  });
+}
+
+function renderTags() {
+  elements.tagsList.innerHTML = tags.map(tag => `
+    <div class="tag-item" onclick="filterByTag('${escapeHtml(tag.name)}')"
+         role="listitem" tabindex="0"
+         aria-label="标签: ${escapeHtml(tag.name)}">
+      <div class="tag-info">
+        <div class="tag-color" style="background-color: ${tag.color}" aria-hidden="true"></div>
+        <span class="tag-name">${escapeHtml(tag.name)}</span>
+      </div>
+      <button class="tag-delete"
+              onclick="event.stopPropagation(); deleteTag(${tag.id})"
+              title="删除标签" aria-label="删除标签 ${escapeHtml(tag.name)}">
+        ×
+      </button>
+    </div>
+  `).join('');
+}
+
+function updateTagFilter() {
+  const currentValue = elements.tagFilter.value;
+  elements.tagFilter.innerHTML = '<option value="">全部标签</option>' +
+    tags.map(tag => `<option value="${escapeHtml(tag.name)}" ${tag.name === currentValue ? 'selected' : ''}>${escapeHtml(tag.name)}</option>`).join('');
+}
+
+function filterByTag(tagName) {
+  elements.tagFilter.value = tagName;
+  currentFilter.tag = tagName;
+  resetAndLoadMemos();
+}
+
+function updateStats() {
+  elements.totalMemos.textContent = pagination.total;
+  elements.totalTags.textContent = tags.length;
+}
+
+// Modal functions
+function openMemoModal(memoId = null) {
+  currentMemo = memoId ? memos.find(m => m.id === memoId) : null;
+
+  const form = document.getElementById('memoForm');
+  const title = document.getElementById('modalTitle');
+  const titleInput = document.getElementById('memoTitle');
+  const contentInput = document.getElementById('memoContent');
+  const tagsInput = document.getElementById('memoTags');
+  const favoriteInput = document.getElementById('memoFavorite');
+
+  // Reset editor to write mode
+  const writeTab = document.querySelector('.editor-tab[data-tab="write"]');
+  const previewTab = document.querySelector('.editor-tab[data-tab="preview"]');
+  const preview = document.getElementById('markdownPreview');
+
+  if (writeTab && previewTab) {
+    writeTab.classList.add('active');
+    writeTab.setAttribute('aria-selected', 'true');
+    previewTab.classList.remove('active');
+    previewTab.setAttribute('aria-selected', 'false');
+    contentInput.style.display = 'block';
+    preview.style.display = 'none';
+    isPreviewMode = false;
+  }
+
+  if (currentMemo) {
+    title.textContent = '编辑备忘录';
+    titleInput.value = currentMemo.title;
+    contentInput.value = currentMemo.content;
+    tagsInput.value = currentMemo.tags;
+    favoriteInput.checked = currentMemo.is_favorite;
+    clearDraft();
+  } else {
+    title.textContent = '新建备忘录';
+
+    // Check for draft
+    const draft = loadDraft();
+
+    if (draft) {
+      titleInput.value = draft.title || '';
+      contentInput.value = draft.content || '';
+      tagsInput.value = draft.tags || '';
+      favoriteInput.checked = draft.is_favorite || false;
+      showToast('已恢复草稿', 'info');
+    } else {
+      form.reset();
+    }
+  }
+
+  renderAvailableTags();
+  elements.memoModal.classList.add('active');
+
+  // Focus management for accessibility
+  titleInput.focus();
+
+  // Announce modal to screen readers
+  elements.memoModal.setAttribute('aria-hidden', 'false');
+}
+
+function closeMemoModal() {
+  elements.memoModal.classList.remove('active');
+  elements.memoModal.setAttribute('aria-hidden', 'true');
+
+  // Keep draft if there's unsaved content
+  const contentInput = document.getElementById('memoContent');
+  const titleInput = document.getElementById('memoTitle');
+
+  if (!currentMemo && (contentInput.value.trim() || titleInput.value.trim())) {
+    showToast('草稿已保存', 'info');
+  }
+
+  currentMemo = null;
+
+  // Return focus to trigger element
+  elements.newMemoBtn.focus();
+}
+
+function openTagModal() {
+  document.getElementById('tagForm').reset();
+  elements.tagModal.classList.add('active');
+  elements.tagModal.setAttribute('aria-hidden', 'false');
+  document.getElementById('tagName').focus();
+}
+
+function closeTagModal() {
+  elements.tagModal.classList.remove('active');
+  elements.tagModal.setAttribute('aria-hidden', 'true');
+  elements.newTagBtn.focus();
+}
+
+function renderAvailableTags() {
+  const container = document.getElementById('availableTags');
+  container.innerHTML = tags.map(tag => `
+    <span class="available-tag"
+          onclick="addTagToInput('${escapeHtml(tag.name)}')"
+          style="border-color: ${tag.color}"
+          role="button" tabindex="0"
+          aria-label="添加标签 ${escapeHtml(tag.name)}">
+      ${escapeHtml(tag.name)}
+    </span>
+  `).join('');
+}
+
+function addTagToInput(tagName) {
+  const tagsInput = document.getElementById('memoTags');
+  const currentTags = tagsInput.value.split(',').map(t => t.trim()).filter(t => t);
+
+  if (!currentTags.includes(tagName)) {
+    currentTags.push(tagName);
+    tagsInput.value = currentTags.join(', ');
+  }
+  saveDraft();
+}
+
+// Form handlers
+async function handleMemoSubmit(e) {
+  e.preventDefault();
+
+  const formData = {
+    title: document.getElementById('memoTitle').value.trim(),
+    content: document.getElementById('memoContent').value.trim(),
+    tags: document.getElementById('memoTags').value.trim(),
+    is_favorite: document.getElementById('memoFavorite').checked
+  };
+
+  if (!formData.content) {
+    showToast('请输入内容', 'error');
+    return;
+  }
+
+  try {
+    showLoading(true);
+
+    if (currentMemo) {
+      await updateMemo(currentMemo.id, formData);
+    } else {
+      await createMemo(formData);
+    }
+
+    closeMemoModal();
+  } catch (error) {
+    console.error('Error saving memo:', error);
+  } finally {
+    showLoading(false);
+  }
+}
+
+async function handleTagSubmit(e) {
+  e.preventDefault();
+
+  const formData = {
+    name: document.getElementById('tagName').value.trim(),
+    color: document.getElementById('tagColor').value
+  };
+
+  if (!formData.name) {
+    showToast('请输入标签名称', 'error');
+    return;
+  }
+
+  try {
+    showLoading(true);
+    await createTag(formData);
+    closeTagModal();
+  } catch (error) {
+    console.error('Error creating tag:', error);
+  } finally {
+    showLoading(false);
+  }
+}
+
+// Export functionality
+function exportMemos() {
+  const exportData = {
+    memos: memos,
+    tags: tags,
+    pagination: pagination,
+    exportDate: new Date().toISOString(),
+    version: '2.0'
+  };
+
+  const dataStr = JSON.stringify(exportData, null, 2);
+  const dataBlob = new Blob([dataStr], { type: 'application/json' });
+
+  const link = document.createElement('a');
+  link.href = URL.createObjectURL(dataBlob);
+  link.download = `memos-export-${new Date().toISOString().split('T')[0]}.json`;
+  link.click();
+
+  showToast('导出成功', 'success');
+}
+
+// Helper function to generate title from content (client-side)
+function generateTitleFromContent(content) {
+  if (!content) return '无标题';
+
+  // Remove markdown formatting for title generation
+  let plainText = content
+    .replace(/```[\s\S]*?```/g, '')
+    .replace(/`([^`]+)`/g, '$1')
+    .replace(/\*\*\*(.*?)\*\*\*/g, '$1')
+    .replace(/\*\*(.*?)\*\*/g, '$1')
+    .replace(/\*(.*?)\*/g, '$1')
+    .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
+    .replace(/!\[([^\]]*)\]\([^)]+\)/g, '')
+    .replace(/^#{1,6}\s+/gm, '')
+    .replace(/^>\s+/gm, '')
+    .replace(/^[-*+]\s+/gm, '')
+    .replace(/^\d+\.\s+/gm, '')
+    .replace(/\n+/g, ' ')
+    .trim();
+
+  // Get first meaningful line/sentence
+  const firstLine = plainText.split(/[.!?。！？]|\n/)[0].trim();
+
+  // Limit length and add ellipsis if needed
+  if (firstLine.length > 50) {
+    return firstLine.substring(0, 47) + '...';
+  }
+
+  return firstLine || '无标题';
+}
+
+// Utility functions
+function showLoading(show) {
+  elements.loading.classList.toggle('active', show);
+}
+
+function showToast(message, type = 'info') {
+  const toast = document.createElement('div');
+  toast.className = `toast ${type}`;
+  toast.setAttribute('role', 'status');
+  toast.textContent = message;
+
+  elements.toastContainer.appendChild(toast);
+
+  setTimeout(() => {
+    toast.remove();
+  }, 4000);
+}
+
+function showToastWithAction(message, type, actionText, actionCallback) {
+  const toast = document.createElement('div');
+  toast.className = `toast ${type} toast-with-action`;
+  toast.setAttribute('role', 'status');
+
+  const textSpan = document.createElement('span');
+  textSpan.textContent = message;
+
+  const actionBtn = document.createElement('button');
+  actionBtn.className = 'toast-action';
+  actionBtn.textContent = actionText;
+  actionBtn.onclick = () => {
+    actionCallback();
+    toast.remove();
+  };
+
+  toast.appendChild(textSpan);
+  toast.appendChild(actionBtn);
+
+  elements.toastContainer.appendChild(toast);
+
+  // Auto remove after timeout
+  setTimeout(() => {
+    if (toast.parentNode) {
+      toast.remove();
+    }
+  }, UNDO_TIMEOUT);
+}
+
+function escapeHtml(text) {
+  if (!text) return '';
+  const div = document.createElement('div');
+  div.textContent = text;
+  return div.innerHTML;
+}
+
+// Service Worker registration (optional)
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js')
+      .then(registration => {
+        console.log('SW registered: ', registration);
+      })
+      .catch(registrationError => {
+        console.log('SW registration failed: ', registrationError);
+      });
+  });
+}

@@ -1,0 +1,7 @@
+{
+  "tool_name": "Bash",
+  "tool_input_preview": "{\"command\":\"cd C:/Users/Administrator/Documents/augment-projects/test2 && npm run deploy\",\"timeout\":120000,\"description\":\"Deploy tag delete fix to Cloudflare\"}",
+  "error": "Exit code 1\n\n> memo-app@1.0.0 deploy\n> wrangler pages deploy public\n\n\n ⛅️ wrangler 4.25.1 (update available 4.80.0)\n─────────────────────────────────────────────\n\u001b[33m▲ \u001b[43;33m[\u001b[43;30mWARNING\u001b[43;33m]\u001b[0m \u001b[1mWarning: Your working directory is a git repo and has uncommitted changes\u001b[0m\n\n  To silence this warning, pass in --commit-dirty=true\n\n\n\u001b[31m✘ \u001b[41;31m[\u001b[41;97mERROR\u001b[41;31m]\u001b[0m \u001b[1mBuild failed with 1 error:\u001b[0m\n\n  \u001b[31m✘ \u001b[41;31m[\u001b[41;97mERROR\u001b[41;31m]\u001b[0m \u001b[1mCould not resolve \"../_sh...",
+  "timestamp": "2026-04-04T08:36:56.060Z",
+  "retry_count": 1
+}
