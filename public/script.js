@@ -6,6 +6,8 @@ let currentNotebook = 'all'; // 'all' | notebook_id | 'archived'
 let currentMemo = null;
 let currentFilter = { search: '', tag: '', notebook: 'all', archived: false, favorite: false };
 let isPreviewMode = false;
+let editingNotebookId = null;
+let restoreMemoId = null;
 
 // Pagination
 let pagination = { page: 1, limit: 50, total: 0, hasMore: false };
@@ -127,9 +129,17 @@ function setupEvents() {
   $('cancelBtn').addEventListener('click', closeMemoModal);
   $('memoForm').addEventListener('submit', handleMemoSubmit);
   $('tagForm').addEventListener('submit', handleTagSubmit);
+  $('notebookForm').addEventListener('submit', handleNotebookSubmit);
 
   document.querySelectorAll('.color-preset').forEach(btn => {
     btn.addEventListener('click', e => $('tagColor').value = e.target.dataset.color);
+  });
+
+  // Icon preset buttons
+  document.querySelectorAll('.icon-preset').forEach(btn => {
+    btn.addEventListener('click', () => {
+      $('notebookIcon').value = btn.dataset.icon;
+    });
   });
 
   document.addEventListener('click', e => {
@@ -149,10 +159,20 @@ function setupEvents() {
     if (e.target === dom.tagModal) closeTagModal();
   });
 
+  dom.notebookModal.addEventListener('click', e => {
+    if (e.target === dom.notebookModal) closeNotebookModal();
+  });
+
+  dom.restoreModal.addEventListener('click', e => {
+    if (e.target === dom.restoreModal) closeRestoreModal();
+  });
+
   document.addEventListener('keydown', e => {
     if (e.key === 'Escape') {
       closeMemoModal();
       closeTagModal();
+      closeNotebookModal();
+      closeRestoreModal();
     }
     if (e.ctrlKey || e.metaKey) {
       if (e.key === 'n') { e.preventDefault(); openMemoModal(); }
@@ -494,10 +514,94 @@ function showNotebookMenu(event, id) {
   }
 }
 
-function openNotebookModal() {
-  $('notebookForm')?.reset();
-  dom.notebookModal.classList.add('active');
-  $('notebookName')?.focus();
+// Notebook Modal
+function openNotebookModal(id = null) {
+  editingNotebookId = id;
+  const modal = dom.notebookModal;
+  const title = $('notebookModalTitle');
+  const nameInput = $('notebookName');
+  const iconInput = $('notebookIcon');
+
+  if (id) {
+    const notebook = notebooks.find(n => n.id === id);
+    title.textContent = '重命名笔记本';
+    nameInput.value = notebook?.name || '';
+    iconInput.value = notebook?.icon || '📁';
+  } else {
+    title.textContent = '新建笔记本';
+    nameInput.value = '';
+    iconInput.value = '📁';
+  }
+
+  modal.classList.add('active');
+  nameInput.focus();
+}
+
+function closeNotebookModal() {
+  dom.notebookModal.classList.remove('active');
+  editingNotebookId = null;
+}
+
+async function handleNotebookSubmit(e) {
+  e.preventDefault();
+
+  const name = $('notebookName').value.trim();
+  const icon = $('notebookIcon').value || '📁';
+
+  if (!name) {
+    showToast('请输入名称', 'error');
+    return;
+  }
+
+  showLoading(true);
+  try {
+    if (editingNotebookId) {
+      await updateNotebook(editingNotebookId, { name, icon });
+    } else {
+      await createNotebook({ name, icon });
+    }
+    closeNotebookModal();
+  } catch (e) {
+    showToast(e.message, 'error');
+  } finally {
+    showLoading(false);
+  }
+}
+
+// Restore Modal
+function openRestoreModal(memoId) {
+  restoreMemoId = memoId;
+  const select = $('restoreNotebook');
+
+  select.innerHTML = notebooks.map(n =>
+    `<option value="${n.id}">${escapeHtml(n.icon)} ${escapeHtml(n.name)}</option>`
+  ).join('');
+
+  // Default to first notebook (usually 未分类)
+  select.value = '1';
+
+  dom.restoreModal.classList.add('active');
+}
+
+function closeRestoreModal() {
+  dom.restoreModal.classList.remove('active');
+  restoreMemoId = null;
+}
+
+async function confirmRestore() {
+  if (!restoreMemoId) return;
+
+  const notebook_id = parseInt($('restoreNotebook').value);
+
+  showLoading(true);
+  try {
+    await restoreMemo(restoreMemoId, notebook_id);
+    closeRestoreModal();
+  } catch (e) {
+    showToast(e.message, 'error');
+  } finally {
+    showLoading(false);
+  }
 }
 
 // Scroll
