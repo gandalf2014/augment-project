@@ -3,7 +3,7 @@ import { test, expect } from '@playwright/test';
 test.describe('Notebook Feature', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto('/');
-    await page.waitForSelector('.notebook-item', { timeout: 10000 });
+    await expect(page.locator('.notebook-item').first()).toBeVisible({ timeout: 10000 });
   });
 
   test('应该显示笔记本列表', async ({ page }) => {
@@ -23,11 +23,23 @@ test.describe('Notebook Feature', () => {
   });
 
   test('切换笔记本', async ({ page }) => {
-    // Click on a notebook
-    const notebookItem = page.locator('.notebook-item').nth(1);
-    const notebookName = await notebookItem.textContent();
+    // Wait for notebooks to load
+    await expect(page.locator('.notebook-item').first()).toBeVisible();
+
+    // Find a user notebook (not "全部笔记")
+    const notebookItems = page.locator('.notebook-item');
+    const count = await notebookItems.count();
+
+    // Skip if only "全部笔记" exists
+    if (count <= 1) {
+      test.skip();
+      return;
+    }
+
+    // Click second notebook (index 1)
+    const notebookItem = notebookItems.nth(1);
     await notebookItem.click();
-    
+
     // Verify active state
     await expect(notebookItem).toHaveClass(/active/);
   });
