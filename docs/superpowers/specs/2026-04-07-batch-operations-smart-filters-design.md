@@ -17,6 +17,7 @@
 - 顶部显示操作栏：「已选择 N 个」 | 「全选」 | 「取消选择」
 - 选中的卡片添加 `.selected` 类（边框高亮）
 - 其他卡片仍可点击选择
+- **点击已选中的卡片会取消选择**（toggle 行为）
 
 ### 1.2 右键上下文菜单
 
@@ -191,6 +192,83 @@ CREATE INDEX idx_saved_filters_sort_order ON saved_filters(sort_order);
 
 ---
 
+## 验证 Schemas
+
+### 批量操作 Schema
+
+```javascript
+export const BatchSchema = z.object({
+  action: z.enum(['archive', 'restore', 'delete', 'move', 'tags']),
+  memo_ids: z.array(z.number().int().positive()).min(1).max(100),
+  params: z.object({
+    notebook_id: z.number().int().positive().optional(),
+    mode: z.enum(['add', 'replace', 'remove']).optional(),
+    tags: z.string().optional()
+  }).optional()
+});
+
+// 根据 action 校验 params
+export const BatchMoveSchema = z.object({
+  action: z.literal('move'),
+  memo_ids: z.array(z.number().int().positive()).min(1).max(100),
+  params: z.object({
+    notebook_id: z.number().int().positive()
+  })
+});
+
+export const BatchTagsSchema = z.object({
+  action: z.literal('tags'),
+  memo_ids: z.array(z.number().int().positive()).min(1).max(100),
+  params: z.object({
+    mode: z.enum(['add', 'replace', 'remove']),
+    tags: z.string().min(1)
+  })
+});
+```
+
+### 筛选预设 Schema
+
+```javascript
+export const SavedFilterSchema = z.object({
+  name: z.string().min(1).max(50),
+  icon: z.string().max(10).default('⭐'),
+  filter_config: z.object({
+    notebook: z.union([z.literal('all'), z.number().int().positive()]).nullable(),
+    tags: z.array(z.string()).nullable(),
+    favorite: z.boolean().nullable(),
+    archived: z.boolean().nullable(),
+    search: z.string().max(100).nullable()
+  })
+});
+```
+
+---
+
+## 错误处理
+
+### 批量操作错误处理
+
+**策略：部分成功 + 错误列表**
+
+```json
+{
+  "success": true,
+  "data": {
+    "affected": 2,
+    "failed": [
+      { "id": 3, "reason": "备忘录不存在" }
+    ]
+  }
+}
+```
+
+**验证规则：**
+- `memo_ids` 超过 100 个返回 400 错误
+- `notebook_id` 不存在返回部分成功 + 错误列表
+- 无效标签名自动过滤，不返回错误
+
+---
+
 ## 前端实现
 
 ### 新增状态变量
@@ -254,10 +332,81 @@ function deleteFilterPreset(id) {}
 </div>
 
 <!-- 保存筛选模态框 -->
-<div class="modal" id="saveFilterModal">...</div>
+<div class="modal" id="saveFilterModal">
+  <div class="modal-content modal-small">
+    <div class="modal-header">
+      <h2>保存筛选预设</h2>
+      <button class="modal-close" onclick="closeSaveFilterModal()" aria-label="关闭">×</button>
+    </div>
+    <form id="saveFilterForm" class="modal-body">
+      <div class="form-group">
+        <label for="filterName">名称 <span class="required">*</span></label>
+        <input type="text" id="filterName" required placeholder="输入预设名称..." maxlength="50">
+      </div>
+      <div class="form-group">
+        <label for="filterIcon">图标</label>
+        <input type="text" id="filterIcon" value="⭐" maxlength="10" class="icon-input">
+        <div class="icon-presets">
+          <button type="button" class="icon-preset" data-icon="⭐">⭐</button>
+          <button type="button" class="icon-preset" data-icon="📋">📋</button>
+          <button type="button" class="icon-preset" data-icon="🔔">🔔</button>
+          <button type="button" class="icon-preset" data-icon="📌">📌</button>
+          <button type="button" class="icon-preset" data-icon="💼">💼</button>
+          <button type="button" class="icon-preset" data-icon="🎯">🎯</button>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>当前条件</label>
+        <div id="filterConditions" class="filter-conditions-preview"></div>
+      </div>
+      <div class="modal-actions">
+        <button type="button" class="btn btn-outline" onclick="closeSaveFilterModal()">取消</button>
+        <button type="submit" class="btn btn-primary">保存</button>
+      </div>
+    </form>
+  </div>
+</div>
 
 <!-- 批量修改标签模态框 -->
-<div class="modal" id="batchTagsModal">...</div>
+<div class="modal" id="batchTagsModal">
+  <div class="modal-content modal-small">
+    <div class="modal-header">
+      <h2>批量修改标签</h2>
+      <button class="modal-close" onclick="closeBatchTagsModal()" aria-label="关闭">×</button>
+    </div>
+    <form id="batchTagsForm" class="modal-body">
+      <div class="form-group">
+        <label>修改方式</label>
+        <div class="radio-group">
+          <label class="radio-label">
+            <input type="radio" name="tagMode" value="add" checked>
+            <span>追加标签</span>
+            <small class="radio-hint">在现有标签后添加新标签</small>
+          </label>
+          <label class="radio-label">
+            <input type="radio" name="tagMode" value="replace">
+            <span>替换标签</span>
+            <small class="radio-hint">清除现有标签，只保留新标签</small>
+          </label>
+          <label class="radio-label">
+            <input type="radio" name="tagMode" value="remove">
+            <span>移除标签</span>
+            <small class="radio-hint">从现有标签中删除指定标签</small>
+          </label>
+        </div>
+      </div>
+      <div class="form-group">
+        <label for="batchTags">标签</label>
+        <input type="text" id="batchTags" placeholder="输入标签，逗号分隔..." maxlength="200">
+        <small class="form-hint">已选择 <span id="batchAffectedCount">0</span> 个备忘录</small>
+      </div>
+      <div class="modal-actions">
+        <button type="button" class="btn btn-outline" onclick="closeBatchTagsModal()">取消</button>
+        <button type="submit" class="btn btn-primary">确认修改</button>
+      </div>
+    </form>
+  </div>
+</div>
 ```
 
 ---
@@ -338,7 +487,7 @@ function deleteFilterPreset(id) {}
 }
 
 .context-item.danger {
-  color: var(--danger-color);
+  color: var(--error-color);
 }
 
 .context-divider {
@@ -372,6 +521,8 @@ function deleteFilterPreset(id) {}
 ### Chunk 4: E2E 测试 (2 tasks)
 - T4.1: 批量操作 E2E 测试
 - T4.2: 智能筛选 E2E 测试
+
+**测试框架：Playwright**（项目已有配置，位于 `e2e/` 目录）
 
 ---
 
