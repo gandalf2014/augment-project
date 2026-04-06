@@ -1,0 +1,44 @@
+<h2>归档功能的交互方式</h2>
+<p class="subtitle">归档后的备忘录如何处理？</p>
+
+<div class="mockup" style="max-width: 500px; margin-bottom: 1.5rem;">
+  <div class="mockup-header">归档场景</div>
+  <div class="mockup-body" style="padding: 1rem;">
+    <p style="margin: 0 0 1rem 0; color: var(--text-secondary); font-size: 0.9rem;">
+      项目完成了、笔记过时了、不想删但不想在主列表看到...
+    </p>
+    <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+      <span style="background: var(--bg-primary); padding: 0.5rem 0.75rem; border-radius: 4px;">📁 工作</span>
+      <span style="background: var(--bg-primary); padding: 0.5rem 0.75rem; border-radius: 4px;">📁 学习</span>
+      <span style="background: var(--bg-primary); padding: 0.5rem 0.75rem; border-radius: 4px; opacity: 0.5;">📦 已归档 (12)</span>
+    </div>
+  </div>
+</div>
+
+<div class="options">
+  <div class="option selected" data-choice="archive-folder" onclick="toggleSelect(this)">
+    <div class="letter">A</div>
+    <div class="content">
+      <h3>归档作为特殊笔记本</h3>
+      <p>侧边栏显示「已归档」笔记本，点击可查看，可恢复到其他笔记本</p>
+    </div>
+  </div>
+  <div class="option" data-choice="archive-toggle" onclick="toggleSelect(this)">
+    <div class="letter">B</div>
+    <div class="content">
+      <h3>归档作为隐藏状态</h3>
+      <p>归档的备忘录完全隐藏，需在设置里开启「显示归档」才能看到</p>
+    </div>
+  </div>
+  <div class="option" data-choice="archive-date" onclick="toggleSelect(this)">
+    <div class="letter">C</div>
+    <div class="content">
+      <h3>自动归档</h3>
+      <p>超过 N 天未更新的备忘录自动归档（可配置天数）</p>
+    </div>
+  </div>
+</div>
+
+<p style="margin-top: 1.5rem; color: var(--text-secondary); font-size: 0.9rem;">
+  <strong>推荐 A</strong>：实现简单，归档可见可恢复，符合「不删但隐藏」的需求
+</p>

@@ -1,0 +1,102 @@
+<h2>功能优先级建议</h2>
+<p class="subtitle">基于依赖关系和使用价值排序</p>
+
+<div class="section">
+  <h3>第一优先级：基础组织</h3>
+  <div class="cards">
+    <div class="card" style="border-left: 4px solid #22c55e;">
+      <div class="card-body">
+        <h4>📁 文件夹/笔记本</h4>
+        <p>核心基础设施。有了文件夹后，批量操作和智能筛选才有意义（移动到文件夹、按文件夹筛选）</p>
+        <p class="label">建议先做</p>
+      </div>
+    </div>
+    <div class="card" style="border-left: 4px solid #3b82f6;">
+      <div class="card-body">
+        <h4>📦 归档功能</h4>
+        <p>实现简单，只需给备忘录加一个「已归档」状态。可以和文件夹一起做</p>
+        <p class="label">可与文件夹并行</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h3>第二优先级：效率增强</h3>
+  <div class="cards">
+    <div class="card" style="border-left: 4px solid #f59e0b;">
+      <div class="card-body">
+        <h4>✅ 批量操作</h4>
+        <p>有了文件夹后价值最大：批量移动、批量归档、批量改标签</p>
+        <p class="label">依赖文件夹</p>
+      </div>
+    </div>
+    <div class="card" style="border-left: 4px solid #f59e0b;">
+      <div class="card-body">
+        <h4>🔍 智能筛选</h4>
+        <p>保存「文件夹=工作 + 标签=重要」这类组合筛选，一键切换</p>
+        <p class="label">依赖文件夹</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h3>第三优先级：独立增值</h3>
+  <div class="cards">
+    <div class="card" style="border-left: 4px solid #8b5cf6;">
+      <div class="card-body">
+        <h4>📅 时间线视图</h4>
+        <p>独立功能，随时可加。日历视角查看备忘录分布</p>
+        <p class="label">无依赖</p>
+      </div>
+    </div>
+    <div class="card" style="border-left: 4px solid #8b5cf6;">
+      <div class="card-body">
+        <h4>📝 模板</h4>
+        <p>独立功能，随时可加。预设格式快速创建</p>
+        <p class="label">无依赖</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div style="margin-top: 2rem; padding: 1rem; background: var(--bg-secondary); border-radius: 8px;">
+  <h4 style="margin: 0 0 0.5rem 0;">建议开发顺序</h4>
+  <p style="margin: 0; color: var(--text-secondary);">
+    <strong>M1:</strong> 文件夹 + 归档（基础组织）<br>
+    <strong>M2:</strong> 批量操作 + 智能筛选（效率增强）<br>
+    <strong>M3:</strong> 时间线 + 模板（独立增值）
+  </p>
+</div>
+
+<div class="options" style="margin-top: 1.5rem;">
+  <div class="option selected" data-choice="agree" onclick="toggleSelect(this)">
+    <div class="letter">✓</div>
+    <div class="content">
+      <h3>同意这个顺序</h3>
+      <p>按 M1→M2→M3 依次实现</p>
+    </div>
+  </div>
+  <div class="option" data-choice="priority-timeline" onclick="toggleSelect(this)">
+    <div class="letter">!</div>
+    <div class="content">
+      <h3>时间线优先</h3>
+      <p>时间线对我来说更重要，提前到 M1</p>
+    </div>
+  </div>
+  <div class="option" data-choice="priority-templates" onclick="toggleSelect(this)">
+    <div class="letter">!</div>
+    <div class="content">
+      <h3>模板优先</h3>
+      <p>模板对我来说更重要，提前到 M1</p>
+    </div>
+  </div>
+  <div class="option" data-choice="all-at-once" onclick="toggleSelect(this)">
+    <div class="letter">*</div>
+    <div class="content">
+      <h3>一次性全做</h3>
+      <p>不分阶段，作为一个大版本一起实现</p>
+    </div>
+  </div>
+</div>

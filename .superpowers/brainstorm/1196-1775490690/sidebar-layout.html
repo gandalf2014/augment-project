@@ -1,0 +1,94 @@
+<h2>笔记本在侧边栏的位置</h2>
+<p class="subtitle">当前侧边栏只显示标签，笔记本放哪里？</p>
+
+<div class="split">
+  <div class="mockup">
+    <div class="mockup-header">方案 A：笔记本在上，标签在下</div>
+    <div class="mockup-body" style="padding: 0.5rem;">
+      <div style="background: var(--bg-primary); padding: 0.75rem; border-radius: 4px; font-size: 0.85rem;">
+        <div style="color: var(--text-secondary); font-size: 0.75rem; margin-bottom: 0.5rem;">笔记本</div>
+        <div style="padding: 0.25rem 0;">📁 全部笔记</div>
+        <div style="padding: 0.25rem 0;">📁 工作</div>
+        <div style="padding: 0.25rem 0;">📁 学习</div>
+        <div style="padding: 0.25rem 0;">📁 生活</div>
+        <div style="padding: 0.25rem 0; color: var(--primary-color);">+ 新建笔记本</div>
+        <div style="border-top: 1px solid var(--border-color); margin: 0.75rem 0;"></div>
+        <div style="color: var(--text-secondary); font-size: 0.75rem; margin-bottom: 0.5rem;">标签</div>
+        <div style="display: flex; flex-wrap: wrap; gap: 0.25rem;">
+          <span style="background: #3b82f6; padding: 0.125rem 0.5rem; border-radius: 999px; font-size: 0.75rem;">重要</span>
+          <span style="background: #22c55e; padding: 0.125rem 0.5rem; border-radius: 999px; font-size: 0.75rem;">待办</span>
+          <span style="background: #f59e0b; padding: 0.125rem 0.5rem; border-radius: 999px; font-size: 0.75rem;">想法</span>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="mockup">
+    <div class="mockup-header">方案 B：标签融入笔记本</div>
+    <div class="mockup-body" style="padding: 0.5rem;">
+      <div style="background: var(--bg-primary); padding: 0.75rem; border-radius: 4px; font-size: 0.85rem;">
+        <div style="color: var(--text-secondary); font-size: 0.75rem; margin-bottom: 0.5rem;">笔记本</div>
+        <div style="padding: 0.25rem 0;">📁 全部笔记 <span style="color: var(--text-secondary); font-size: 0.75rem;">127</span></div>
+        <div style="padding: 0.25rem 0;">📁 工作 <span style="color: var(--text-secondary); font-size: 0.75rem;">45</span></div>
+        <div style="padding: 0.25rem 0; padding-left: 1rem; color: var(--text-secondary); font-size: 0.8rem;">→ 重要 <span style="font-size: 0.75rem;">12</span></div>
+        <div style="padding: 0.25rem 0; padding-left: 1rem; color: var(--text-secondary); font-size: 0.8rem;">→ 待办 <span style="font-size: 0.75rem;">8</span></div>
+        <div style="padding: 0.25rem 0;">📁 学习 <span style="color: var(--text-secondary); font-size: 0.75rem;">32</span></div>
+        <div style="padding: 0.25rem 0;">📁 生活 <span style="color: var(--text-secondary); font-size: 0.75rem;">50</span></div>
+        <div style="padding: 0.25rem 0; color: var(--primary-color);">+ 新建笔记本</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="pros-cons" style="margin-top: 1.5rem;">
+  <div class="pros">
+    <h4>方案 A 优点</h4>
+    <ul>
+      <li>笔记本和标签职责清晰分离</li>
+      <li>标签可跨笔记本筛选</li>
+      <li>实现改动小，保留现有标签逻辑</li>
+    </ul>
+  </div>
+  <div class="cons">
+    <h4>方案 A 缺点</h4>
+    <ul>
+      <li>侧边栏会变长</li>
+      <li>笔记本和标签是两套系统</li>
+    </ul>
+  </div>
+</div>
+
+<div class="pros-cons" style="margin-top: 1rem;">
+  <div class="pros">
+    <h4>方案 B 优点</h4>
+    <ul>
+      <li>层级感更强</li>
+      <li>每个笔记本下显示相关标签</li>
+      <li>侧边栏更紧凑</li>
+    </ul>
+  </div>
+  <div class="cons">
+    <h4>方案 B 缺点</h4>
+    <ul>
+      <li>标签变成笔记本的子概念</li>
+      <li>实现复杂，标签要关联笔记本</li>
+      <li>跨笔记本标签不好处理</li>
+    </ul>
+  </div>
+</div>
+
+<div class="options" style="margin-top: 1.5rem;">
+  <div class="option selected" data-choice="separate" onclick="toggleSelect(this)">
+    <div class="letter">A</div>
+    <div class="content">
+      <h3>笔记本和标签分离</h3>
+      <p>标签全局可用，跨笔记本筛选</p>
+    </div>
+  </div>
+  <div class="option" data-choice="integrated" onclick="toggleSelect(this)">
+    <div class="letter">B</div>
+    <div class="content">
+      <h3>标签融入笔记本</h3>
+      <p>每个笔记本有自己的标签</p>
+    </div>
+  </div>
+</div>

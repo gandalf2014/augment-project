@@ -11,15 +11,18 @@ test.describe('Notebook Feature', () => {
   });
 
   test('创建笔记本', async ({ page }) => {
+    // Use unique name to avoid conflicts with previous test runs
+    const uniqueName = `测试笔记本_${Date.now()}`;
+    
     // Click new notebook button
     await page.click('.notebook-new');
     
     // Fill form
-    await page.fill('#notebookName', '测试笔记本');
+    await page.fill('#notebookName', uniqueName);
     await page.click('#notebookForm .btn-primary');
     
     // Wait for notebook to appear
-    await expect(page.locator('.notebook-item', { hasText: '测试笔记本' })).toBeVisible();
+    await expect(page.locator('.notebook-item', { hasText: uniqueName })).toBeVisible();
   });
 
   test('切换笔记本', async ({ page }) => {

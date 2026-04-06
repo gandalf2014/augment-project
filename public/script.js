@@ -766,7 +766,15 @@ async function deleteTag(id) {
 
 // Render - Simple CSS Columns Masonry
 function renderMemos(append = false) {
-  if (memos.length === 0) {
+  // Filter memos based on archive view
+  let filteredMemos = memos;
+  if (currentNotebook !== 'archived') {
+    filteredMemos = memos.filter(m => !m.is_archived);
+  } else {
+    filteredMemos = memos.filter(m => m.is_archived);
+  }
+
+  if (filteredMemos.length === 0) {
     dom.memosGrid.style.display = 'none';
     dom.emptyState.style.display = 'block';
     return;
@@ -775,7 +783,7 @@ function renderMemos(append = false) {
   dom.memosGrid.style.display = 'block';
   dom.emptyState.style.display = 'none';
 
-  const html = memos.map(memo => createMemoCard(memo)).join('');
+  const html = filteredMemos.map(memo => createMemoCard(memo)).join('');
 
   if (append) {
     dom.memosGrid.insertAdjacentHTML('beforeend', html);

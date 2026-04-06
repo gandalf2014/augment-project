@@ -1,0 +1,85 @@
+<h2>文件夹实现方式</h2>
+<p class="subtitle">决定数据结构和交互复杂度</p>
+
+<div class="split">
+  <div class="mockup">
+    <div class="mockup-header">方案 A：单层笔记本</div>
+    <div class="mockup-body" style="padding: 1rem;">
+      <div class="mock-nav" style="margin-bottom: 1rem; padding: 0.5rem; background: var(--bg-primary); border-radius: 4px;">
+        📁 工作<br>
+        📁 学习<br>
+        📁 生活<br>
+        📁 项目A
+      </div>
+      <p style="font-size: 0.9rem; color: var(--text-secondary);">每个备忘录只属于一个笔记本，简单直观</p>
+    </div>
+  </div>
+  <div class="mockup">
+    <div class="mockup-header">方案 B：多层文件夹</div>
+    <div class="mockup-body" style="padding: 1rem;">
+      <div class="mock-nav" style="margin-bottom: 1rem; padding: 0.5rem; background: var(--bg-primary); border-radius: 4px;">
+        📁 工作<br>
+        <span style="padding-left: 1rem;">📁 项目A</span><br>
+        <span style="padding-left: 1rem;">📁 项目B</span><br>
+        📁 学习<br>
+        <span style="padding-left: 1rem;">📁 英语</span><br>
+        <span style="padding-left: 1rem;">📁 编程</span>
+      </div>
+      <p style="font-size: 0.9rem; color: var(--text-secondary);">支持嵌套，更灵活但交互复杂</p>
+    </div>
+  </div>
+</div>
+
+<div class="pros-cons" style="margin-top: 1.5rem;">
+  <div class="pros">
+    <h4>方案 A 优点</h4>
+    <ul>
+      <li>实现简单，数据库改动小</li>
+      <li>UI 清晰，无嵌套导航</li>
+      <li>适合几百条规模的场景</li>
+      <li>已有标签可做交叉筛选</li>
+    </ul>
+  </div>
+  <div class="cons">
+    <h4>方案 A 缺点</h4>
+    <ul>
+      <li>不能做「工作→项目A」这种层级</li>
+      <li>笔记本多时会变扁平</li>
+    </ul>
+  </div>
+</div>
+
+<div class="pros-cons" style="margin-top: 1rem;">
+  <div class="pros">
+    <h4>方案 B 优点</h4>
+    <ul>
+      <li>层级组织更灵活</li>
+      <li>符合传统文件夹心智模型</li>
+    </ul>
+  </div>
+  <div class="cons">
+    <h4>方案 B 缺点</h4>
+    <ul>
+      <li>UI 需要树形导航/面包屑</li>
+      <li>移动/删除时要处理子文件夹</li>
+      <li>开发工作量大</li>
+    </ul>
+  </div>
+</div>
+
+<div class="options" style="margin-top: 1.5rem;">
+  <div class="option selected" data-choice="flat" onclick="toggleSelect(this)">
+    <div class="letter">A</div>
+    <div class="content">
+      <h3>单层笔记本</h3>
+      <p>简单够用，配合标签做细分</p>
+    </div>
+  </div>
+  <div class="option" data-choice="nested" onclick="toggleSelect(this)">
+    <div class="letter">B</div>
+    <div class="content">
+      <h3>多层文件夹</h3>
+      <p>需要层级组织，接受复杂度</p>
+    </div>
+  </div>
+</div>

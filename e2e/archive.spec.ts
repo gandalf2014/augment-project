@@ -7,9 +7,10 @@ test.describe('Archive Feature', () => {
   });
 
   test('归档备忘录', async ({ page }) => {
-    // Find first memo
+    // Find first memo and capture its ID
     const firstMemo = page.locator('.memo-card').first();
     await expect(firstMemo).toBeVisible();
+    const memoId = await firstMemo.getAttribute('data-memo-id');
     
     // Click archive button
     await firstMemo.locator('.memo-action[title="归档"]').click();
@@ -17,8 +18,8 @@ test.describe('Archive Feature', () => {
     // Wait for toast
     await expect(page.locator('.toast', { hasText: '已归档' })).toBeVisible();
     
-    // Memo should no longer be visible in main list
-    await expect(firstMemo).not.toBeVisible();
+    // The specific memo should no longer be visible in main list
+    await expect(page.locator(`.memo-card[data-memo-id="${memoId}"]`)).not.toBeVisible();
   });
 
   test('查看已归档备忘录', async ({ page }) => {

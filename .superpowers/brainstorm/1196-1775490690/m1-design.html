@@ -1,0 +1,154 @@
+<h2>M1: 文件夹 + 归档 — 完整设计</h2>
+<p class="subtitle">请确认以下设计</p>
+
+<div class="section">
+  <h3>📊 数据模型变更</h3>
+  <div style="background: var(--bg-primary); padding: 1rem; border-radius: 8px; font-family: monospace; font-size: 0.85rem; overflow-x: auto;">
+    <pre style="margin: 0; color: var(--text-secondary);">
+-- 新增 notebooks 表
+CREATE TABLE notebooks (
+  id INTEGER PRIMARY KEY,
+  name TEXT NOT NULL,
+  icon TEXT DEFAULT '📁',
+  sort_order INTEGER DEFAULT 0,
+  created_at TEXT DEFAULT datetime('now'),
+  updated_at TEXT DEFAULT datetime('now')
+);
+
+-- memos 表新增字段
+ALTER TABLE memos ADD COLUMN notebook_id INTEGER;
+ALTER TABLE memos ADD COLUMN is_archived INTEGER DEFAULT 0;</pre>
+  </div>
+</div>
+
+<div class="section">
+  <h3>📁 笔记本功能</h3>
+  <ul style="color: var(--text-secondary); line-height: 1.8;">
+    <li><strong>单层结构</strong> — 不支持嵌套，简单直观</li>
+    <li><strong>侧边栏显示</strong> — 笔记本在上，标签在下，分离显示</li>
+    <li><strong>排序</strong> — 按最近更新时间，活跃笔记本在前</li>
+    <li><strong>默认笔记本</strong> — 系统内置「未分类」，新备忘录默认进入</li>
+    <li><strong>CRUD</strong> — 创建、重命名、删除（删除时备忘录移至未分类）</li>
+    <li><strong>计数显示</strong> — 每个笔记本显示备忘录数量</li>
+  </ul>
+</div>
+
+<div class="section">
+  <h3>📦 归档功能</h3>
+  <ul style="color: var(--text-secondary); line-height: 1.8;">
+    <li><strong>特殊笔记本</strong> — 「已归档」显示在侧边栏底部</li>
+    <li><strong>归档操作</strong> — 右键菜单/操作按钮选择「归档」</li>
+    <li><strong>恢复操作</strong> — 在已归档列表中选择「恢复到...」</li>
+    <li><strong>视觉区分</strong> — 已归档笔记本半透明显示</li>
+    <li><strong>不参与搜索</strong> — 全局搜索默认不搜归档内容</li>
+  </ul>
+</div>
+
+<div class="section">
+  <h3>🔄 API 变更</h3>
+  <div style="background: var(--bg-primary); padding: 1rem; border-radius: 8px; font-size: 0.85rem;">
+    <table style="width: 100%; border-collapse: collapse;">
+      <tr style="border-bottom: 1px solid var(--border-color);">
+        <td style="padding: 0.5rem 0; color: var(--primary-color);">GET /api/notebooks</td>
+        <td style="padding: 0.5rem 0; color: var(--text-secondary);">获取笔记本列表</td>
+      </tr>
+      <tr style="border-bottom: 1px solid var(--border-color);">
+        <td style="padding: 0.5rem 0; color: var(--primary-color);">POST /api/notebooks</td>
+        <td style="padding: 0.5rem 0; color: var(--text-secondary);">创建笔记本</td>
+      </tr>
+      <tr style="border-bottom: 1px solid var(--border-color);">
+        <td style="padding: 0.5rem 0; color: var(--primary-color);">PUT /api/notebooks/:id</td>
+        <td style="padding: 0.5rem 0; color: var(--text-secondary);">重命名笔记本</td>
+      </tr>
+      <tr style="border-bottom: 1px solid var(--border-color);">
+        <td style="padding: 0.5rem 0; color: var(--primary-color);">DELETE /api/notebooks/:id</td>
+        <td style="padding: 0.5rem 0; color: var(--text-secondary);">删除笔记本（备忘录移至未分类）</td>
+      </tr>
+      <tr style="border-bottom: 1px solid var(--border-color);">
+        <td style="padding: 0.5rem 0; color: var(--primary-color);">GET /api/memos?notebook=...</td>
+        <td style="padding: 0.5rem 0; color: var(--text-secondary);">按笔记本筛选（新增参数）</td>
+      </tr>
+      <tr style="border-bottom: 1px solid var(--border-color);">
+        <td style="padding: 0.5rem 0; color: var(--primary-color);">POST /api/memos/:id/archive</td>
+        <td style="padding: 0.5rem 0; color: var(--text-secondary);">归档备忘录</td>
+      </tr>
+      <tr>
+        <td style="padding: 0.5rem 0; color: var(--primary-color);">POST /api/memos/:id/restore</td>
+        <td style="padding: 0.5rem 0; color: var(--text-secondary);">恢复备忘录</td>
+      </tr>
+    </table>
+  </div>
+</div>
+
+<div class="section">
+  <h3>🖼️ UI 变更预览</h3>
+  <div class="mockup">
+    <div class="mockup-body" style="display: flex; gap: 1rem; padding: 1rem;">
+      <div style="width: 200px; background: var(--bg-primary); padding: 0.75rem; border-radius: 8px; font-size: 0.85rem;">
+        <div style="color: var(--text-secondary); font-size: 0.75rem; margin-bottom: 0.5rem;">笔记本</div>
+        <div style="padding: 0.35rem 0; background: var(--primary-color); border-radius: 4px; padding-left: 0.5rem;">📁 全部笔记 <span style="float: right; padding-right: 0.5rem;">127</span></div>
+        <div style="padding: 0.35rem 0; padding-left: 0.5rem;">📁 工作 <span style="float: right; padding-right: 0.5rem; color: var(--text-secondary);">45</span></div>
+        <div style="padding: 0.35rem 0; padding-left: 0.5rem;">📁 学习 <span style="float: right; padding-right: 0.5rem; color: var(--text-secondary);">32</span></div>
+        <div style="padding: 0.35rem 0; padding-left: 0.5rem;">📁 生活 <span style="float: right; padding-right: 0.5rem; color: var(--text-secondary);">50</span></div>
+        <div style="padding: 0.35rem 0; padding-left: 0.5rem; color: var(--primary-color);">+ 新建笔记本</div>
+        <div style="border-top: 1px solid var(--border-color); margin: 0.75rem 0;"></div>
+        <div style="color: var(--text-secondary); font-size: 0.75rem; margin-bottom: 0.5rem;">标签</div>
+        <div style="display: flex; flex-wrap: wrap; gap: 0.25rem;">
+          <span style="background: #3b82f6; padding: 0.125rem 0.5rem; border-radius: 999px; font-size: 0.75rem;">重要</span>
+          <span style="background: #22c55e; padding: 0.125rem 0.5rem; border-radius: 999px; font-size: 0.75rem;">待办</span>
+          <span style="background: #f59e0b; padding: 0.125rem 0.5rem; border-radius: 999px; font-size: 0.75rem;">想法</span>
+        </div>
+        <div style="border-top: 1px solid var(--border-color); margin: 0.75rem 0;"></div>
+        <div style="padding: 0.35rem 0; padding-left: 0.5rem; opacity: 0.6;">📦 已归档 <span style="float: right; padding-right: 0.5rem;">12</span></div>
+      </div>
+      <div style="flex: 1; background: var(--bg-primary); padding: 0.75rem; border-radius: 8px;">
+        <div style="color: var(--text-secondary); font-size: 0.85rem;">备忘录卡片区域...</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h3>📋 实现范围</h3>
+  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+    <div style="background: var(--bg-primary); padding: 1rem; border-radius: 8px;">
+      <h4 style="margin: 0 0 0.5rem 0; color: #22c55e;">✅ 包含</h4>
+      <ul style="margin: 0; padding-left: 1.25rem; color: var(--text-secondary); font-size: 0.85rem; line-height: 1.6;">
+        <li>数据库迁移</li>
+        <li>笔记本 CRUD API</li>
+        <li>侧边栏笔记本列表</li>
+        <li>备忘录归属笔记本选择</li>
+        <li>按笔记本筛选</li>
+        <li>归档/恢复功能</li>
+        <li>E2E 测试更新</li>
+      </ul>
+    </div>
+    <div style="background: var(--bg-primary); padding: 1rem; border-radius: 8px;">
+      <h4 style="margin: 0 0 0.5rem 0; color: #ef4444;">❌ 不包含（留到后续）</h4>
+      <ul style="margin: 0; padding-left: 1.25rem; color: var(--text-secondary); font-size: 0.85rem; line-height: 1.6;">
+        <li>批量操作（M2）</li>
+        <li>智能筛选（M2）</li>
+        <li>笔记本拖拽排序</li>
+        <li>笔记本图标自定义</li>
+        <li>笔记本颜色</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<div class="options" style="margin-top: 1.5rem;">
+  <div class="option selected" data-choice="approve" onclick="toggleSelect(this)">
+    <div class="letter">✓</div>
+    <div class="content">
+      <h3>设计通过，开始实现</h3>
+      <p>写入设计文档并创建实现计划</p>
+    </div>
+  </div>
+  <div class="option" data-choice="revise" onclick="toggleSelect(this)">
+    <div class="letter">✎</div>
+    <div class="content">
+      <h3>需要调整</h3>
+      <p>告诉我哪里需要修改</p>
+    </div>
+  </div>
+</div>

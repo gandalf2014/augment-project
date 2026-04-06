@@ -9,7 +9,9 @@ CREATE TABLE IF NOT EXISTS notebooks (
 );
 
 -- Add notebook_id and is_archived to memos
-ALTER TABLE memos ADD COLUMN notebook_id INTEGER REFERENCES notebooks(id) DEFAULT 1;
+-- Note: SQLite doesn't support REFERENCES with DEFAULT in ALTER TABLE
+-- Foreign key relationship enforced at application level
+ALTER TABLE memos ADD COLUMN notebook_id INTEGER DEFAULT 1;
 ALTER TABLE memos ADD COLUMN is_archived BOOLEAN DEFAULT FALSE;
 
 -- Create indexes
