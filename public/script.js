@@ -396,7 +396,8 @@ async function restoreMemo(id, notebook_id) {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ notebook_id })
   });
-  if (!res.ok) throw new Error('恢复失败');
+  const result = await res.json();
+  if (!res.ok) throw new Error(result.error?.message);
 
   // Update local state
   const idx = memos.findIndex(m => m.id === id);
