@@ -1,8 +1,10 @@
 // State
 let memos = [];
 let tags = [];
+let notebooks = [];
+let currentNotebook = 'all'; // 'all' | notebook_id | 'archived'
 let currentMemo = null;
-let currentFilter = { search: '', tag: '', favorite: false };
+let currentFilter = { search: '', tag: '', notebook: 'all', archived: false, favorite: false };
 let isPreviewMode = false;
 
 // Pagination
@@ -46,7 +48,12 @@ const dom = {
   memoModal: null,
   tagModal: null,
   loading: null,
-  toastContainer: null
+  toastContainer: null,
+  notebooksList: null,
+  notebookModal: null,
+  notebookSelect: null,
+  restoreModal: null,
+  includeArchived: null
 };
 
 // Initialize DOM cache
@@ -68,6 +75,11 @@ function initDomCache() {
   dom.tagModal = $('tagModal');
   dom.loading = $('loading');
   dom.toastContainer = $('toastContainer');
+  dom.notebooksList = $('notebooksList');
+  dom.notebookModal = $('notebookModal');
+  dom.notebookSelect = $('notebookSelect');
+  dom.restoreModal = $('restoreModal');
+  dom.includeArchived = $('includeArchived');
 }
 
 // Initialize
