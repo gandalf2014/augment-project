@@ -7,6 +7,8 @@ export async function onRequestGet(context) {
   const search = url.searchParams.get('search') || '';
   const tag = url.searchParams.get('tag') || '';
   const favorite = url.searchParams.get('favorite') === 'true';
+  const notebook = url.searchParams.get('notebook') || 'all';
+  const archived = url.searchParams.get('archived') === 'true';
 
   // Validate pagination parameters
   const paginationResult = validateQuery(url.searchParams, PaginationSchema);
@@ -23,7 +25,7 @@ export async function onRequestGet(context) {
 
     // Data query with pagination
     let dataQuery = `
-      SELECT id, title, content, tags, is_favorite, created_at, updated_at
+      SELECT id, title, content, tags, is_favorite, notebook_id, is_archived, created_at, updated_at
       FROM memos
       WHERE 1=1
     `;
@@ -46,6 +48,20 @@ export async function onRequestGet(context) {
     if (favorite) {
       countQuery += ` AND is_favorite = 1`;
       dataQuery += ` AND is_favorite = 1`;
+    }
+
+    // Notebook filter
+    if (notebook && notebook !== 'all') {
+      countQuery += ` AND notebook_id = ?`;
+      dataQuery += ` AND notebook_id = ?`;
+      countParams.push(parseInt(notebook));
+      dataParams.push(parseInt(notebook));
+    }
+
+    // Archive filter (default: exclude archived)
+    if (!archived) {
+      countQuery += ` AND is_archived = 0`;
+      dataQuery += ` AND is_archived = 0`;
     }
 
     // Get total count
@@ -76,6 +92,7 @@ export async function onRequestGet(context) {
 
 export async function onRequestPost(context) {
   const { env, request } = context;
+  const url = new URL(request.url);
 
   // Validate input
   const validation = await validateBody(request, MemoSchema);
@@ -84,6 +101,7 @@ export async function onRequestPost(context) {
   }
 
   const { title, content, tags, is_favorite } = validation.data;
+  const notebook_id = parseInt(url.searchParams.get('notebook_id')) || 1;
 
   try {
     // Generate title if not provided
@@ -91,9 +109,9 @@ export async function onRequestPost(context) {
 
     // Insert the memo
     const insertResult = await env.DB.prepare(`
-      INSERT INTO memos (title, content, tags, is_favorite, created_at, updated_at)
-      VALUES (?, ?, ?, ?, datetime('now'), datetime('now'))
-    `).bind(finalTitle, content, tags, is_favorite).run();
+      INSERT INTO memos (title, content, tags, is_favorite, notebook_id, is_archived, created_at, updated_at)
+      VALUES (?, ?, ?, ?, ?, 0, datetime('now'), datetime('now'))
+    `).bind(finalTitle, content, tags, is_favorite, notebook_id).run();
 
     if (!insertResult.success) {
       throw new Error('Failed to insert memo');
@@ -101,7 +119,7 @@ export async function onRequestPost(context) {
 
     // Get the inserted memo
     const { results } = await env.DB.prepare(`
-      SELECT id, title, content, tags, is_favorite, created_at, updated_at
+      SELECT id, title, content, tags, is_favorite, notebook_id, is_archived, created_at, updated_at
       FROM memos
       WHERE id = ?
     `).bind(insertResult.meta.last_row_id).all();
@@ -154,7 +172,7 @@ export async function onRequestPut(context) {
 
     // Get the updated memo
     const { results } = await env.DB.prepare(`
-      SELECT id, title, content, tags, is_favorite, created_at, updated_at
+      SELECT id, title, content, tags, is_favorite, notebook_id, is_archived, created_at, updated_at
       FROM memos
       WHERE id = ?
     `).bind(id).all();
