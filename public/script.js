@@ -357,8 +357,8 @@ async function updateNotebook(id, data) {
   if (idx !== -1) {
     notebooks[idx] = { ...notebooks[idx], ...result.data };
     renderNotebooks();
+    showToast('笔记本已更新', 'success');
   }
-  showToast('笔记本已更新', 'success');
   return result.data;
 }
 
@@ -376,7 +376,8 @@ async function deleteNotebook(id) {
 
 async function archiveMemo(id) {
   const res = await fetch(`/api/memos/${id}/archive`, { method: 'POST' });
-  if (!res.ok) throw new Error('归档失败');
+  const result = await res.json();
+  if (!res.ok) throw new Error(result.error?.message);
 
   // Update local state
   const idx = memos.findIndex(m => m.id === id);
