@@ -321,6 +321,99 @@ async function loadTags() {
   updateTagFilter();
 }
 
+// Notebook API
+async function loadNotebooks() {
+  const res = await fetch('/api/notebooks');
+  const data = await res.json();
+  notebooks = res.ok ? data.data : [];
+  return notebooks;
+}
+
+async function createNotebook(data) {
+  const res = await fetch('/api/notebooks', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data)
+  });
+  const result = await res.json();
+  if (!res.ok) throw new Error(result.error?.message);
+
+  notebooks.push(result.data);
+  renderNotebooks();
+  showToast('笔记本已创建', 'success');
+  return result.data;
+}
+
+async function updateNotebook(id, data) {
+  const res = await fetch(`/api/notebooks/${id}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data)
+  });
+  const result = await res.json();
+  if (!res.ok) throw new Error(result.error?.message);
+
+  const idx = notebooks.findIndex(n => n.id === id);
+  if (idx !== -1) {
+    notebooks[idx] = { ...notebooks[idx], ...result.data };
+    renderNotebooks();
+  }
+  showToast('笔记本已更新', 'success');
+  return result.data;
+}
+
+async function deleteNotebook(id) {
+  const confirmed = await showConfirm('删除笔记本？其中的备忘录将移至未分类。');
+  if (!confirmed) return;
+
+  const res = await fetch(`/api/notebooks/${id}`, { method: 'DELETE' });
+  if (!res.ok) throw new Error('删除失败');
+
+  notebooks = notebooks.filter(n => n.id !== id);
+  renderNotebooks();
+  showToast('笔记本已删除', 'success');
+}
+
+async function archiveMemo(id) {
+  const res = await fetch(`/api/memos/${id}/archive`, { method: 'POST' });
+  if (!res.ok) throw new Error('归档失败');
+
+  // Update local state
+  const idx = memos.findIndex(m => m.id === id);
+  if (idx !== -1) {
+    memos[idx].is_archived = true;
+  }
+
+  // Re-render
+  renderMemos();
+  updateNotebookCounts();
+  showToast('已归档', 'success');
+}
+
+async function restoreMemo(id, notebook_id) {
+  const res = await fetch(`/api/memos/${id}/restore`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ notebook_id })
+  });
+  if (!res.ok) throw new Error('恢复失败');
+
+  // Update local state
+  const idx = memos.findIndex(m => m.id === id);
+  if (idx !== -1) {
+    memos[idx].is_archived = false;
+    memos[idx].notebook_id = notebook_id;
+  }
+
+  renderMemos();
+  updateNotebookCounts();
+  showToast('已恢复', 'success');
+}
+
+function updateNotebookCounts() {
+  loadNotebooks().then(() => renderNotebooks());
+}
+
 // Scroll
 function handleScroll() {
   if (!pagination.hasMore) return;
