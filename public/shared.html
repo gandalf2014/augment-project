@@ -73,7 +73,7 @@
       if (!token) return;
       
       try {
-        const response = await fetch(`/api/share-view/${token}`);
+        const response = await fetch(`/api/share/view/${token}`);
         const data = await response.json();
 
         if (!data.success) {
