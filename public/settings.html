@@ -255,6 +255,52 @@
             from { transform: translateX(100%); opacity: 0; }
             to { transform: translateX(0); opacity: 1; }
         }
+        
+        /* Toggle Switch */
+        .toggle-switch {
+            position: relative;
+            display: inline-block;
+            width: 48px;
+            height: 26px;
+        }
+        
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+        
+        .toggle-slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: var(--bg-tertiary);
+            transition: 0.3s;
+            border-radius: 26px;
+        }
+        
+        .toggle-slider:before {
+            position: absolute;
+            content: "";
+            height: 20px;
+            width: 20px;
+            left: 3px;
+            bottom: 3px;
+            background-color: white;
+            transition: 0.3s;
+            border-radius: 50%;
+        }
+        
+        .toggle-switch input:checked + .toggle-slider {
+            background-color: var(--primary-color);
+        }
+        
+        .toggle-switch input:checked + .toggle-slider:before {
+            transform: translateX(22px);
+        }
     </style>
 </head>
 <body>
@@ -332,6 +378,22 @@
             
             <div class="settings-item">
                 <div class="settings-item-info">
+                    <h3>默认视图</h3>
+                    <p>选择备忘录默认显示方式</p>
+                </div>
+                <select id="viewModeSelect" onchange="updateSetting('viewMode', this.value)">
+                    <option value="card">卡片视图</option>
+                    <option value="list">列表视图</option>
+                </select>
+            </div>
+        </div>
+        
+        <!-- Editor Settings -->
+        <div class="settings-section">
+            <h2>编辑器设置</h2>
+            
+            <div class="settings-item">
+                <div class="settings-item-info">
                     <h3>字体大小</h3>
                     <p>调整编辑器字体大小</p>
                 </div>
@@ -340,6 +402,45 @@
                     <option value="14">14px</option>
                     <option value="16">16px</option>
                     <option value="18">18px</option>
+                </select>
+            </div>
+            
+            <div class="settings-item">
+                <div class="settings-item-info">
+                    <h3>行高</h3>
+                    <p>调整编辑器行间距</p>
+                </div>
+                <select id="lineHeightSelect" onchange="updateSetting('lineHeight', this.value)">
+                    <option value="1.4">紧凑</option>
+                    <option value="1.6">标准</option>
+                    <option value="1.8">宽松</option>
+                    <option value="2.0">超宽</option>
+                </select>
+            </div>
+            
+            <div class="settings-item">
+                <div class="settings-item-info">
+                    <h3>自动保存</h3>
+                    <p>编辑时自动保存草稿</p>
+                </div>
+                <label class="toggle-switch">
+                    <input type="checkbox" id="autoSaveToggle" onchange="updateSetting('autoSave', this.checked)" checked>
+                    <span class="toggle-slider"></span>
+                </label>
+            </div>
+        </div>
+        
+        <!-- Default Settings -->
+        <div class="settings-section">
+            <h2>默认设置</h2>
+            
+            <div class="settings-item">
+                <div class="settings-item-info">
+                    <h3>默认笔记本</h3>
+                    <p>新建备忘录时默认选择</p>
+                </div>
+                <select id="defaultNotebookSelect" onchange="updateSetting('defaultNotebook', this.value)">
+                    <option value="all">全部</option>
                 </select>
             </div>
         </div>
@@ -455,11 +556,31 @@
         
         // Load settings
         async function loadSettings() {
+            // Load user settings
             const res = await fetch('/api/user/settings');
             const data = await res.json();
             if (data.success) {
                 document.getElementById('themeSelect').value = data.data.theme || 'dark';
                 document.getElementById('fontSizeSelect').value = data.data.fontSize || 14;
+                document.getElementById('lineHeightSelect').value = data.data.lineHeight || 1.6;
+                document.getElementById('viewModeSelect').value = data.data.viewMode || 'card';
+                document.getElementById('defaultNotebookSelect').value = data.data.defaultNotebook || 'all';
+                if (document.getElementById('autoSaveToggle')) {
+                    document.getElementById('autoSaveToggle').checked = data.data.autoSave !== false;
+                }
+            }
+            
+            // Load notebooks for default notebook selector
+            const notebooksRes = await fetch('/api/notebooks');
+            const notebooksData = await notebooksRes.json();
+            if (notebooksData.success) {
+                const select = document.getElementById('defaultNotebookSelect');
+                const currentValue = select.value;
+                select.innerHTML = '<option value="all">全部</option>' +
+                    notebooksData.data.map(n => 
+                        `<option value="${n.id}">${n.name}</option>`
+                    ).join('');
+                select.value = currentValue;
             }
             
             // Check admin status

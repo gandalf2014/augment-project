@@ -30,6 +30,25 @@ const DRAFT_DELAY = 1000;
 let lastDeleted = null;
 const UNDO_TIMEOUT = 5000;
 
+// Templates
+let templates = [];
+
+// View mode
+let viewMode = localStorage.getItem('viewMode') || 'card'; // 'card' | 'list'
+
+// Auto-save indicator
+let autoSaveIndicator = null;
+let autoSaveTimeout = null;
+
+// Gesture state
+let gestureState = {
+  startX: 0,
+  startY: 0,
+  currentX: 0,
+  isDragging: false,
+  targetCard: null
+};
+
 // Performance: Cache for parsed markdown
 const markdownCache = new Map();
 const MARKDOWN_CACHE_MAX_SIZE = 100;
@@ -392,6 +411,7 @@ function insertMd(before, after = '') {
 // Draft
 function saveDraft() {
   clearTimeout(draftTimer);
+  showAutoSaveIndicator('saving');
   draftTimer = setTimeout(() => {
     const draft = {
       title: $('memoTitle').value,
@@ -402,6 +422,7 @@ function saveDraft() {
     };
     if (draft.content || draft.title) {
       localStorage.setItem(DRAFT_KEY, JSON.stringify(draft));
+      showAutoSaveIndicator('saved');
     }
   }, DRAFT_DELAY);
 }
@@ -430,8 +451,9 @@ function clearDraft() {
 async function loadData() {
   showLoading(true);
   try {
-    await Promise.all([loadMemos(), loadTags(), loadNotebooks(), loadSavedFilters()]);
+    await Promise.all([loadMemos(), loadTags(), loadNotebooks(), loadSavedFilters(), loadTemplates()]);
     updateStats();
+    updateViewToggleIcon();
     renderMemos();
     renderTags();
     renderNotebooks();
@@ -910,6 +932,189 @@ async function togglePinned(id) {
   }
 }
 
+// View mode toggle
+function toggleViewMode() {
+  viewMode = viewMode === 'card' ? 'list' : 'card';
+  localStorage.setItem('viewMode', viewMode);
+  updateViewToggleIcon();
+  renderMemos();
+}
+
+function updateViewToggleIcon() {
+  const btn = document.querySelector('.view-toggle');
+  if (btn) {
+    btn.innerHTML = viewMode === 'card' 
+      ? '<svg class="icon"><use href="#icon-list"/></svg>'
+      : '<svg class="icon"><use href="#icon-grid"/></svg>';
+    btn.title = viewMode === 'card' ? '列表视图' : '卡片视图';
+  }
+}
+
+// Gesture handling
+function setupGestureListeners() {
+  const cards = document.querySelectorAll('.memo-card');
+  cards.forEach(card => {
+    card.addEventListener('touchstart', handleTouchStart, { passive: true });
+    card.addEventListener('touchmove', handleTouchMove, { passive: false });
+    card.addEventListener('touchend', handleTouchEnd);
+  });
+}
+
+function handleTouchStart(e) {
+  if (selectionMode) return;
+  
+  const touch = e.touches[0];
+  gestureState.startX = touch.clientX;
+  gestureState.startY = touch.clientY;
+  gestureState.currentX = touch.clientX;
+  gestureState.isDragging = false;
+  gestureState.targetCard = e.currentTarget;
+}
+
+function handleTouchMove(e) {
+  if (!gestureState.targetCard || selectionMode) return;
+  
+  const touch = e.touches[0];
+  const deltaX = touch.clientX - gestureState.startX;
+  const deltaY = touch.clientY - gestureState.startY;
+  
+  // Only handle horizontal swipes
+  if (Math.abs(deltaY) > Math.abs(deltaX)) return;
+  
+  gestureState.isDragging = true;
+  gestureState.currentX = touch.clientX;
+  
+  // Apply transform
+  const card = gestureState.targetCard;
+  if (deltaX < 0) {
+    // Left swipe - show delete action
+    card.style.transform = `translateX(${Math.max(deltaX, -100)}px)`;
+    card.style.transition = 'none';
+  }
+}
+
+function handleTouchEnd(e) {
+  if (!gestureState.targetCard || !gestureState.isDragging) {
+    gestureState = { startX: 0, startY: 0, currentX: 0, isDragging: false, targetCard: null };
+    return;
+  }
+  
+  const deltaX = gestureState.currentX - gestureState.startX;
+  const card = gestureState.targetCard;
+  const memoId = parseInt(card.dataset.memoId);
+  
+  card.style.transition = 'transform 0.3s ease';
+  card.style.transform = '';
+  
+  // If swiped more than 80px left, show action menu
+  if (deltaX < -80) {
+    showSwipeActions(memoId, card);
+  }
+  
+  gestureState = { startX: 0, startY: 0, currentX: 0, isDragging: false, targetCard: null };
+}
+
+function showSwipeActions(memoId, card) {
+  // Create action overlay
+  const existing = document.querySelector('.swipe-actions');
+  if (existing) existing.remove();
+  
+  const memo = memos.find(m => m.id === memoId);
+  if (!memo) return;
+  
+  const overlay = document.createElement('div');
+  overlay.className = 'swipe-actions';
+  overlay.innerHTML = `
+    <button onclick="archiveMemo(${memoId})" class="swipe-btn archive">
+      <svg class="icon"><use href="#icon-archive"/></svg>
+      归档
+    </button>
+    <button onclick="toggleFavorite(${memoId})" class="swipe-btn favorite ${memo.is_favorite ? 'active' : ''}">
+      <svg class="icon"><use href="#icon-star${memo.is_favorite ? '' : '-empty'}"/></svg>
+      ${memo.is_favorite ? '取消收藏' : '收藏'}
+    </button>
+    <button onclick="deleteMemo(${memoId})" class="swipe-btn delete">
+      <svg class="icon"><use href="#icon-trash"/></svg>
+      删除
+    </button>
+  `;
+  
+  card.appendChild(overlay);
+  
+  // Auto-hide after 3 seconds
+  setTimeout(() => {
+    overlay.classList.add('fade-out');
+    setTimeout(() => overlay.remove(), 300);
+  }, 3000);
+}
+
+// Template functions
+async function loadTemplates() {
+  try {
+    const res = await fetch('/api/templates');
+    const data = await res.json();
+    if (data.success) {
+      templates = data.data || [];
+      renderTemplateSelector();
+    }
+  } catch (e) {
+    console.error('Failed to load templates:', e);
+  }
+}
+
+function renderTemplateSelector() {
+  const selector = $('templateSelector');
+  if (!selector) return;
+  
+  selector.innerHTML = templates.length > 0 
+    ? templates.map(t => `
+        <div class="template-item" onclick="applyTemplate(${t.id})">
+          <div class="template-name">${escapeHtml(t.name)}</div>
+          ${t.is_default ? '<span class="template-default">默认</span>' : ''}
+        </div>
+      `).join('')
+    : '<div class="template-empty">暂无模板</div>';
+}
+
+function applyTemplate(templateId) {
+  const template = templates.find(t => t.id === templateId);
+  if (template) {
+    $('memoContent').value = template.content || '';
+    $('memoTags').value = template.tags || '';
+    updatePreview();
+    showToast(`已应用模板：${template.name}`, 'success');
+  }
+  closeTemplateSelector();
+}
+
+function openTemplateSelector() {
+  const modal = $('templateModal');
+  if (modal) modal.classList.add('active');
+}
+
+function closeTemplateSelector() {
+  const modal = $('templateModal');
+  if (modal) modal.classList.remove('active');
+}
+
+// Auto-save indicator
+function showAutoSaveIndicator(status = 'saving') {
+  if (!autoSaveIndicator) {
+    autoSaveIndicator = document.createElement('div');
+    autoSaveIndicator.className = 'autosave-indicator';
+    document.body.appendChild(autoSaveIndicator);
+  }
+  
+  autoSaveIndicator.className = `autosave-indicator ${status}`;
+  autoSaveIndicator.textContent = status === 'saving' ? '正在保存...' : '已保存';
+  autoSaveIndicator.classList.add('visible');
+  
+  clearTimeout(autoSaveTimeout);
+  autoSaveTimeout = setTimeout(() => {
+    autoSaveIndicator.classList.remove('visible');
+  }, 2000);
+}
+
 // Tag CRUD
 async function createTag(data) {
   const res = await fetch('/api/tags', {
@@ -1271,7 +1476,7 @@ function closeSaveFilterModal() {
   $('saveFilterModal').classList.remove('active');
 }
 
-// Render - Simple CSS Columns Masonry
+// Render - Card or List view
 function renderMemos(append = false) {
   // Filter memos based on archive view
   let filteredMemos = memos;
@@ -1289,6 +1494,9 @@ function renderMemos(append = false) {
 
   dom.memosGrid.style.display = 'block';
   dom.emptyState.style.display = 'none';
+  
+  // Update grid class based on view mode
+  dom.memosGrid.classList.toggle('list-view', viewMode === 'list');
 
   const html = filteredMemos.map(memo => createMemoCard(memo)).join('');
 
@@ -1297,6 +1505,9 @@ function renderMemos(append = false) {
   } else {
     dom.memosGrid.innerHTML = html;
   }
+  
+  // Setup gesture listeners for cards
+  setupGestureListeners();
 
   updateLoadMore();
 }

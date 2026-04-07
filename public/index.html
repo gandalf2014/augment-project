@@ -2,9 +2,26 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Memo - 记录你的想法</title>
     <meta name="description" content="一个简洁优雅的备忘录应用，支持 Markdown、标签和收藏功能">
+    
+    <!-- PWA Meta Tags -->
+    <meta name="theme-color" content="#2563eb">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Memo">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="application-name" content="Memo">
+    <meta name="msapplication-TileColor" content="#2563eb">
+    <meta name="msapplication-config" content="/browserconfig.xml">
+    
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="/manifest.json">
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%232563eb' stroke-width='2'><path d='M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z'/><polyline points='14 2 14 8 20 8'/><line x1='16' y1='13' x2='8' y2='13'/><line x1='16' y1='17' x2='8' y2='17'/></svg>">
+    <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%232563eb'><rect width='24' height='24' rx='4'/><path d='M14 6H8a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2v-6z' fill='white'/><polyline points='14 6 14 10 18 10' fill='none' stroke='%232563eb' stroke-width='1.5'/></svg>">
 
     <!-- Preconnect to font CDN -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -102,6 +119,26 @@
             <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/>
             <line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/>
         </symbol>
+        <symbol id="icon-file" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+            <polyline points="14 2 14 8 20 8"/>
+            <line x1="16" y1="13" x2="8" y2="13"/>
+            <line x1="16" y1="17" x2="8" y2="17"/>
+        </symbol>
+        <symbol id="icon-list" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="8" y1="6" x2="21" y2="6"/>
+            <line x1="8" y1="12" x2="21" y2="12"/>
+            <line x1="8" y1="18" x2="21" y2="18"/>
+            <line x1="3" y1="6" x2="3.01" y2="6"/>
+            <line x1="3" y1="12" x2="3.01" y2="12"/>
+            <line x1="3" y1="18" x2="3.01" y2="18"/>
+        </symbol>
+        <symbol id="icon-grid" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="3" width="7" height="7"/>
+            <rect x="14" y="3" width="7" height="7"/>
+            <rect x="14" y="14" width="7" height="7"/>
+            <rect x="3" y="14" width="7" height="7"/>
+        </symbol>
     </svg>
 
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%232563eb' stroke-width='2'><path d='M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z'/><polyline points='14 2 14 8 20 8'/><line x1='16' y1='13' x2='8' y2='13'/><line x1='16' y1='17' x2='8' y2='17'/></svg>">
@@ -118,6 +155,9 @@
                     <h1>Memo</h1>
                 </div>
                 <div class="header-actions">
+                    <button class="btn btn-icon view-toggle" onclick="toggleViewMode()" aria-label="切换视图">
+                        <svg class="icon"><use href="#icon-list"/></svg>
+                    </button>
                     <button class="btn btn-icon" id="themeToggle" aria-label="切换主题">
                         <svg class="icon theme-icon"><use href="#icon-sun"/></svg>
                     </button>
@@ -260,6 +300,9 @@
                             <svg class="icon small"><use href="#icon-quote"/></svg>
                         </button>
                         <button type="button" class="toolbar-btn" onclick="insertMd('# ', '')" title="标题">H</button>
+                        <button type="button" class="toolbar-btn template-btn" onclick="openTemplateSelector()" title="模板">
+                            <svg class="icon small"><use href="#icon-file"/></svg>
+                        </button>
                     </div>
                     <div class="editor-content">
                         <textarea id="memoContent" required placeholder="支持 Markdown 格式..." rows="8"></textarea>
@@ -459,6 +502,19 @@
     <!-- Loading -->
     <div class="loading" id="loading">
         <div class="spinner"></div>
+    </div>
+
+    <!-- Template Modal -->
+    <div class="modal" id="templateModal">
+        <div class="modal-content modal-small">
+            <div class="modal-header">
+                <h2>选择模板</h2>
+                <button class="modal-close" onclick="closeTemplateSelector()" aria-label="关闭">×</button>
+            </div>
+            <div class="modal-body">
+                <div id="templateSelector" class="template-selector"></div>
+            </div>
+        </div>
     </div>
 
     <!-- Toast -->
