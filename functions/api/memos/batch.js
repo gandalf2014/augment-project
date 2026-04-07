@@ -1,7 +1,7 @@
 // functions/api/memos/batch.js
 
-import { ApiResponse } from '../_shared/utils.js';
-import { validateBody, BatchSchema, BatchMoveSchema, BatchTagsSchema } from '../_shared/validation.js';
+import { ApiResponse } from '../../_shared/utils.js';
+import { validateBody, BatchSchema, BatchMoveSchema, BatchTagsSchema } from '../../_shared/validation.js';
 
 export async function onRequestPost(context) {
   const { DB } = context.env;
