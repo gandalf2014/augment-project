@@ -3,8 +3,8 @@
  * Get and restore previous versions
  */
 
-import { ApiResponse } from '../../_shared/utils.js';
-import { getUserIdFromRequest } from '../../_shared/auth.js';
+import { ApiResponse } from '../../../_shared/utils.js';
+import { getUserIdFromRequest } from '../../../_shared/auth.js';
 
 // Main request handler
 export async function onRequest(context) {

@@ -3,8 +3,8 @@
  * Create and manage share links for notebooks
  */
 
-import { ApiResponse } from '../../_shared/utils.js';
-import { getUserIdFromRequest } from '../../_shared/auth.js';
+import { ApiResponse } from '../../../_shared/utils.js';
+import { getUserIdFromRequest } from '../../../_shared/auth.js';
 
 // Generate random share token
 function generateShareToken() {
