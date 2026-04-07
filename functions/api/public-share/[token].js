@@ -1,11 +1,11 @@
 /**
- * Shared notebook access API (public, no auth required)
+ * Public share view API (no auth required)
  * Returns notebook and its memos for shared access
  */
 
 import { ApiResponse } from '../../_shared/utils.js';
 
-export async function onGet(context) {
+export async function onRequest(context) {
   const { env, params } = context;
   const db = env.DB;
   const token = params.token;
