@@ -5,7 +5,7 @@ import { validateBody, SavedFilterSchema } from '../_shared/validation.js';
 import { getUserIdFromRequest } from '../_shared/auth.js';
 
 export async function onRequestGet(context) {
-  const { DB, request } = context;
+  const { env, request } = context;
   
   // Get user ID
   const userId = getUserIdFromRequest(request);
@@ -13,7 +13,7 @@ export async function onRequestGet(context) {
     return ApiResponse.error('请先登录', 401, 'AUTH_REQUIRED');
   }
   
-  const filters = await DB.prepare(
+  const filters = await env.DB.prepare(
     'SELECT * FROM saved_filters WHERE user_id = ? ORDER BY sort_order ASC, created_at DESC'
   ).bind(userId).all();
   
@@ -26,7 +26,7 @@ export async function onRequestGet(context) {
 }
 
 export async function onRequestPost(context) {
-  const { DB, request } = context;
+  const { env, request } = context;
   
   // Get user ID
   const userId = getUserIdFromRequest(request);
@@ -41,11 +41,11 @@ export async function onRequestPost(context) {
   
   const { name, icon, filter_config } = validation.data;
   
-  const result = await DB.prepare(
+  const result = await env.DB.prepare(
     'INSERT INTO saved_filters (name, icon, filter_config, user_id) VALUES (?, ?, ?, ?)'
   ).bind(name, icon || '⭐', JSON.stringify(filter_config), userId).run();
   
-  const newFilter = await DB.prepare('SELECT * FROM saved_filters WHERE id = ?')
+  const newFilter = await env.DB.prepare('SELECT * FROM saved_filters WHERE id = ?')
     .bind(result.meta.last_row_id).first();
   
   return ApiResponse.success({

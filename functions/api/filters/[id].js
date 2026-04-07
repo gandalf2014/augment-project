@@ -5,7 +5,7 @@ import { validateBody, SavedFilterUpdateSchema } from '../../_shared/validation.
 import { getUserIdFromRequest } from '../../_shared/auth.js';
 
 export async function onRequestGet(context) {
-  const { DB } = context.env;
+  const { env } = context;
   const { id } = context.params;
   
   // Get user ID
@@ -14,7 +14,7 @@ export async function onRequestGet(context) {
     return ApiResponse.error('请先登录', 401, 'AUTH_REQUIRED');
   }
   
-  const filter = await DB.prepare('SELECT * FROM saved_filters WHERE id = ? AND user_id = ?')
+  const filter = await env.DB.prepare('SELECT * FROM saved_filters WHERE id = ? AND user_id = ?')
     .bind(parseInt(id), userId).first();
   
   if (!filter) {
@@ -28,7 +28,7 @@ export async function onRequestGet(context) {
 }
 
 export async function onRequestPut(context) {
-  const { DB } = context.env;
+  const { env } = context;
   const { id } = context.params;
   
   // Get user ID
@@ -42,7 +42,7 @@ export async function onRequestPut(context) {
     return ApiResponse.error(validation.error, 400, 'VALIDATION_ERROR');
   }
   
-  const existing = await DB.prepare('SELECT * FROM saved_filters WHERE id = ? AND user_id = ?')
+  const existing = await env.DB.prepare('SELECT * FROM saved_filters WHERE id = ? AND user_id = ?')
     .bind(parseInt(id), userId).first();
   
   if (!existing) {
@@ -52,7 +52,7 @@ export async function onRequestPut(context) {
   const { name, icon, filter_config } = validation.data;
   const configStr = filter_config ? JSON.stringify(filter_config) : existing.filter_config;
   
-  await DB.prepare(
+  await env.DB.prepare(
     'UPDATE saved_filters SET name = ?, icon = ?, filter_config = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ? AND user_id = ?'
   ).bind(
     name || existing.name,
@@ -62,7 +62,7 @@ export async function onRequestPut(context) {
     userId
   ).run();
   
-  const updated = await DB.prepare('SELECT * FROM saved_filters WHERE id = ?')
+  const updated = await env.DB.prepare('SELECT * FROM saved_filters WHERE id = ?')
     .bind(parseInt(id)).first();
   
   return ApiResponse.success({
@@ -72,7 +72,7 @@ export async function onRequestPut(context) {
 }
 
 export async function onRequestDelete(context) {
-  const { DB } = context.env;
+  const { env } = context;
   const { id } = context.params;
   
   // Get user ID
@@ -81,7 +81,7 @@ export async function onRequestDelete(context) {
     return ApiResponse.error('请先登录', 401, 'AUTH_REQUIRED');
   }
   
-  const result = await DB.prepare('DELETE FROM saved_filters WHERE id = ? AND user_id = ?')
+  const result = await env.DB.prepare('DELETE FROM saved_filters WHERE id = ? AND user_id = ?')
     .bind(parseInt(id), userId).run();
   
   if (result.meta.changes === 0) {
