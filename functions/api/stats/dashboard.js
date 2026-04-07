@@ -4,31 +4,17 @@
  */
 
 import { ApiResponse } from '../../_shared/utils.js';
+import { getUserIdFromRequest } from '../../_shared/auth.js';
 
 export async function onRequest(context) {
   const { request, env } = context;
   const db = env.DB;
 
-  // Check authentication via cookie
-  const cookieHeader = request.headers.get('Cookie') || '';
-  const authMatch = cookieHeader.match(/auth_token=([^;]+)/);
-  
-  if (!authMatch) {
+  // Get user ID from auth
+  const userId = getUserIdFromRequest(request);
+  if (!userId) {
     return ApiResponse.error('Unauthorized', 401, 'AUTH_REQUIRED');
   }
-
-  const token = authMatch[1];
-
-  // Validate session
-  const sessionRes = await db.prepare(
-    'SELECT user_id FROM sessions WHERE token_hash = ? AND expires_at > datetime("now")'
-  ).bind(token).first();
-
-  if (!sessionRes) {
-    return ApiResponse.error('Invalid or expired token', 401, 'INVALID_TOKEN');
-  }
-
-  const userId = sessionRes.user_id;
 
   try {
     // Get total counts
