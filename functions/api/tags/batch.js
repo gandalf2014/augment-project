@@ -3,7 +3,7 @@
  * Supports batch delete, merge, and move operations
  */
 
-import { ApiResponse } from '../_shared/utils.js';
+import { ApiResponse } from '../../_shared/utils.js';
 import { z } from 'zod';
 
 const BatchDeleteSchema = z.object({

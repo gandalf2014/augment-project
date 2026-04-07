@@ -1889,9 +1889,9 @@ async function trackActivity(action, data = {}) {
   try {
     await fetch('/api/stats/activity', {
       method: 'POST',
+      credentials: 'include',  // Use cookies for auth
       headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${localStorage.getItem('token')}`
+        'Content-Type': 'application/json'
       },
       body: JSON.stringify({ action, ...data })
     });
@@ -1906,9 +1906,9 @@ async function shareToSocial(memoId, platform) {
   try {
     const res = await fetch('/api/share/social', {
       method: 'POST',
+      credentials: 'include',
       headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${localStorage.getItem('token')}`
+        'Content-Type': 'application/json'
       },
       body: JSON.stringify({ memo_id: memoId, platform })
     });
@@ -1936,7 +1936,7 @@ async function showWeChatShareModal(memoId) {
   // Create share link first
   const res = await fetch(`/api/share/${memoId}`, {
     method: 'POST',
-    headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+    credentials: 'include'
   });
   const result = await res.json();
   
@@ -1947,7 +1947,7 @@ async function showWeChatShareModal(memoId) {
   
   // Get QR code
   const qrRes = await fetch(`/api/share/${result.data.share_token}/qr`, {
-    headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+    credentials: 'include'
   });
   const qrResult = await qrRes.json();
   

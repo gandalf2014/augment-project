@@ -3,19 +3,23 @@
  * Returns comprehensive stats for the dashboard
  */
 
-import { ApiResponse } from '../_shared/utils.js';
+import { ApiResponse } from '../../_shared/utils.js';
 
 export async function onRequest(context) {
   const { request, env } = context;
   const db = env.DB;
 
-  // Check authentication
-  const authHeader = request.headers.get('Authorization');
-  if (!authHeader?.startsWith('Bearer ')) {
+  // Check authentication via cookie
+  const cookieHeader = request.headers.get('Cookie') || '';
+  const authMatch = cookieHeader.match(/auth_token=([^;]+)/);
+  
+  if (!authMatch) {
     return ApiResponse.error('Unauthorized', 401, 'AUTH_REQUIRED');
   }
 
-  const token = authHeader.slice(7);
+  const token = authMatch[1];
+
+  // Validate session
   const sessionRes = await db.prepare(
     'SELECT user_id FROM sessions WHERE token_hash = ? AND expires_at > datetime("now")'
   ).bind(token).first();

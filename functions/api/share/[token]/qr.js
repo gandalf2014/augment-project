@@ -3,7 +3,7 @@
  * Uses a simple QR code library approach
  */
 
-import { ApiResponse } from '../_shared/utils.js';
+import { ApiResponse } from '../../../_shared/utils.js';
 
 // Simple QR code generator (uses qrcode library approach)
 // Since we can't use external npm packages directly, we'll generate QR data URL

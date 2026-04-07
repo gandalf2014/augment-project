@@ -366,12 +366,15 @@
         async function loadStats() {
             try {
                 const res = await fetch('/api/stats/dashboard', {
-                    headers: { 'Authorization': `Bearer ${token}` }
+                    credentials: 'include'  // Use cookies for auth
                 });
                 const data = await res.json();
 
                 if (data.success) {
                     renderStats(data.data);
+                } else if (res.status === 401) {
+                    // Not authenticated - redirect to login
+                    window.location.href = '/login.html';
                 }
             } catch (e) {
                 console.error('Failed to load stats:', e);

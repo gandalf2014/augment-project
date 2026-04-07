@@ -3,7 +3,7 @@
  * Returns tag usage statistics and supports hierarchy
  */
 
-import { ApiResponse } from '../_shared/utils.js';
+import { ApiResponse } from '../../_shared/utils.js';
 import { z } from 'zod';
 
 const TagUpdateSchema = z.object({
