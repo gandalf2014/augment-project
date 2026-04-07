@@ -59,6 +59,57 @@ export const NotebookSchema = z.object({
 });
 
 /**
+ * Batch operation schemas
+ */
+export const BatchSchema = z.object({
+  action: z.enum(['archive', 'restore', 'delete', 'move', 'tags']),
+  memo_ids: z.array(z.number().int().positive()).min(1).max(100),
+  params: z.object({
+    notebook_id: z.number().int().positive().optional(),
+    mode: z.enum(['add', 'replace', 'remove']).optional(),
+    tags: z.string().optional()
+  }).optional()
+});
+
+export const BatchMoveSchema = z.object({
+  action: z.literal('move'),
+  memo_ids: z.array(z.number().int().positive()).min(1).max(100),
+  params: z.object({
+    notebook_id: z.number().int().positive()
+  })
+});
+
+export const BatchTagsSchema = z.object({
+  action: z.literal('tags'),
+  memo_ids: z.array(z.number().int().positive()).min(1).max(100),
+  params: z.object({
+    mode: z.enum(['add', 'replace', 'remove']),
+    tags: z.string().min(1)
+  })
+});
+
+/**
+ * Saved filter schemas
+ */
+export const SavedFilterSchema = z.object({
+  name: z.string().min(1).max(50),
+  icon: z.string().max(10).default('⭐'),
+  filter_config: z.object({
+    notebook: z.union([z.literal('all'), z.number().int().positive()]).nullable(),
+    tags: z.array(z.string()).nullable(),
+    favorite: z.boolean().nullable(),
+    archived: z.boolean().nullable(),
+    search: z.string().max(100).nullable()
+  })
+});
+
+export const SavedFilterUpdateSchema = z.object({
+  name: z.string().min(1).max(50).optional(),
+  icon: z.string().max(10).optional(),
+  filter_config: SavedFilterSchema.shape.filter_config.optional()
+});
+
+/**
  * Pagination query schema
  */
 export const PaginationSchema = z.object({
