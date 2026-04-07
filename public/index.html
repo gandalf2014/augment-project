@@ -158,6 +158,15 @@
 
                 <div id="notebooksList" class="notebooks-list"></div>
 
+                <!-- Saved Filters Section -->
+                <div class="saved-filters-section" id="savedFiltersSection">
+                    <h2>已保存的筛选</h2>
+                    <div class="saved-filters-list" id="savedFiltersList"></div>
+                    <button class="btn btn-outline btn-small btn-block" id="saveFilterBtn" onclick="openSaveFilterModal()">
+                        + 保存当前筛选
+                    </button>
+                </div>
+
                 <div class="tags-section">
                     <h2>标签</h2>
                     <div class="tags-list" id="tagsList"></div>
@@ -178,6 +187,23 @@
                 </div>
             </div>
         </main>
+
+        <!-- Batch operation bar -->
+        <div class="batch-bar" id="batchBar" style="display: none;">
+            <span id="batchCount">已选择 0 个</span>
+            <button class="btn btn-outline btn-small" onclick="selectAllMemos()">全选</button>
+            <button class="btn btn-outline btn-small" onclick="clearSelection()">取消</button>
+        </div>
+
+        <!-- Batch context menu -->
+        <div class="context-menu" id="batchContextMenu" style="display: none;">
+            <div class="context-item" onclick="batchMoveToNotebook()">移动到笔记本...</div>
+            <div class="context-item" onclick="batchArchive()">归档所选</div>
+            <div class="context-item" onclick="batchModifyTags()">修改标签...</div>
+            <div class="context-item danger" onclick="batchDelete()">删除所选</div>
+            <div class="context-divider"></div>
+            <div class="context-item" onclick="clearSelection()">取消选择</div>
+        </div>
     </div>
 
     <!-- Memo Modal -->
@@ -330,6 +356,83 @@
                     <button type="button" class="btn btn-primary" onclick="confirmRestore()">恢复</button>
                 </div>
             </div>
+        </div>
+    </div>
+
+    <!-- Save Filter Modal -->
+    <div class="modal" id="saveFilterModal">
+        <div class="modal-content modal-small">
+            <div class="modal-header">
+                <h2>保存筛选预设</h2>
+                <button class="modal-close" onclick="closeSaveFilterModal()" aria-label="关闭">×</button>
+            </div>
+            <form id="saveFilterForm" class="modal-body">
+                <div class="form-group">
+                    <label for="filterName">名称 <span class="required">*</span></label>
+                    <input type="text" id="filterName" required placeholder="输入预设名称..." maxlength="50">
+                </div>
+                <div class="form-group">
+                    <label>图标</label>
+                    <div class="icon-presets">
+                        <button type="button" class="icon-preset selected" data-icon="⭐">⭐</button>
+                        <button type="button" class="icon-preset" data-icon="📋">📋</button>
+                        <button type="button" class="icon-preset" data-icon="🔔">🔔</button>
+                        <button type="button" class="icon-preset" data-icon="📌">📌</button>
+                        <button type="button" class="icon-preset" data-icon="💼">💼</button>
+                        <button type="button" class="icon-preset" data-icon="🎯">🎯</button>
+                    </div>
+                    <input type="hidden" id="filterIcon" value="⭐">
+                </div>
+                <div class="form-group">
+                    <label>当前条件</label>
+                    <div id="filterConditions" class="filter-conditions-preview"></div>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-outline" onclick="closeSaveFilterModal()">取消</button>
+                    <button type="submit" class="btn btn-primary">保存</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Batch Tags Modal -->
+    <div class="modal" id="batchTagsModal">
+        <div class="modal-content modal-small">
+            <div class="modal-header">
+                <h2>批量修改标签</h2>
+                <button class="modal-close" onclick="closeBatchTagsModal()" aria-label="关闭">×</button>
+            </div>
+            <form id="batchTagsForm" class="modal-body">
+                <div class="form-group">
+                    <label>修改方式</label>
+                    <div class="radio-group">
+                        <label class="radio-label">
+                            <input type="radio" name="tagMode" value="add" checked>
+                            <span>追加标签</span>
+                            <small class="radio-hint">在现有标签后添加新标签</small>
+                        </label>
+                        <label class="radio-label">
+                            <input type="radio" name="tagMode" value="replace">
+                            <span>替换标签</span>
+                            <small class="radio-hint">清除现有标签，只保留新标签</small>
+                        </label>
+                        <label class="radio-label">
+                            <input type="radio" name="tagMode" value="remove">
+                            <span>移除标签</span>
+                            <small class="radio-hint">从现有标签中删除指定标签</small>
+                        </label>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="batchTagsInput">标签</label>
+                    <input type="text" id="batchTagsInput" placeholder="输入标签，逗号分隔..." maxlength="200">
+                    <small class="form-hint">已选择 <span id="batchAffectedCount">0</span> 个备忘录</small>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-outline" onclick="closeBatchTagsModal()">取消</button>
+                    <button type="submit" class="btn btn-primary">确认修改</button>
+                </div>
+            </form>
         </div>
     </div>
 

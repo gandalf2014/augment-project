@@ -9,6 +9,15 @@ let isPreviewMode = false;
 let editingNotebookId = null;
 let restoreMemoId = null;
 
+// Batch selection
+let selectionMode = false;
+let selectedMemoIds = new Set();
+
+// Saved filters
+let savedFilters = [];
+let currentFilterPreset = null;
+let selectedFilterIcon = '⭐';
+
 // Pagination
 let pagination = { page: 1, limit: 50, total: 0, hasMore: false };
 
@@ -167,12 +176,98 @@ function setupEvents() {
     if (e.target === dom.restoreModal) closeRestoreModal();
   });
 
+  $('saveFilterModal')?.addEventListener('click', e => {
+    if (e.target === $('saveFilterModal')) closeSaveFilterModal();
+  });
+
+  $('batchTagsModal')?.addEventListener('click', e => {
+    if (e.target === $('batchTagsModal')) closeBatchTagsModal();
+  });
+
+  // Filter icon preset buttons
+  document.querySelectorAll('#saveFilterModal .icon-preset').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('#saveFilterModal .icon-preset').forEach(b => b.classList.remove('selected'));
+      btn.classList.add('selected');
+      selectedFilterIcon = btn.dataset.icon;
+      $('filterIcon').value = selectedFilterIcon;
+    });
+  });
+
+  // Save filter form submit
+  $('saveFilterForm')?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    
+    if (savedFilters.length >= 10) {
+      showToast('已达到筛选预设上限（10个），请删除后再添加', true);
+      return;
+    }
+    
+    const name = $('filterName').value.trim();
+    if (!name) {
+      showToast('请输入名称', true);
+      return;
+    }
+    
+    const config = {
+      notebook: currentNotebook === 'archived' ? null : currentNotebook,
+      tags: currentFilter.tags ? currentFilter.tags.split(',').map(t => t.trim()).filter(t => t) : null,
+      favorite: currentFilter.favorite || null,
+      archived: currentNotebook === 'archived' ? true : null,
+      search: currentFilter.search || null
+    };
+    
+    const result = await saveFilterPreset(name, selectedFilterIcon, config);
+    if (result.success) {
+      savedFilters.push(result.data);
+      renderSavedFilters();
+      closeSaveFilterModal();
+      showToast('筛选预设已保存');
+    } else {
+      showToast(result.error?.message || '保存失败', true);
+    }
+  });
+
+  // Batch tags form submit
+  $('batchTagsForm')?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    
+    const mode = document.querySelector('input[name="tagMode"]:checked').value;
+    const tags = $('batchTagsInput').value.trim();
+    
+    if (!tags) {
+      showToast('请输入标签', true);
+      return;
+    }
+    
+    const result = await batchOperation('tags', { mode, tags });
+    if (result.success) {
+      showToast(`已修改 ${result.data.affected} 个备忘录的标签`);
+      closeBatchTagsModal();
+      clearSelection();
+      await loadMemos();
+      await loadTags();
+    } else {
+      showToast(result.error?.message || '修改失败', true);
+    }
+  });
+
+  // Click outside to hide context menu
+  document.addEventListener('click', e => {
+    if (!e.target.closest('.context-menu')) {
+      hideContextMenu();
+    }
+  });
+
   document.addEventListener('keydown', e => {
     if (e.key === 'Escape') {
       closeMemoModal();
       closeTagModal();
       closeNotebookModal();
       closeRestoreModal();
+      closeSaveFilterModal();
+      closeBatchTagsModal();
+      hideContextMenu();
     }
     if (e.ctrlKey || e.metaKey) {
       if (e.key === 'n') { e.preventDefault(); openMemoModal(); }
@@ -292,7 +387,7 @@ function clearDraft() {
 async function loadData() {
   showLoading(true);
   try {
-    await Promise.all([loadMemos(), loadTags(), loadNotebooks()]);
+    await Promise.all([loadMemos(), loadTags(), loadNotebooks(), loadSavedFilters()]);
     updateStats();
     renderMemos();
     renderTags();
@@ -764,6 +859,335 @@ async function deleteTag(id) {
   showToast('标签已删除', 'success');
 }
 
+// Batch Selection Functions
+function toggleSelectionMode() {
+  selectionMode = !selectionMode;
+  if (!selectionMode) {
+    selectedMemoIds.clear();
+  }
+  updateBatchBar();
+  renderMemos();
+}
+
+function toggleMemoSelection(id) {
+  if (selectedMemoIds.has(id)) {
+    selectedMemoIds.delete(id);
+  } else {
+    selectedMemoIds.add(id);
+  }
+  if (selectedMemoIds.size > 0 && !selectionMode) {
+    selectionMode = true;
+  }
+  if (selectedMemoIds.size === 0) {
+    selectionMode = false;
+  }
+  updateBatchBar();
+  renderMemos();
+}
+
+function selectAllMemos() {
+  const visibleMemos = getVisibleMemos();
+  visibleMemos.forEach(m => selectedMemoIds.add(m.id));
+  updateBatchBar();
+  renderMemos();
+}
+
+function clearSelection() {
+  selectedMemoIds.clear();
+  selectionMode = false;
+  updateBatchBar();
+  renderMemos();
+  hideContextMenu();
+}
+
+function getVisibleMemos() {
+  if (currentNotebook === 'archived') {
+    return memos.filter(m => m.is_archived);
+  }
+  if (currentNotebook === 'all') {
+    return memos.filter(m => !m.is_archived);
+  }
+  return memos.filter(m => m.notebook_id === currentNotebook && !m.is_archived);
+}
+
+function updateBatchBar() {
+  const batchBar = $('batchBar');
+  const batchCount = $('batchCount');
+  if (!batchBar) return;
+  
+  if (selectionMode && selectedMemoIds.size > 0) {
+    batchBar.style.display = 'flex';
+    batchCount.textContent = `已选择 ${selectedMemoIds.size} 个`;
+  } else {
+    batchBar.style.display = 'none';
+  }
+}
+
+// Context Menu Functions
+function showContextMenu(event) {
+  event.preventDefault();
+  if (selectedMemoIds.size === 0) return;
+  
+  const menu = $('batchContextMenu');
+  menu.style.display = 'block';
+  menu.style.left = `${event.clientX}px`;
+  menu.style.top = `${event.clientY}px`;
+  
+  // Adjust position if menu goes off-screen
+  setTimeout(() => {
+    const rect = menu.getBoundingClientRect();
+    if (rect.right > window.innerWidth) {
+      menu.style.left = `${event.clientX - rect.width}px`;
+    }
+    if (rect.bottom > window.innerHeight) {
+      menu.style.top = `${event.clientY - rect.height}px`;
+    }
+  }, 0);
+}
+
+function hideContextMenu() {
+  const menu = $('batchContextMenu');
+  if (menu) menu.style.display = 'none';
+}
+
+// Batch Operations
+async function batchOperation(action, params = {}) {
+  const ids = Array.from(selectedMemoIds);
+  const body = { action, memo_ids: ids };
+  if (params.notebook_id) body.params = { notebook_id: params.notebook_id };
+  if (params.mode && params.tags) body.params = { mode: params.mode, tags: params.tags };
+  
+  const res = await fetch('/api/memos/batch', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body)
+  });
+  
+  return res.json();
+}
+
+async function batchArchive() {
+  hideContextMenu();
+  if (selectedMemoIds.size === 0) return;
+  
+  const result = await batchOperation('archive');
+  if (result.success) {
+    showToast(`已归档 ${result.data.affected} 个备忘录`);
+    clearSelection();
+    await loadMemos();
+  } else {
+    showToast(result.error?.message || '归档失败', true);
+  }
+}
+
+async function batchDelete() {
+  hideContextMenu();
+  if (selectedMemoIds.size === 0) return;
+  
+  if (!confirm(`确定删除 ${selectedMemoIds.size} 个备忘录？此操作不可撤销。`)) {
+    return;
+  }
+  
+  const result = await batchOperation('delete');
+  if (result.success) {
+    showToast(`已删除 ${result.data.affected} 个备忘录`);
+    clearSelection();
+    await loadMemos();
+    await loadTags();
+  } else {
+    showToast(result.error?.message || '删除失败', true);
+  }
+}
+
+function batchModifyTags() {
+  hideContextMenu();
+  if (selectedMemoIds.size === 0) return;
+  
+  $('batchAffectedCount').textContent = selectedMemoIds.size;
+  $('batchTagsInput').value = '';
+  $('batchTagsModal').classList.add('active');
+}
+
+function closeBatchTagsModal() {
+  $('batchTagsModal').classList.remove('active');
+}
+
+function batchMoveToNotebook() {
+  hideContextMenu();
+  if (selectedMemoIds.size === 0) return;
+  
+  const modal = $('notebookModal');
+  const form = $('notebookForm');
+  const title = $('notebookModalTitle');
+  
+  title.textContent = '移动到笔记本';
+  form.innerHTML = `
+    <div class="form-group">
+      <label for="batchNotebookSelect">目标笔记本</label>
+      <select id="batchNotebookSelect" required>
+        <option value="">选择笔记本...</option>
+        ${notebooks.map(n => `<option value="${n.id}">${n.name}</option>`).join('')}
+      </select>
+      <small class="form-hint">已选择 ${selectedMemoIds.size} 个备忘录</small>
+    </div>
+    <div class="modal-actions">
+      <button type="button" class="btn btn-outline" onclick="closeNotebookModal()">取消</button>
+      <button type="submit" class="btn btn-primary">确认移动</button>
+    </div>
+  `;
+  
+  modal.classList.add('active');
+  editingNotebookId = 'batch-move';
+  
+  form.onsubmit = async (e) => {
+    e.preventDefault();
+    const notebookId = parseInt($('batchNotebookSelect').value);
+    if (!notebookId) {
+      showToast('请选择笔记本', true);
+      return;
+    }
+    
+    const result = await batchOperation('move', { notebook_id: notebookId });
+    if (result.success) {
+      showToast(`已移动 ${result.data.affected} 个备忘录`);
+      closeNotebookModal();
+      clearSelection();
+      await loadMemos();
+    } else {
+      showToast(result.error?.message || '移动失败', true);
+    }
+  };
+}
+
+// Saved Filters Functions
+async function loadSavedFilters() {
+  const res = await fetch('/api/filters');
+  const data = await res.json();
+  if (data.success) {
+    savedFilters = data.data;
+    renderSavedFilters();
+  }
+}
+
+async function saveFilterPreset(name, icon, config) {
+  const res = await fetch('/api/filters', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ name, icon, filter_config: config })
+  });
+  return res.json();
+}
+
+async function deleteFilterPreset(id) {
+  const res = await fetch(`/api/filters/${id}`, { method: 'DELETE' });
+  return res.json();
+}
+
+function renderSavedFilters() {
+  const list = $('savedFiltersList');
+  if (!list) return;
+  
+  if (savedFilters.length === 0) {
+    list.innerHTML = '<p class="empty-hint">暂无筛选预设</p>';
+    return;
+  }
+  
+  const displayFilters = savedFilters.slice(0, 10);
+  
+  list.innerHTML = displayFilters.map(f => `
+    <div class="saved-filter-item ${currentFilterPreset === f.id ? 'active' : ''}" 
+         data-filter-id="${f.id}"
+         onclick="applyFilterPreset(${f.id})">
+      <span class="filter-icon">${f.icon}</span>
+      <span class="filter-name">${escapeHtml(f.name)}</span>
+      <button class="filter-delete" onclick="event.stopPropagation(); confirmDeleteFilter(${f.id})">×</button>
+    </div>
+  `).join('');
+}
+
+function applyFilterPreset(id) {
+  const filter = savedFilters.find(f => f.id === id);
+  if (!filter) return;
+  
+  currentFilterPreset = id;
+  const config = filter.filter_config;
+  
+  if (config.notebook !== null && config.notebook !== undefined) {
+    currentNotebook = config.notebook;
+  }
+  if (config.tags !== null && config.tags !== undefined) {
+    currentFilter.tags = config.tags.join(',');
+  }
+  if (config.favorite !== null && config.favorite !== undefined) {
+    currentFilter.favorite = config.favorite;
+  }
+  if (config.archived !== null && config.archived !== undefined) {
+    currentFilter.archived = config.archived;
+  }
+  if (config.search !== null && config.search !== undefined) {
+    currentFilter.search = config.search;
+    $('searchInput').value = config.search;
+  }
+  
+  renderNotebooks();
+  renderSavedFilters();
+  renderTags();
+  loadMemos();
+}
+
+function confirmDeleteFilter(id) {
+  const filter = savedFilters.find(f => f.id === id);
+  if (!filter) return;
+  
+  if (confirm(`确定删除筛选预设「${filter.name}」？`)) {
+    deleteFilterPreset(id).then(result => {
+      if (result.success) {
+        savedFilters = savedFilters.filter(f => f.id !== id);
+        if (currentFilterPreset === id) {
+          currentFilterPreset = null;
+        }
+        renderSavedFilters();
+        showToast('筛选预设已删除');
+      }
+    });
+  }
+}
+
+function openSaveFilterModal() {
+  $('filterName').value = '';
+  selectedFilterIcon = '⭐';
+  $('filterIcon').value = '⭐';
+  
+  document.querySelectorAll('.icon-preset').forEach(btn => {
+    btn.classList.toggle('selected', btn.dataset.icon === '⭐');
+  });
+  
+  const conditions = [];
+  if (currentNotebook !== 'all' && currentNotebook !== 'archived') {
+    const notebook = notebooks.find(n => n.id === currentNotebook);
+    conditions.push(`笔记本: ${notebook?.name || currentNotebook}`);
+  }
+  if (currentFilter.tags) {
+    conditions.push(`标签: ${currentFilter.tags}`);
+  }
+  if (currentFilter.favorite) {
+    conditions.push('收藏');
+  }
+  if (currentFilter.search) {
+    conditions.push(`搜索: ${currentFilter.search}`);
+  }
+  
+  $('filterConditions').innerHTML = conditions.length > 0 
+    ? conditions.map(c => `<p class="condition-item">• ${c}</p>`).join('')
+    : '<p class="empty-hint">当前无筛选条件</p>';
+  
+  $('saveFilterModal').classList.add('active');
+}
+
+function closeSaveFilterModal() {
+  $('saveFilterModal').classList.remove('active');
+}
+
 // Render - Simple CSS Columns Masonry
 function renderMemos(append = false) {
   // Filter memos based on archive view
@@ -816,6 +1240,10 @@ function createMemoCard(memo) {
   const date = new Date(memo.created_at).toLocaleDateString('zh-CN');
   const content = parseMarkdown(memo.content);
   const borderColor = getRandomMemoColor();
+  
+  // Selection state
+  const isSelected = selectedMemoIds.has(memo.id);
+  const selectedClass = isSelected ? 'selected' : '';
 
   // Archive or restore button based on state
   const archiveBtn = memo.is_archived
@@ -827,7 +1255,8 @@ function createMemoCard(memo) {
        </button>`;
 
   return `
-    <article class="memo-card ${memo.is_archived ? 'archived' : ''}" data-memo-id="${memo.id}" tabindex="0" role="listitem" style="border-left: 4px solid ${borderColor}">
+    <article class="memo-card ${memo.is_archived ? 'archived' : ''} ${selectedClass}" data-memo-id="${memo.id}" tabindex="0" role="listitem" style="border-left: 4px solid ${borderColor}" oncontextmenu="if(selectionMode && selectedMemoIds.size > 0) showContextMenu(event)">
+      <div class="select-circle" onclick="event.stopPropagation(); toggleMemoSelection(${memo.id})"></div>
       <div class="memo-header">
         <h3 class="memo-title">${escapeHtml(memo.title)}</h3>
         <div class="memo-actions">
