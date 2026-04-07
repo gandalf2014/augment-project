@@ -44,9 +44,9 @@ export async function onRequestPost(context) {
       // Existing user - login
       user = existingUser;
       
-      // Update last_login_at
+      // Update last_login_at and login_count
       await env.DB.prepare(
-        'UPDATE users SET last_login_at = datetime("now") WHERE id = ?'
+        'UPDATE users SET last_login_at = datetime("now"), login_count = login_count + 1 WHERE id = ?'
       ).bind(user.id).run();
     } else {
       // New user - register

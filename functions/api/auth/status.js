@@ -21,7 +21,7 @@ export async function onRequestGet(context) {
   // Verify user exists in database
   try {
     const user = await env.DB.prepare(
-      'SELECT id, created_at, last_login_at FROM users WHERE id = ?'
+      'SELECT id, is_admin, username, created_at, last_login_at FROM users WHERE id = ?'
     ).bind(userId).first();
     
     if (!user) {
@@ -35,6 +35,8 @@ export async function onRequestGet(context) {
     return ApiResponse.success({
       authenticated: true,
       userId: user.id,
+      isAdmin: user.is_admin === 1,
+      username: user.username,
       createdAt: user.created_at,
       lastLoginAt: user.last_login_at,
       message: '已登录'

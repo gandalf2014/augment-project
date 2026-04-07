@@ -1,0 +1,722 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>管理后台 - Memo</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        .admin-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+        
+        .admin-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+        }
+        
+        .admin-header h1 {
+            font-size: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .admin-badge {
+            background: var(--primary-color);
+            color: white;
+            font-size: 0.75rem;
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+        }
+        
+        .admin-nav {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+        
+        .admin-nav a {
+            color: var(--text-secondary);
+            text-decoration: none;
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+        }
+        
+        .admin-nav a:hover {
+            background: var(--bg-primary);
+        }
+        
+        .admin-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+        
+        .stat-card {
+            background: var(--bg-primary);
+            border-radius: 12px;
+            padding: 1.5rem;
+        }
+        
+        .stat-value {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--primary-color);
+        }
+        
+        .stat-label {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+        }
+        
+        .users-table {
+            background: var(--bg-primary);
+            border-radius: 12px;
+            overflow: hidden;
+        }
+        
+        .table-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem 1.5rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+        
+        .table-header h2 {
+            font-size: 1.1rem;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        
+        th, td {
+            padding: 1rem 1.5rem;
+            text-align: left;
+        }
+        
+        th {
+            color: var(--text-secondary);
+            font-weight: 500;
+            font-size: 0.85rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+        
+        td {
+            border-bottom: 1px solid var(--border-color);
+        }
+        
+        tr:last-child td {
+            border-bottom: none;
+        }
+        
+        tr:hover {
+            background: var(--bg-secondary);
+        }
+        
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+        
+        .user-avatar {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background: var(--primary-color);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 600;
+        }
+        
+        .user-name {
+            font-weight: 500;
+        }
+        
+        .user-id {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+        }
+        
+        .badge {
+            display: inline-block;
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: 500;
+        }
+        
+        .badge-admin {
+            background: var(--primary-color);
+            color: white;
+        }
+        
+        .badge-user {
+            background: var(--bg-secondary);
+            color: var(--text-secondary);
+        }
+        
+        .action-btns {
+            display: flex;
+            gap: 0.5rem;
+        }
+        
+        .btn-sm {
+            padding: 0.4rem 0.8rem;
+            font-size: 0.85rem;
+        }
+        
+        .btn-icon-sm {
+            padding: 0.4rem;
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            cursor: pointer;
+        }
+        
+        .btn-icon-sm:hover {
+            color: var(--primary-color);
+        }
+        
+        .modal {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.5);
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+        
+        .modal.active {
+            display: flex;
+        }
+        
+        .modal-content {
+            background: var(--bg-primary);
+            border-radius: 12px;
+            padding: 1.5rem;
+            max-width: 500px;
+            width: 90%;
+        }
+        
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+        
+        .modal-close {
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            font-size: 1.5rem;
+            cursor: pointer;
+        }
+        
+        .form-group {
+            margin-bottom: 1rem;
+        }
+        
+        .form-group label {
+            display: block;
+            font-size: 0.9rem;
+            margin-bottom: 0.5rem;
+            color: var(--text-secondary);
+        }
+        
+        .form-group input, .form-group select {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            color: var(--text-primary);
+            font-size: 0.95rem;
+        }
+        
+        .form-group input:focus, .form-group select:focus {
+            outline: none;
+            border-color: var(--primary-color);
+        }
+        
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .checkbox-group input[type="checkbox"] {
+            width: auto;
+        }
+        
+        .modal-actions {
+            display: flex;
+            gap: 0.75rem;
+            margin-top: 1.5rem;
+            justify-content: flex-end;
+        }
+        
+        .loading-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.5);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+        }
+        
+        .loading-overlay.active {
+            display: flex;
+        }
+        
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid var(--border-color);
+            border-top-color: var(--primary-color);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        .error-state {
+            text-align: center;
+            padding: 4rem 2rem;
+        }
+        
+        .error-icon {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+        }
+        
+        .toast-container {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            z-index: 3000;
+        }
+        
+        .toast {
+            background: var(--bg-primary);
+            padding: 1rem 1.5rem;
+            border-radius: 8px;
+            margin-top: 0.5rem;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            animation: slideIn 0.3s ease;
+        }
+        
+        .toast.success { border-left: 4px solid var(--success-color); }
+        .toast.error { border-left: 4px solid var(--danger-color); }
+        
+        @keyframes slideIn {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+        
+        .user-stats {
+            display: flex;
+            gap: 1rem;
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+        }
+        
+        .user-stat {
+            display: flex;
+            align-items: center;
+            gap: 0.25rem;
+        }
+        
+        .log-section {
+            background: var(--bg-primary);
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-top: 2rem;
+        }
+        
+        .log-item {
+            display: flex;
+            gap: 1rem;
+            padding: 0.75rem 0;
+            border-bottom: 1px solid var(--border-color);
+        }
+        
+        .log-item:last-child {
+            border-bottom: none;
+        }
+        
+        .log-time {
+            color: var(--text-secondary);
+            font-size: 0.85rem;
+            min-width: 140px;
+        }
+        
+        .log-action {
+            min-width: 100px;
+        }
+        
+        .log-action.create_user { color: var(--success-color); }
+        .log-action.delete_user { color: var(--danger-color); }
+        .log-action.update_user { color: var(--primary-color); }
+        .log-action.set_admin { color: var(--warning-color, #f59e0b); }
+    </style>
+</head>
+<body>
+    <div class="admin-container" id="app" style="display:none;">
+        <div class="admin-header">
+            <h1>
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                </svg>
+                管理后台
+                <span class="admin-badge">ADMIN</span>
+            </h1>
+            <div style="display:flex;gap:1rem;align-items:center;">
+                <a href="/" class="btn btn-outline">返回主页</a>
+                <a href="/settings.html" class="btn btn-outline">设置</a>
+            </div>
+        </div>
+        
+        <div class="admin-stats" id="stats"></div>
+        
+        <div class="users-table">
+            <div class="table-header">
+                <h2>用户管理</h2>
+                <button class="btn btn-primary" onclick="openCreateModal()">+ 新建用户</button>
+            </div>
+            <table>
+                <thead>
+                    <tr>
+                        <th>用户</th>
+                        <th>角色</th>
+                        <th>数据统计</th>
+                        <th>创建时间</th>
+                        <th>操作</th>
+                    </tr>
+                </thead>
+                <tbody id="usersList"></tbody>
+            </table>
+        </div>
+        
+        <div class="log-section">
+            <h2 style="margin-bottom: 1rem;">操作日志</h2>
+            <div id="logsList"></div>
+        </div>
+    </div>
+    
+    <div class="error-state" id="error" style="display:none;">
+        <div class="error-icon">🚫</div>
+        <h2>访问被拒绝</h2>
+        <p id="errorMessage">需要管理员权限</p>
+        <a href="/" class="btn btn-primary" style="margin-top: 1rem;">返回主页</a>
+    </div>
+    
+    <!-- Create/Edit User Modal -->
+    <div class="modal" id="userModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="modalTitle">新建用户</h3>
+                <button class="modal-close" onclick="closeModal()">×</button>
+            </div>
+            <form id="userForm" onsubmit="saveUser(event)">
+                <input type="hidden" id="userId">
+                <div class="form-group">
+                    <label>用户名（可选）</label>
+                    <input type="text" id="username" placeholder="显示名称">
+                </div>
+                <div class="form-group">
+                    <label>密码 <span id="passwordHint"></span></label>
+                    <input type="password" id="password" placeholder="至少4位">
+                </div>
+                <div class="form-group">
+                    <div class="checkbox-group">
+                        <input type="checkbox" id="isAdmin">
+                        <label for="isAdmin" style="margin:0;">设为管理员</label>
+                    </div>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-outline" onclick="closeModal()">取消</button>
+                    <button type="submit" class="btn btn-primary">保存</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <!-- Delete Confirm Modal -->
+    <div class="modal" id="deleteModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>确认删除</h3>
+                <button class="modal-close" onclick="closeModal('deleteModal')">×</button>
+            </div>
+            <p>确定要删除用户 <strong id="deleteUserName"></strong> 吗？</p>
+            <p style="color: var(--danger-color); margin-top: 0.5rem;">
+                此操作将删除该用户的所有数据（<span id="deleteStats"></span>），且不可恢复！
+            </p>
+            <div class="modal-actions">
+                <button class="btn btn-outline" onclick="closeModal('deleteModal')">取消</button>
+                <button class="btn btn-danger" onclick="confirmDelete()">确认删除</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Loading -->
+    <div class="loading-overlay" id="loading">
+        <div class="spinner"></div>
+    </div>
+    
+    <!-- Toast -->
+    <div class="toast-container" id="toastContainer"></div>
+    
+    <script>
+        let users = [];
+        let deleteTargetId = null;
+        
+        document.addEventListener('DOMContentLoaded', async () => {
+            await checkAuth();
+            await loadData();
+        });
+        
+        async function checkAuth() {
+            const res = await fetch('/api/auth/status');
+            const data = await res.json();
+            if (!data.success || !data.data?.authenticated) {
+                window.location.href = '/login.html';
+                throw new Error('Not authenticated');
+            }
+        }
+        
+        async function loadData() {
+            showLoading(true);
+            try {
+                const res = await fetch('/api/admin/users');
+                const data = await res.json();
+                
+                if (!data.success) {
+                    if (data.error?.code === 'FORBIDDEN') {
+                        document.getElementById('errorMessage').textContent = '需要管理员权限';
+                    }
+                    document.getElementById('error').style.display = 'block';
+                    document.getElementById('app').style.display = 'none';
+                    return;
+                }
+                
+                users = data.data;
+                document.getElementById('app').style.display = 'block';
+                renderStats();
+                renderUsers();
+                await loadLogs();
+                
+            } catch (e) {
+                showToast('加载失败', 'error');
+            }
+            showLoading(false);
+        }
+        
+        function renderStats() {
+            const total = users.length;
+            const admins = users.filter(u => u.is_admin).length;
+            const memos = users.reduce((sum, u) => sum + (u.memo_count || 0), 0);
+            
+            document.getElementById('stats').innerHTML = `
+                <div class="stat-card">
+                    <div class="stat-value">${total}</div>
+                    <div class="stat-label">总用户数</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">${admins}</div>
+                    <div class="stat-label">管理员</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">${memos}</div>
+                    <div class="stat-label">总备忘录</div>
+                </div>
+            `;
+        }
+        
+        function renderUsers() {
+            document.getElementById('usersList').innerHTML = users.map(u => `
+                <tr>
+                    <td>
+                        <div class="user-info">
+                            <div class="user-avatar">${(u.username || `U${u.id}`)[0].toUpperCase()}</div>
+                            <div>
+                                <div class="user-name">${u.username || `用户${u.id}`}</div>
+                                <div class="user-id">ID: ${u.id}</div>
+                            </div>
+                        </div>
+                    </td>
+                    <td>
+                        <span class="badge ${u.is_admin ? 'badge-admin' : 'badge-user'}">
+                            ${u.is_admin ? '管理员' : '普通用户'}
+                        </span>
+                    </td>
+                    <td>
+                        <div class="user-stats">
+                            <span class="user-stat">📝 ${u.memo_count || 0}</span>
+                            <span class="user-stat">🏷️ ${u.tag_count || 0}</span>
+                            <span class="user-stat">📁 ${u.notebook_count || 0}</span>
+                        </div>
+                    </td>
+                    <td>${u.created_at ? new Date(u.created_at).toLocaleDateString('zh-CN') : '-'}</td>
+                    <td>
+                        <div class="action-btns">
+                            <button class="btn-icon-sm" onclick="openEditModal(${u.id})" title="编辑">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                                </svg>
+                            </button>
+                            <button class="btn-icon-sm" onclick="openDeleteModal(${u.id})" title="删除" style="color: var(--danger-color);">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <polyline points="3 6 5 6 21 6"/>
+                                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                                </svg>
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+            `).join('');
+        }
+        
+        async function loadLogs() {
+            const res = await fetch('/api/admin/logs?limit=50');
+            const data = await res.json();
+            
+            if (data.success) {
+                const actionNames = {
+                    'create_user': '创建用户',
+                    'delete_user': '删除用户',
+                    'update_user': '更新用户',
+                    'set_admin': '设置管理员'
+                };
+                
+                document.getElementById('logsList').innerHTML = data.data.map(log => `
+                    <div class="log-item">
+                        <div class="log-time">${new Date(log.created_at).toLocaleString('zh-CN')}</div>
+                        <div class="log-action ${log.action}">${actionNames[log.action] || log.action}</div>
+                        <div class="log-details">${log.admin_name || `管理员${log.admin_id}`} → ${log.target_name || `用户${log.target_user_id}`}</div>
+                    </div>
+                `).join('') || '<div style="text-align:center;color:var(--text-secondary);padding:2rem;">暂无日志</div>';
+            }
+        }
+        
+        function openCreateModal() {
+            document.getElementById('modalTitle').textContent = '新建用户';
+            document.getElementById('passwordHint').textContent = '';
+            document.getElementById('userForm').reset();
+            document.getElementById('userId').value = '';
+            document.getElementById('password').required = true;
+            document.getElementById('userModal').classList.add('active');
+        }
+        
+        function openEditModal(id) {
+            const user = users.find(u => u.id === id);
+            if (!user) return;
+            
+            document.getElementById('modalTitle').textContent = '编辑用户';
+            document.getElementById('passwordHint').textContent = '（留空则不修改）';
+            document.getElementById('userId').value = id;
+            document.getElementById('username').value = user.username || '';
+            document.getElementById('password').value = '';
+            document.getElementById('password').required = false;
+            document.getElementById('isAdmin').checked = user.is_admin;
+            document.getElementById('userModal').classList.add('active');
+        }
+        
+        function openDeleteModal(id) {
+            const user = users.find(u => u.id === id);
+            if (!user) return;
+            
+            deleteTargetId = id;
+            document.getElementById('deleteUserName').textContent = user.username || `用户${id}`;
+            document.getElementById('deleteStats').textContent = `${user.memo_count || 0} 条备忘录, ${user.tag_count || 0} 个标签`;
+            document.getElementById('deleteModal').classList.add('active');
+        }
+        
+        function closeModal(id = 'userModal') {
+            document.getElementById(id).classList.remove('active');
+        }
+        
+        async function saveUser(e) {
+            e.preventDefault();
+            
+            const id = document.getElementById('userId').value;
+            const username = document.getElementById('username').value.trim() || null;
+            const password = document.getElementById('password').value;
+            const isAdmin = document.getElementById('isAdmin').checked;
+            
+            showLoading(true);
+            
+            const body = { username, is_admin: isAdmin };
+            if (password) body.password = password;
+            
+            const url = id ? `/api/admin/users/${id}` : '/api/admin/users';
+            const method = id ? 'PUT' : 'POST';
+            
+            const res = await fetch(url, {
+                method,
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(body)
+            });
+            
+            showLoading(false);
+            
+            const data = await res.json();
+            if (data.success) {
+                showToast(id ? '用户已更新' : '用户已创建', 'success');
+                closeModal();
+                await loadData();
+            } else {
+                showToast(data.error?.message || '操作失败', 'error');
+            }
+        }
+        
+        async function confirmDelete() {
+            if (!deleteTargetId) return;
+            
+            showLoading(true);
+            const res = await fetch(`/api/admin/users/${deleteTargetId}`, { method: 'DELETE' });
+            showLoading(false);
+            
+            const data = await res.json();
+            if (data.success) {
+                showToast('用户已删除', 'success');
+                closeModal('deleteModal');
+                deleteTargetId = null;
+                await loadData();
+            } else {
+                showToast(data.error?.message || '删除失败', 'error');
+            }
+        }
+        
+        function showLoading(show) {
+            document.getElementById('loading').classList.toggle('active', show);
+        }
+        
+        function showToast(message, type = 'info') {
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            toast.textContent = message;
+            document.getElementById('toastContainer').appendChild(toast);
+            setTimeout(() => toast.remove(), 3000);
+        }
+    </script>
+</body>
+</html>
