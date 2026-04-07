@@ -1,0 +1,31 @@
+/**
+ * Memo Extension - Content Script Styles
+ * Minimal styles injected into all pages
+ */
+
+/* Floating save button - already defined in content.js, but here as fallback */
+.memo-float-btn {
+  position: absolute;
+  z-index: 999999;
+  width: 32px;
+  height: 32px;
+  background: #2563eb;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  transition: transform 0.2s, background 0.2s;
+}
+
+.memo-float-btn:hover {
+  background: #1d4ed8;
+  transform: scale(1.1);
+}
+
+.memo-float-btn svg {
+  width: 18px;
+  height: 18px;
+  color: white;
+}
