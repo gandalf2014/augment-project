@@ -1397,6 +1397,24 @@ textarea {
   background: var(--bg-tertiary);
 }
 
+/* Pinned memo styles */
+.memo-card.pinned {
+  background: linear-gradient(135deg, var(--bg-primary) 0%, rgba(37, 99, 235, 0.1) 100%);
+  border-left-color: var(--primary-color) !important;
+}
+
+.pinned-indicator {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+  color: var(--primary-color);
+  opacity: 0.8;
+}
+
+.memo-action.pinned {
+  color: var(--primary-color);
+}
+
 /* Restore Modal */
 .restore-select {
   width: 100%;

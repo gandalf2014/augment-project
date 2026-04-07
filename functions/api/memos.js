@@ -33,7 +33,7 @@ export async function onRequestGet(context) {
 
     // Data query with pagination - filter by user
     let dataQuery = `
-      SELECT id, title, content, tags, is_favorite, notebook_id, is_archived, created_at, updated_at
+      SELECT id, title, content, tags, is_favorite, is_pinned, notebook_id, is_archived, created_at, updated_at
       FROM memos
       WHERE user_id = ?
     `;
@@ -78,7 +78,8 @@ export async function onRequestGet(context) {
     const total = countResult?.total || 0;
 
     // Get paginated data
-    dataQuery += ` ORDER BY updated_at DESC LIMIT ? OFFSET ?`;
+    // Order: pinned first, then by updated_at DESC
+    dataQuery += ` ORDER BY is_pinned DESC, updated_at DESC LIMIT ? OFFSET ?`;
     dataParams.push(limit, offset);
 
     const { results } = await env.DB.prepare(dataQuery).bind(...dataParams).all();
@@ -117,6 +118,8 @@ export async function onRequestPost(context) {
   }
 
   const { title, content, tags, is_favorite } = validation.data;
+  const body = validation.data;
+  const is_pinned = body.is_pinned ? 1 : 0;
   let notebook_id = parseInt(url.searchParams.get('notebook_id')) || null;
 
   try {
@@ -146,9 +149,9 @@ export async function onRequestPost(context) {
 
     // Insert the memo with user_id
     const insertResult = await env.DB.prepare(`
-      INSERT INTO memos (title, content, tags, is_favorite, notebook_id, is_archived, user_id, created_at, updated_at)
-      VALUES (?, ?, ?, ?, ?, 0, ?, datetime('now'), datetime('now'))
-    `).bind(finalTitle, content, tags, is_favorite, notebook_id, userId).run();
+      INSERT INTO memos (title, content, tags, is_favorite, is_pinned, notebook_id, is_archived, user_id, created_at, updated_at)
+      VALUES (?, ?, ?, ?, ?, ?, 0, ?, datetime('now'), datetime('now'))
+    `).bind(finalTitle, content, tags, is_favorite, is_pinned, notebook_id, userId).run();
 
     if (!insertResult.success) {
       throw new Error('Failed to insert memo');
@@ -156,7 +159,7 @@ export async function onRequestPost(context) {
 
     // Get the inserted memo
     const { results } = await env.DB.prepare(`
-      SELECT id, title, content, tags, is_favorite, notebook_id, is_archived, created_at, updated_at
+      SELECT id, title, content, tags, is_favorite, is_pinned, notebook_id, is_archived, created_at, updated_at
       FROM memos
       WHERE id = ?
     `).bind(insertResult.meta.last_row_id).all();

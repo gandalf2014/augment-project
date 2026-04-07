@@ -21,7 +21,7 @@ export async function onRequestGet(context) {
 
   try {
     const { results } = await env.DB.prepare(`
-      SELECT id, title, content, tags, is_favorite, notebook_id, is_archived, created_at, updated_at
+      SELECT id, title, content, tags, is_favorite, is_pinned, notebook_id, is_archived, created_at, updated_at
       FROM memos
       WHERE id = ? AND user_id = ?
     `).bind(id, userId).all();
@@ -60,6 +60,10 @@ export async function onRequestPut(context) {
   }
 
   const { title, content, tags, is_favorite } = validation.data;
+  const body = validation.data;
+  
+  // Check if this is a partial update (only pin/favorite/archive)
+  const isPartialUpdate = body.is_pinned !== undefined || body.is_archived !== undefined;
 
   try {
     // Verify memo belongs to user
@@ -71,15 +75,48 @@ export async function onRequestPut(context) {
       return ApiResponse.error('Memo not found', 404, 'NOT_FOUND');
     }
 
-    // Generate title if not provided
-    const finalTitle = title || generateTitleFromContent(content);
-
-    // Update the memo
-    const updateResult = await env.DB.prepare(`
-      UPDATE memos
-      SET title = ?, content = ?, tags = ?, is_favorite = ?, updated_at = datetime('now')
-      WHERE id = ? AND user_id = ?
-    `).bind(finalTitle, content, tags, is_favorite, id, userId).run();
+    let updateResult;
+    
+    if (isPartialUpdate) {
+      // Partial update - only update specific fields
+      const updates = [];
+      const values = [];
+      
+      if (body.is_pinned !== undefined) {
+        updates.push('is_pinned = ?');
+        values.push(body.is_pinned ? 1 : 0);
+      }
+      
+      if (body.is_archived !== undefined) {
+        updates.push('is_archived = ?');
+        values.push(body.is_archived ? 1 : 0);
+      }
+      
+      if (body.is_favorite !== undefined) {
+        updates.push('is_favorite = ?');
+        values.push(body.is_favorite ? 1 : 0);
+      }
+      
+      if (updates.length === 0) {
+        return ApiResponse.error('No fields to update', 400, 'VALIDATION_ERROR');
+      }
+      
+      updates.push('updated_at = datetime("now")');
+      values.push(id, userId);
+      
+      updateResult = await env.DB.prepare(
+        `UPDATE memos SET ${updates.join(', ')} WHERE id = ? AND user_id = ?`
+      ).bind(...values).run();
+    } else {
+      // Full update
+      const finalTitle = title || generateTitleFromContent(content);
+      
+      updateResult = await env.DB.prepare(`
+        UPDATE memos
+        SET title = ?, content = ?, tags = ?, is_favorite = ?, updated_at = datetime('now')
+        WHERE id = ? AND user_id = ?
+      `).bind(finalTitle, content, tags, is_favorite, id, userId).run();
+    }
 
     if (!updateResult.success) {
       return ApiResponse.error('Failed to update memo', 500, 'DATABASE_ERROR');
@@ -87,7 +124,7 @@ export async function onRequestPut(context) {
 
     // Get the updated memo
     const { results } = await env.DB.prepare(`
-      SELECT id, title, content, tags, is_favorite, notebook_id, is_archived, created_at, updated_at
+      SELECT id, title, content, tags, is_favorite, is_pinned, notebook_id, is_archived, created_at, updated_at
       FROM memos
       WHERE id = ?
     `).bind(id).all();

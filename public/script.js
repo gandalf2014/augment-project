@@ -870,6 +870,46 @@ async function toggleFavorite(id) {
   }
 }
 
+async function togglePinned(id) {
+  const memo = memos.find(m => m.id === id);
+  if (memo) {
+    const newPinnedState = !memo.is_pinned;
+    
+    // Optimistic update
+    memo.is_pinned = newPinnedState;
+    
+    // Send partial update
+    const res = await fetch(`/api/memos/${id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ is_pinned: newPinnedState })
+    });
+    
+    const result = await res.json();
+    if (!res.ok) {
+      // Revert on error
+      memo.is_pinned = !newPinnedState;
+      showToast(result.error?.message || '操作失败', 'error');
+      return;
+    }
+    
+    // Update memo in array and re-render
+    const idx = memos.findIndex(m => m.id === id);
+    if (idx !== -1) {
+      memos[idx] = result.data;
+    }
+    
+    // Re-sort: pinned first
+    memos.sort((a, b) => {
+      if (a.is_pinned !== b.is_pinned) return b.is_pinned ? 1 : -1;
+      return new Date(b.updated_at) - new Date(a.updated_at);
+    });
+    
+    renderMemos();
+    showToast(newPinnedState ? '已置顶' : '已取消置顶', 'success');
+  }
+}
+
 // Tag CRUD
 async function createTag(data) {
   const res = await fetch('/api/tags', {
@@ -1298,8 +1338,9 @@ function createMemoCard(memo) {
        </button>`;
 
   return `
-    <article class="memo-card ${memo.is_archived ? 'archived' : ''} ${selectedClass}" data-memo-id="${memo.id}" tabindex="0" role="listitem" style="border-left: 4px solid ${borderColor}" oncontextmenu="if(selectionMode && selectedMemoIds.size > 0) showContextMenu(event)">
+    <article class="memo-card ${memo.is_archived ? 'archived' : ''} ${selectedClass} ${memo.is_pinned ? 'pinned' : ''}" data-memo-id="${memo.id}" tabindex="0" role="listitem" style="border-left: 4px solid ${borderColor}" oncontextmenu="if(selectionMode && selectedMemoIds.size > 0) showContextMenu(event)">
       <div class="select-circle" onclick="event.stopPropagation(); toggleMemoSelection(${memo.id})"></div>
+      ${memo.is_pinned ? '<div class="pinned-indicator"><svg class="icon small"><use href="#icon-pin"/></svg></div>' : ''}
       <div class="memo-header">
         <h3 class="memo-title">${escapeHtml(memo.title)}</h3>
         <div class="memo-actions">
@@ -1308,6 +1349,9 @@ function createMemoCard(memo) {
             <svg class="icon small"><use href="#icon-edit"/></svg>
           </button>
           ` : ''}
+          <button class="memo-action ${memo.is_pinned ? 'pinned' : ''}" onclick="togglePinned(${memo.id})" title="${memo.is_pinned ? '取消置顶' : '置顶'}">
+            <svg class="icon small"><use href="#icon-pin"/></svg>
+          </button>
           <button class="memo-action ${memo.is_favorite ? 'favorite' : ''}" onclick="toggleFavorite(${memo.id})" title="${memo.is_favorite ? '取消收藏' : '收藏'}">
             <svg class="icon small"><use href="#icon-star${memo.is_favorite ? '' : '-empty'}"/></svg>
           </button>

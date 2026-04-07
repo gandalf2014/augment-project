@@ -24,7 +24,14 @@ export const MemoSchema = z.object({
 
   is_favorite: z.boolean()
     .optional()
-    .default(false)
+    .default(false),
+    
+  is_pinned: z.boolean()
+    .optional()
+    .default(false),
+    
+  is_archived: z.boolean()
+    .optional()
 });
 
 /**
