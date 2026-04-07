@@ -1,5 +1,5 @@
 import { generateTitleFromContent, ApiResponse } from '../../_shared/utils.js';
-import { MemoSchema, validateBody } from '../../_shared/validation.js';
+import { MemoSchema, PartialMemoSchema, validateBody } from '../../_shared/validation.js';
 import { getUserIdFromRequest } from '../../_shared/auth.js';
 
 // Dynamic route for individual memo operations
@@ -53,17 +53,18 @@ export async function onRequestPut(context) {
     return ApiResponse.error('Invalid memo ID', 400, 'VALIDATION_ERROR');
   }
 
-  // Validate input
-  const validation = await validateBody(request, MemoSchema);
+  // Validate input - use PartialMemoSchema for partial updates
+  const body = await request.json();
+  
+  // Check if this is a partial update (only pin/favorite/archive)
+  const isPartialUpdate = body.is_pinned !== undefined || body.is_archived !== undefined || body.is_favorite !== undefined;
+  
+  const validation = await validateBody(request, isPartialUpdate ? PartialMemoSchema : MemoSchema);
   if (!validation.success) {
     return ApiResponse.error(validation.error, 400, 'VALIDATION_ERROR');
   }
 
   const { title, content, tags, is_favorite } = validation.data;
-  const body = validation.data;
-  
-  // Check if this is a partial update (only pin/favorite/archive)
-  const isPartialUpdate = body.is_pinned !== undefined || body.is_archived !== undefined;
 
   try {
     // Verify memo belongs to user

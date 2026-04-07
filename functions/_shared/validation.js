@@ -35,6 +35,30 @@ export const MemoSchema = z.object({
 });
 
 /**
+ * Partial memo schema for partial updates (pin, archive, favorite)
+ */
+export const PartialMemoSchema = z.object({
+  title: z.string()
+    .max(200, 'Title must be 200 characters or less')
+    .optional()
+    .transform(val => val?.trim() || ''),
+
+  content: z.string()
+    .max(50000, 'Content must be 50000 characters or less')
+    .optional()
+    .transform(val => val?.trim()),
+
+  tags: z.string()
+    .max(500, 'Tags must be 500 characters or less')
+    .optional()
+    .transform(val => val?.trim() || ''),
+
+  is_favorite: z.boolean().optional(),
+  is_pinned: z.boolean().optional(),
+  is_archived: z.boolean().optional()
+});
+
+/**
  * Tag validation schema
  */
 export const TagSchema = z.object({
