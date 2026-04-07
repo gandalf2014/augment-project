@@ -110,6 +110,50 @@ export const SavedFilterUpdateSchema = z.object({
 });
 
 /**
+ * Template validation schema
+ */
+export const TemplateSchema = z.object({
+  name: z.string()
+    .min(1, 'Template name is required')
+    .max(50, 'Template name must be 50 characters or less')
+    .transform(val => val.trim()),
+  content: z.string()
+    .max(10000, 'Template content must be 10000 characters or less')
+    .optional()
+    .default(''),
+  tags: z.string()
+    .max(500, 'Tags must be 500 characters or less')
+    .optional()
+    .default(''),
+  is_default: z.boolean().optional().default(false)
+});
+
+/**
+ * Share validation schema
+ */
+export const ShareSchema = z.object({
+  memo_id: z.number().int().positive(),
+  expires_in: z.number().int().positive().optional(), // seconds
+  password: z.string().max(50).optional()
+});
+
+/**
+ * Password change schema
+ */
+export const PasswordChangeSchema = z.object({
+  currentPassword: z.string().min(1, 'Current password is required'),
+  newPassword: z.string().min(4, 'New password must be at least 4 characters').max(100)
+});
+
+/**
+ * Account deletion schema
+ */
+export const AccountDeleteSchema = z.object({
+  password: z.string().min(1, 'Password is required'),
+  confirmation: z.literal('DELETE', { errorMap: () => ({ message: 'Please type DELETE to confirm' }) })
+});
+
+/**
  * Pagination query schema
  */
 export const PaginationSchema = z.object({

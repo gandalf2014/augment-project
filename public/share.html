@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>分享的备忘录 - Memo</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        .share-container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 2rem;
+            min-height: 100vh;
+        }
+        
+        .share-header {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+        
+        .share-header .logo {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+        
+        .share-header .subtitle {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+        }
+        
+        .share-content {
+            background: var(--bg-primary);
+            border-radius: 12px;
+            padding: 2rem;
+        }
+        
+        .share-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+        }
+        
+        .share-meta {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid var(--border-color);
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+        }
+        
+        .share-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            margin-bottom: 1.5rem;
+        }
+        
+        .share-tag {
+            background: var(--bg-secondary);
+            padding: 0.25rem 0.75rem;
+            border-radius: 999px;
+            font-size: 0.85rem;
+        }
+        
+        .share-body {
+            line-height: 1.8;
+            white-space: pre-wrap;
+            word-break: break-word;
+        }
+        
+        .share-body h1 { font-size: 1.5rem; margin: 1rem 0; }
+        .share-body h2 { font-size: 1.25rem; margin: 1rem 0; }
+        .share-body h3 { font-size: 1.1rem; margin: 1rem 0; }
+        .share-body code {
+            background: var(--bg-secondary);
+            padding: 0.2rem 0.4rem;
+            border-radius: 4px;
+            font-family: monospace;
+        }
+        .share-body pre {
+            background: var(--bg-secondary);
+            padding: 1rem;
+            border-radius: 8px;
+            overflow-x: auto;
+        }
+        .share-body a {
+            color: var(--primary-color);
+        }
+        .share-body blockquote {
+            border-left: 4px solid var(--primary-color);
+            padding-left: 1rem;
+            margin: 1rem 0;
+            color: var(--text-secondary);
+        }
+        .share-body ul, .share-body ol {
+            padding-left: 1.5rem;
+            margin: 1rem 0;
+        }
+        .share-body li { margin: 0.5rem 0; }
+        
+        .share-footer {
+            margin-top: 2rem;
+            padding-top: 1rem;
+            border-top: 1px solid var(--border-color);
+            text-align: center;
+        }
+        
+        .share-footer a {
+            color: var(--primary-color);
+            text-decoration: none;
+        }
+        
+        .share-footer a:hover {
+            text-decoration: underline;
+        }
+        
+        .error-state {
+            text-align: center;
+            padding: 4rem 2rem;
+        }
+        
+        .error-icon {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+        }
+        
+        .error-title {
+            font-size: 1.25rem;
+            margin-bottom: 0.5rem;
+        }
+        
+        .error-message {
+            color: var(--text-secondary);
+        }
+        
+        .loading {
+            display: flex;
+            justify-content: center;
+            padding: 4rem;
+        }
+        
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid var(--border-color);
+            border-top-color: var(--primary-color);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="share-container">
+        <div class="share-header">
+            <div class="logo">
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                    <polyline points="14 2 14 8 20 8"/>
+                    <line x1="16" y1="13" x2="8" y2="13"/>
+                    <line x1="16" y1="17" x2="8" y2="17"/>
+                </svg>
+                Memo
+            </div>
+            <div class="subtitle">分享的备忘录</div>
+        </div>
+        
+        <div id="loading" class="loading">
+            <div class="spinner"></div>
+        </div>
+        
+        <div id="content" class="share-content" style="display:none;"></div>
+        
+        <div id="error" class="error-state" style="display:none;">
+            <div class="error-icon">😔</div>
+            <h2 class="error-title">无法访问</h2>
+            <p class="error-message" id="errorMessage">分享链接不存在或已过期</p>
+        </div>
+    </div>
+    
+    <script>
+        // Get share token from URL
+        const token = window.location.pathname.split('/share/')[1];
+        
+        async function loadSharedMemo() {
+            try {
+                const res = await fetch(`/api/share/${token}`);
+                const data = await res.json();
+                
+                document.getElementById('loading').style.display = 'none';
+                
+                if (!data.success) {
+                    showError(data.error?.message || '加载失败');
+                    return;
+                }
+                
+                const memo = data.data;
+                const tags = memo.tags ? memo.tags.split(',').filter(t => t.trim()) : [];
+                
+                document.getElementById('content').innerHTML = `
+                    <h1 class="share-title">${escapeHtml(memo.title)}</h1>
+                    <div class="share-meta">
+                        <span>📅 ${new Date(memo.created_at).toLocaleDateString('zh-CN')}</span>
+                        ${memo.view_count ? `<span>👁 ${memo.view_count} 次查看</span>` : ''}
+                    </div>
+                    ${tags.length > 0 ? `
+                        <div class="share-tags">
+                            ${tags.map(t => `<span class="share-tag">${escapeHtml(t.trim())}</span>`).join('')}
+                        </div>
+                    ` : ''}
+                    <div class="share-body">${parseMarkdown(memo.content)}</div>
+                    <div class="share-footer">
+                        <a href="/">使用 Memo 创建你自己的备忘录 →</a>
+                    </div>
+                `;
+                document.getElementById('content').style.display = 'block';
+                
+            } catch (e) {
+                showError('加载失败');
+            }
+        }
+        
+        function showError(message) {
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('errorMessage').textContent = message;
+            document.getElementById('error').style.display = 'block';
+        }
+        
+        function escapeHtml(text) {
+            if (!text) return '';
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+        
+        function parseMarkdown(text) {
+            if (!text) return '';
+            let result = text;
+            
+            // Code blocks
+            result = result.replace(/```([\s\S]*?)```/g, '<pre><code>$1</code></pre>');
+            
+            // Inline code
+            result = result.replace(/`([^`]+)`/g, '<code>$1</code>');
+            
+            // Escape HTML
+            result = result.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+            
+            // Headers
+            result = result.replace(/^### (.+)$/gm, '<h3>$1</h3>');
+            result = result.replace(/^## (.+)$/gm, '<h2>$1</h2>');
+            result = result.replace(/^# (.+)$/gm, '<h1>$1</h1>');
+            
+            // Bold & Italic
+            result = result.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+            result = result.replace(/\*(.+?)\*/g, '<em>$1</em>');
+            
+            // Links
+            result = result.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank">$1</a>');
+            
+            // Lists
+            result = result.replace(/^- (.+)$/gm, '<li>$1</li>');
+            result = result.replace(/(<li>.*<\/li>\n?)+/g, '<ul>$&</ul>');
+            
+            // Paragraphs
+            result = result.replace(/\n\n/g, '</p><p>');
+            result = result.replace(/\n/g, '<br>');
+            result = `<p>${result}</p>`;
+            
+            return result;
+        }
+        
+        loadSharedMemo();
+    </script>
+</body>
+</html>
