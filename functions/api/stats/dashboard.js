@@ -19,7 +19,7 @@ export async function onRequest(context) {
   try {
     // Get total counts
     const totalMemos = await db.prepare(
-      'SELECT COUNT(*) as count FROM memos WHERE user_id = ? AND archived = 0'
+      'SELECT COUNT(*) as count FROM memos WHERE user_id = ? AND is_archived = 0'
     ).bind(userId).first();
 
     const totalTags = await db.prepare(
@@ -31,11 +31,11 @@ export async function onRequest(context) {
     ).bind(userId).first();
 
     const favoriteCount = await db.prepare(
-      'SELECT COUNT(*) as count FROM memos WHERE user_id = ? AND is_favorite = 1 AND archived = 0'
+      'SELECT COUNT(*) as count FROM memos WHERE user_id = ? AND is_favorite = 1 AND is_archived = 0'
     ).bind(userId).first();
 
     const archivedCount = await db.prepare(
-      'SELECT COUNT(*) as count FROM memos WHERE user_id = ? AND archived = 1'
+      'SELECT COUNT(*) as count FROM memos WHERE user_id = ? AND is_archived = 1'
     ).bind(userId).first();
 
     // Get activity for last 7 days (may be empty if no activity)
@@ -100,7 +100,7 @@ export async function onRequest(context) {
         AVG(LENGTH(content)) as avg_chars,
         MAX(LENGTH(content)) as max_chars
       FROM memos
-      WHERE user_id = ? AND archived = 0
+      WHERE user_id = ? AND is_archived = 0
     `).bind(userId).first();
 
     // Get creation timeline (memos per month for last 6 months)
