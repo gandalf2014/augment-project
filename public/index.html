@@ -293,7 +293,12 @@
         <div class="modal-content">
             <div class="modal-header">
                 <h2 id="modalTitle">新建备忘录</h2>
-                <button class="modal-close" id="modalClose" aria-label="关闭">×</button>
+                <div class="modal-header-actions">
+                    <button type="button" class="btn-icon" id="versionHistoryBtn" style="display: none;" title="历史版本">
+                        <svg class="icon small"><use href="#icon-clock"/></svg>
+                    </button>
+                    <button class="modal-close" id="modalClose" aria-label="关闭">×</button>
+                </div>
             </div>
             <form id="memoForm" class="modal-body">
                 <div class="form-group">
@@ -535,6 +540,67 @@
             </div>
             <div class="modal-body">
                 <div id="templateSelector" class="template-selector"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Version History Modal -->
+    <div class="modal" id="versionModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>历史版本</h2>
+                <button class="modal-close" onclick="closeVersionModal()" aria-label="关闭">×</button>
+            </div>
+            <div class="modal-body">
+                <div id="versionList" class="version-list">
+                    <div class="loading">加载中...</div>
+                </div>
+                <div id="versionPreview" class="version-preview" style="display: none;">
+                    <h3 id="versionPreviewTitle"></h3>
+                    <div id="versionPreviewContent" class="markdown-preview"></div>
+                    <div class="version-actions">
+                        <button type="button" class="btn btn-outline" onclick="closeVersionPreview()">取消</button>
+                        <button type="button" class="btn btn-primary" onclick="restoreVersion()">恢复此版本</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Share Modal -->
+    <div class="modal" id="shareNotebookModal">
+        <div class="modal-content modal-small">
+            <div class="modal-header">
+                <h2>共享笔记本</h2>
+                <button class="modal-close" onclick="closeShareModal()" aria-label="关闭">×</button>
+            </div>
+            <div class="modal-body">
+                <div id="shareStatus" class="share-status">
+                    <p class="share-info">创建共享链接后，其他人可以查看此笔记本中的所有备忘录（只读）。</p>
+                </div>
+                <div id="shareLinkContainer" style="display: none;">
+                    <div class="share-link-box">
+                        <input type="text" id="shareLinkInput" readonly>
+                        <button type="button" class="btn btn-outline" onclick="copyShareLink()">复制</button>
+                    </div>
+                    <p class="share-meta">
+                        <span id="shareViewCount"></span>
+                        <button type="button" class="btn-text" onclick="revokeShare()">撤销共享</button>
+                    </p>
+                </div>
+                <div class="form-group">
+                    <label for="shareExpires">过期时间</label>
+                    <select id="shareExpires">
+                        <option value="">永不过期</option>
+                        <option value="1">1 天后</option>
+                        <option value="7">7 天后</option>
+                        <option value="30">30 天后</option>
+                    </select>
+                </div>
+            </div>
+            <div class="modal-actions">
+                <button type="button" class="btn btn-outline" onclick="closeShareModal()">取消</button>
+                <button type="button" class="btn btn-primary" id="shareCreateBtn" onclick="createShare()">创建共享</button>
             </div>
         </div>
     </div>

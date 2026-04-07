@@ -663,15 +663,38 @@ function showNotebookMenu(event, id) {
   const notebook = notebooks.find(n => n.id === id);
   if (!notebook || notebook.is_default) return;
 
-  const action = prompt('输入操作: rename 或 delete');
-  if (action === 'rename') {
-    const newName = prompt('新名称:', notebook.name);
-    if (newName && newName !== notebook.name) {
-      updateNotebook(id, { name: newName });
+  // Create context menu
+  const existing = document.querySelector('.context-menu');
+  if (existing) existing.remove();
+
+  const menu = document.createElement('div');
+  menu.className = 'context-menu';
+  menu.innerHTML = `
+    <button onclick="openNotebookModal(${id}); this.closest('.context-menu').remove();">
+      <svg class="icon small"><use href="#icon-edit"/></svg> 重命名
+    </button>
+    <button onclick="openShareModal(${id}); this.closest('.context-menu').remove();">
+      <svg class="icon small"><use href="#icon-share"/></svg> 共享
+    </button>
+    <hr>
+    <button class="danger" onclick="deleteNotebook(${id}); this.closest('.context-menu').remove();">
+      <svg class="icon small"><use href="#icon-trash"/></svg> 删除
+    </button>
+  `;
+
+  // Position menu
+  menu.style.left = `${event.clientX}px`;
+  menu.style.top = `${event.clientY}px`;
+  document.body.appendChild(menu);
+
+  // Close on click outside
+  const closeMenu = (e) => {
+    if (!menu.contains(e.target)) {
+      menu.remove();
+      document.removeEventListener('click', closeMenu);
     }
-  } else if (action === 'delete') {
-    deleteNotebook(id);
-  }
+  };
+  setTimeout(() => document.addEventListener('click', closeMenu), 0);
 }
 
 // Notebook Modal
@@ -1636,6 +1659,11 @@ function openMemoModal(id = null) {
   currentMemo = id ? memos.find(m => m.id === id) : null;
 
   $('modalTitle').textContent = currentMemo ? '编辑备忘录' : '新建备忘录';
+  
+  // Show/hide version history button
+  const versionBtn = $('versionHistoryBtn');
+  versionBtn.style.display = currentMemo ? 'flex' : 'none';
+  versionBtn.onclick = () => showVersionHistory(currentMemo.id);
 
   // Reset tabs
   document.querySelectorAll('.editor-tab').forEach((t, i) => {
@@ -1863,6 +1891,36 @@ function escapeHtml(text) {
   return div.innerHTML;
 }
 
+function formatDate(dateStr) {
+  if (!dateStr) return '';
+  const date = new Date(dateStr);
+  const now = new Date();
+  const diff = now - date;
+  const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+  
+  if (days === 0) {
+    const hours = Math.floor(diff / (1000 * 60 * 60));
+    if (hours === 0) {
+      const mins = Math.floor(diff / (1000 * 60));
+      return mins <= 1 ? '刚刚' : `${mins} 分钟前`;
+    }
+    return `${hours} 小时前`;
+  } else if (days === 1) {
+    return '昨天';
+  } else if (days < 7) {
+    return `${days} 天前`;
+  } else if (days < 30) {
+    const weeks = Math.floor(days / 7);
+    return `${weeks} 周前`;
+  } else {
+    return date.toLocaleDateString('zh-CN', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric'
+    });
+  }
+}
+
 function showLoading(show) {
   dom.loading.classList.toggle('active', show);
 }
@@ -2008,4 +2066,230 @@ function showConfirm(message) {
 
     document.body.appendChild(overlay);
   });
+}
+
+// ============================================
+// Version History Functions
+// ============================================
+
+let currentVersions = [];
+let selectedVersion = null;
+
+async function showVersionHistory(memoId) {
+  const modal = $('versionModal');
+  const list = $('versionList');
+  const preview = $('versionPreview');
+  
+  list.style.display = 'block';
+  preview.style.display = 'none';
+  list.innerHTML = '<div class="loading">加载中...</div>';
+  
+  modal.classList.add('active');
+
+  try {
+    const res = await fetch(`/api/memos/${memoId}/versions`);
+    const data = await res.json();
+
+    if (!data.success) {
+      list.innerHTML = `<div class="error">${escapeHtml(data.error?.message || '加载失败')}</div>`;
+      return;
+    }
+
+    currentVersions = data.data.versions || [];
+    
+    if (currentVersions.length === 0) {
+      list.innerHTML = '<div class="empty-state">暂无历史版本</div>';
+      return;
+    }
+
+    list.innerHTML = `
+      <div class="version-item current">
+        <div class="version-info">
+          <span class="version-badge">当前版本</span>
+          <span class="version-date">${formatDate(data.data.current.updatedAt)}</span>
+        </div>
+      </div>
+      ${currentVersions.map(v => `
+        <div class="version-item" data-version="${v.version}" onclick="previewVersion(${memoId}, ${v.version})">
+          <div class="version-info">
+            <span class="version-number">v${v.version}</span>
+            <span class="version-title">${escapeHtml(v.title || '无标题')}</span>
+            <span class="version-date">${formatDate(v.created_at)}</span>
+          </div>
+        </div>
+      `).join('')}
+    `;
+
+  } catch (error) {
+    list.innerHTML = '<div class="error">网络错误</div>';
+  }
+}
+
+async function previewVersion(memoId, version) {
+  const list = $('versionList');
+  const preview = $('versionPreview');
+  
+  try {
+    const res = await fetch(`/api/memos/${memoId}/versions?version=${version}`);
+    const data = await res.json();
+
+    if (!data.success) {
+      showToast('加载版本失败', 'error');
+      return;
+    }
+
+    selectedVersion = { memoId, version, data: data.data.version };
+    
+    $('versionPreviewTitle').textContent = `版本 ${version} - ${data.data.version.title || '无标题'}`;
+    $('versionPreviewContent').innerHTML = parseMarkdown(escapeHtml(data.data.version.content || ''));
+    
+    list.style.display = 'none';
+    preview.style.display = 'block';
+
+  } catch (error) {
+    showToast('网络错误', 'error');
+  }
+}
+
+function closeVersionPreview() {
+  $('versionList').style.display = 'block';
+  $('versionPreview').style.display = 'none';
+  selectedVersion = null;
+}
+
+async function restoreVersion() {
+  if (!selectedVersion) return;
+
+  try {
+    const res = await fetch(`/api/memos/${selectedVersion.memoId}/versions`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ version: selectedVersion.version })
+    });
+
+    const data = await res.json();
+
+    if (!data.success) {
+      showToast(data.error?.message || '恢复失败', 'error');
+      return;
+    }
+
+    showToast('已恢复到此版本', 'success');
+    closeVersionModal();
+    closeMemoModal();
+    loadMemos();
+
+  } catch (error) {
+    showToast('网络错误', 'error');
+  }
+}
+
+function closeVersionModal() {
+  $('versionModal').classList.remove('active');
+  currentVersions = [];
+  selectedVersion = null;
+}
+
+// ============================================
+// Notebook Sharing Functions
+// ============================================
+
+let currentShareNotebook = null;
+
+async function openShareModal(notebookId) {
+  currentShareNotebook = notebookId;
+  const modal = $('shareNotebookModal');
+  const linkContainer = $('shareLinkContainer');
+  const createBtn = $('shareCreateBtn');
+  
+  linkContainer.style.display = 'none';
+  createBtn.style.display = 'block';
+  $('shareExpires').value = '';
+  
+  modal.classList.add('active');
+
+  // Check existing share
+  try {
+    const res = await fetch(`/api/notebooks/${notebookId}/share`);
+    const data = await res.json();
+
+    if (data.success && data.data.share) {
+      showShareLink(data.data.share);
+    }
+  } catch (error) {
+    // Ignore errors
+  }
+}
+
+function closeShareModal() {
+  $('shareNotebookModal').classList.remove('active');
+  currentShareNotebook = null;
+}
+
+function showShareLink(share) {
+  $('shareLinkContainer').style.display = 'block';
+  $('shareCreateBtn').style.display = 'none';
+  $('shareLinkInput').value = share.shareUrl;
+  $('shareViewCount').textContent = `已查看 ${share.viewCount || 0} 次`;
+}
+
+async function createShare() {
+  if (!currentShareNotebook) return;
+
+  const expiresInDays = $('shareExpires').value;
+
+  try {
+    const res = await fetch(`/api/notebooks/${currentShareNotebook}/share`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ expiresInDays: expiresInDays ? parseInt(expiresInDays) : null })
+    });
+
+    const data = await res.json();
+
+    if (!data.success) {
+      showToast(data.error?.message || '创建失败', 'error');
+      return;
+    }
+
+    showShareLink(data.data);
+    showToast('共享链接已创建', 'success');
+
+  } catch (error) {
+    showToast('网络错误', 'error');
+  }
+}
+
+async function revokeShare() {
+  if (!currentShareNotebook) return;
+
+  const confirmed = await showConfirm('确定要撤销此共享链接吗？撤销后链接将失效。');
+  if (!confirmed) return;
+
+  try {
+    const res = await fetch(`/api/notebooks/${currentShareNotebook}/share`, {
+      method: 'DELETE'
+    });
+
+    const data = await res.json();
+
+    if (!data.success) {
+      showToast(data.error?.message || '撤销失败', 'error');
+      return;
+    }
+
+    $('shareLinkContainer').style.display = 'none';
+    $('shareCreateBtn').style.display = 'block';
+    showToast('共享已撤销', 'success');
+
+  } catch (error) {
+    showToast('网络错误', 'error');
+  }
+}
+
+function copyShareLink() {
+  const input = $('shareLinkInput');
+  input.select();
+  document.execCommand('copy');
+  showToast('链接已复制', 'success');
 }

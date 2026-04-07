@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>共享笔记本 - Memo</title>
+  <link rel="stylesheet" href="/style.css">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📝</text></svg>">
+</head>
+<body class="shared-page">
+  <div class="shared-container">
+    <header class="shared-header">
+      <h1 id="notebook-name">加载中...</h1>
+      <p class="shared-info">
+        <span id="memo-count">0</span> 条备忘录
+        <span id="view-count" class="view-count"></span>
+      </p>
+    </header>
+
+    <main class="shared-content">
+      <div id="memo-list" class="shared-memo-list">
+        <div class="loading">加载中...</div>
+      </div>
+
+      <div id="memo-detail" class="shared-memo-detail" style="display: none;">
+        <button id="back-btn" class="back-btn">← 返回列表</button>
+        <article id="memo-content" class="memo-article"></article>
+      </div>
+    </main>
+
+    <footer class="shared-footer">
+      <p>由 <a href="/">Memo</a> 提供支持</p>
+    </footer>
+  </div>
+
+  <script>
+    // Parse markdown
+    function parseMarkdown(text) {
+      if (!text) return '';
+      return text
+        // Headers
+        .replace(/^### (.*$)/gim, '<h3>$1</h3>')
+        .replace(/^## (.*$)/gim, '<h2>$1</h2>')
+        .replace(/^# (.*$)/gim, '<h1>$1</h1>')
+        // Bold and italic
+        .replace(/\*\*\*(.*?)\*\*\*/g, '<strong><em>$1</em></strong>')
+        .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+        .replace(/\*(.*?)\*/g, '<em>$1</em>')
+        // Code blocks
+        .replace(/```([\s\S]*?)```/g, '<pre><code>$1</code></pre>')
+        .replace(/`(.*?)`/g, '<code>$1</code>')
+        // Links
+        .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener">$1</a>')
+        // Lists
+        .replace(/^\s*[-*]\s+(.*)$/gim, '<li>$1</li>')
+        .replace(/(<li>.*<\/li>)/s, '<ul>$1</ul>')
+        // Paragraphs
+        .replace(/\n\n/g, '</p><p>')
+        .replace(/\n/g, '<br>')
+        .wrap('<p>', '</p>');
+    }
+
+    // Get token from URL
+    const token = window.location.pathname.split('/').pop();
+
+    // Load shared notebook
+    async function loadSharedNotebook() {
+      try {
+        const response = await fetch(`/api/shared/${token}`);
+        const data = await response.json();
+
+        if (!data.success) {
+          showError(data.error?.message || '加载失败');
+          return;
+        }
+
+        const { notebook, memos, viewCount, expiresAt } = data.data;
+
+        // Update header
+        document.getElementById('notebook-name').textContent = notebook.name;
+        document.getElementById('memo-count').textContent = memos.length;
+        
+        if (viewCount > 0) {
+          document.getElementById('view-count').textContent = `· 已查看 ${viewCount} 次`;
+        }
+
+        // Render memo list
+        renderMemoList(memos);
+
+      } catch (error) {
+        showError('网络错误，请稍后重试');
+      }
+    }
+
+    function renderMemoList(memos) {
+      const container = document.getElementById('memo-list');
+      
+      if (memos.length === 0) {
+        container.innerHTML = '<div class="empty">此笔记本暂无备忘录</div>';
+        return;
+      }
+
+      container.innerHTML = memos.map(memo => `
+        <div class="shared-memo-card" data-id="${memo.id}">
+          <h3>${escapeHtml(memo.title) || '无标题'}</h3>
+          <p class="memo-preview">${escapeHtml(memo.content?.substring(0, 100) || '')}...</p>
+          ${memo.tags ? `<div class="memo-tags">${memo.tags.split(',').map(tag => 
+            `<span class="tag">${escapeHtml(tag.trim())}</span>`
+          ).join('')}</div>` : ''}
+          <span class="memo-date">${formatDate(memo.created_at)}</span>
+        </div>
+      `).join('');
+
+      // Add click handlers
+      container.querySelectorAll('.shared-memo-card').forEach(card => {
+        card.addEventListener('click', () => {
+          const memo = memos.find(m => m.id === parseInt(card.dataset.id));
+          showMemoDetail(memo);
+        });
+      });
+    }
+
+    function showMemoDetail(memo) {
+      document.getElementById('memo-list').style.display = 'none';
+      document.getElementById('memo-detail').style.display = 'block';
+      
+      const content = document.getElementById('memo-content');
+      content.innerHTML = `
+        <h1>${escapeHtml(memo.title) || '无标题'}</h1>
+        ${memo.tags ? `<div class="memo-tags">${memo.tags.split(',').map(tag => 
+          `<span class="tag">${escapeHtml(tag.trim())}</span>`
+        ).join('')}</div>` : ''}
+        <div class="memo-body">${parseMarkdown(escapeHtml(memo.content || ''))}</div>
+        <div class="memo-meta">
+          创建于 ${formatDate(memo.created_at)}
+          ${memo.updated_at !== memo.created_at ? `· 更新于 ${formatDate(memo.updated_at)}` : ''}
+        </div>
+      `;
+    }
+
+    function showError(message) {
+      document.getElementById('memo-list').innerHTML = `
+        <div class="error">
+          <p>${escapeHtml(message)}</p>
+          <a href="/">返回首页</a>
+        </div>
+      `;
+    }
+
+    function escapeHtml(text) {
+      if (!text) return '';
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+
+    function formatDate(dateStr) {
+      if (!dateStr) return '';
+      const date = new Date(dateStr);
+      return date.toLocaleDateString('zh-CN', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+      });
+    }
+
+    // Back button
+    document.getElementById('back-btn').addEventListener('click', () => {
+      document.getElementById('memo-detail').style.display = 'none';
+      document.getElementById('memo-list').style.display = 'block';
+    });
+
+    // Load on ready
+    loadSharedNotebook();
+  </script>
+
+  <style>
+    .shared-page {
+      background: var(--bg-secondary, #f5f5f5);
+      min-height: 100vh;
+    }
+
+    .shared-container {
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 2rem;
+    }
+
+    .shared-header {
+      text-align: center;
+      margin-bottom: 2rem;
+      padding-bottom: 1rem;
+      border-bottom: 1px solid var(--border-color, #e0e0e0);
+    }
+
+    .shared-header h1 {
+      font-size: 1.75rem;
+      margin-bottom: 0.5rem;
+    }
+
+    .shared-info {
+      color: var(--text-secondary, #666);
+      font-size: 0.875rem;
+    }
+
+    .view-count {
+      color: var(--text-muted, #999);
+    }
+
+    .shared-memo-list {
+      display: grid;
+      gap: 1rem;
+    }
+
+    .shared-memo-card {
+      background: var(--bg-primary, white);
+      border-radius: 8px;
+      padding: 1rem;
+      cursor: pointer;
+      transition: transform 0.2s, box-shadow 0.2s;
+      border: 1px solid var(--border-color, #e0e0e0);
+    }
+
+    .shared-memo-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    }
+
+    .shared-memo-card h3 {
+      margin: 0 0 0.5rem;
+      font-size: 1rem;
+    }
+
+    .memo-preview {
+      color: var(--text-secondary, #666);
+      font-size: 0.875rem;
+      margin: 0 0 0.5rem;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .memo-tags {
+      display: flex;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+      margin: 0.5rem 0;
+    }
+
+    .tag {
+      background: var(--primary-light, #e0f2fe);
+      color: var(--primary, #0284c7);
+      padding: 0.125rem 0.5rem;
+      border-radius: 9999px;
+      font-size: 0.75rem;
+    }
+
+    .memo-date {
+      font-size: 0.75rem;
+      color: var(--text-muted, #999);
+    }
+
+    .shared-memo-detail {
+      background: var(--bg-primary, white);
+      border-radius: 8px;
+      padding: 1.5rem;
+    }
+
+    .back-btn {
+      background: none;
+      border: none;
+      color: var(--primary, #0284c7);
+      cursor: pointer;
+      padding: 0;
+      font-size: 0.875rem;
+      margin-bottom: 1rem;
+    }
+
+    .back-btn:hover {
+      text-decoration: underline;
+    }
+
+    .memo-article h1 {
+      font-size: 1.5rem;
+      margin-bottom: 1rem;
+    }
+
+    .memo-body {
+      line-height: 1.7;
+      margin: 1rem 0;
+    }
+
+    .memo-body pre {
+      background: var(--bg-code, #f0f0f0);
+      padding: 1rem;
+      border-radius: 4px;
+      overflow-x: auto;
+    }
+
+    .memo-body code {
+      background: var(--bg-code, #f0f0f0);
+      padding: 0.125rem 0.25rem;
+      border-radius: 2px;
+      font-size: 0.875em;
+    }
+
+    .memo-meta {
+      font-size: 0.75rem;
+      color: var(--text-muted, #999);
+      margin-top: 1rem;
+      padding-top: 1rem;
+      border-top: 1px solid var(--border-color, #e0e0e0);
+    }
+
+    .shared-footer {
+      text-align: center;
+      margin-top: 2rem;
+      padding-top: 1rem;
+      border-top: 1px solid var(--border-color, #e0e0e0);
+    }
+
+    .shared-footer a {
+      color: var(--primary, #0284c7);
+    }
+
+    .loading, .empty, .error {
+      text-align: center;
+      padding: 2rem;
+      color: var(--text-secondary, #666);
+    }
+
+    .error a {
+      display: block;
+      margin-top: 1rem;
+      color: var(--primary, #0284c7);
+    }
+
+    @media (prefers-color-scheme: dark) {
+      .shared-page {
+        --bg-primary: #1f2937;
+        --bg-secondary: #111827;
+        --bg-code: #374151;
+        --text-primary: #f9fafb;
+        --text-secondary: #9ca3af;
+        --text-muted: #6b7280;
+        --border-color: #374151;
+        --primary: #60a5fa;
+        --primary-light: #1e3a5f;
+      }
+    }
+  </style>
+</body>
+</html>

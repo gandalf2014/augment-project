@@ -118,6 +118,26 @@ export async function onRequestPut(context) {
         `UPDATE memos SET ${updates.join(', ')} WHERE id = ? AND user_id = ?`
       ).bind(...values).run();
     } else {
+      // Full update - save version history first
+      const currentMemo = await env.DB.prepare(
+        'SELECT title, content, tags FROM memos WHERE id = ?'
+      ).bind(id).first();
+      
+      if (currentMemo && currentMemo.content) {
+        // Get current max version
+        const versionResult = await env.DB.prepare(
+          'SELECT COALESCE(MAX(version), 0) as max_version FROM memo_versions WHERE memo_id = ?'
+        ).bind(id).first();
+        
+        const newVersion = (versionResult?.max_version || 0) + 1;
+        
+        // Save current state as version
+        await env.DB.prepare(
+          `INSERT INTO memo_versions (memo_id, user_id, title, content, tags, version)
+           VALUES (?, ?, ?, ?, ?, ?)`
+        ).bind(id, userId, currentMemo.title, currentMemo.content, currentMemo.tags, newVersion).run();
+      }
+      
       // Full update
       const { title, content, tags, is_favorite } = validatedData;
       const finalTitle = title || generateTitleFromContent(content);
