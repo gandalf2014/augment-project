@@ -825,6 +825,10 @@ async function createMemo(data) {
   updateStats();
   clearDraft();
   showToast('已创建', 'success');
+  
+  // Track activity
+  trackActivity('memo_created', { tags: result.data.tags?.split(',').map(t => t.trim()) || [] });
+  
   return result.data;
 }
 
@@ -844,6 +848,10 @@ async function updateMemo(id, data) {
     showToast('已更新', 'success');
   }
   clearDraft();
+  
+  // Track activity
+  trackActivity('memo_edited', { tags: result.data.tags?.split(',').map(t => t.trim()) || [] });
+  
   return result.data;
 }
 
@@ -1874,6 +1882,96 @@ function showToastWithAction(message, type, actionText, actionFn) {
   toast.querySelector('button').onclick = () => { actionFn(); toast.remove(); };
   dom.toastContainer.appendChild(toast);
   setTimeout(() => toast.remove?.(), UNDO_TIMEOUT);
+}
+
+// Track user activity for statistics
+async function trackActivity(action, data = {}) {
+  try {
+    await fetch('/api/stats/activity', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${localStorage.getItem('token')}`
+      },
+      body: JSON.stringify({ action, ...data })
+    });
+  } catch (e) {
+    // Silently fail - activity tracking is not critical
+    console.debug('Activity tracking failed:', e);
+  }
+}
+
+// Social sharing functions
+async function shareToSocial(memoId, platform) {
+  try {
+    const res = await fetch('/api/share/social', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${localStorage.getItem('token')}`
+      },
+      body: JSON.stringify({ memo_id: memoId, platform })
+    });
+    
+    const result = await res.json();
+    if (!result.success) throw new Error(result.error?.message);
+    
+    if (result.data.share_url) {
+      window.open(result.data.share_url, '_blank', 'width=600,height=400');
+    } else if (platform === 'copy') {
+      await navigator.clipboard.writeText(result.data.text);
+      showToast('已复制到剪贴板', 'success');
+    } else if (platform === 'wechat') {
+      // Show QR code modal for WeChat
+      showWeChatShareModal(memoId);
+    }
+    
+    return result.data;
+  } catch (e) {
+    showToast('分享失败: ' + e.message, 'error');
+  }
+}
+
+async function showWeChatShareModal(memoId) {
+  // Create share link first
+  const res = await fetch(`/api/share/${memoId}`, {
+    method: 'POST',
+    headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+  });
+  const result = await res.json();
+  
+  if (!result.success) {
+    showToast('创建分享链接失败', 'error');
+    return;
+  }
+  
+  // Get QR code
+  const qrRes = await fetch(`/api/share/${result.data.share_token}/qr`, {
+    headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+  });
+  const qrResult = await qrRes.json();
+  
+  if (!qrResult.success) {
+    showToast('生成二维码失败', 'error');
+    return;
+  }
+  
+  // Show modal with QR code
+  const modal = document.createElement('div');
+  modal.className = 'modal active';
+  modal.innerHTML = `
+    <div class="modal-content modal-small">
+      <div class="modal-header">
+        <h2>微信分享</h2>
+        <button class="modal-close" onclick="this.closest('.modal').remove()">×</button>
+      </div>
+      <div class="modal-body" style="text-align: center;">
+        <img src="${qrResult.data.qr_code}" alt="QR Code" style="max-width: 200px; margin: 1rem auto;">
+        <p class="text-secondary" style="margin-top: 1rem;">扫描二维码在微信中打开</p>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(modal);
 }
 
 // Custom Confirm Dialog

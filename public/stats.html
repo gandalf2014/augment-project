@@ -1,0 +1,560 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>数据洞察 - Memo</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        .stats-page {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        .stats-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+        }
+
+        .stats-header h1 {
+            font-size: 1.75rem;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            background: var(--bg-primary);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-lg);
+            padding: 1.5rem;
+            text-align: center;
+        }
+
+        .stat-card .stat-value {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: var(--primary-color);
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-card .stat-label {
+            color: var(--text-secondary);
+            font-size: 0.875rem;
+        }
+
+        .stats-section {
+            background: var(--bg-primary);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-lg);
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .stats-section h2 {
+            font-size: 1.125rem;
+            margin-bottom: 1rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        /* Activity Chart */
+        .activity-chart {
+            display: flex;
+            align-items: flex-end;
+            gap: 0.5rem;
+            height: 150px;
+            padding: 1rem 0;
+        }
+
+        .chart-bar {
+            flex: 1;
+            background: var(--primary-color);
+            border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+            min-height: 4px;
+            transition: height 0.3s ease;
+            position: relative;
+        }
+
+        .chart-bar:hover {
+            background: var(--primary-hover, #1d4ed8);
+        }
+
+        .chart-bar::after {
+            content: attr(data-value);
+            position: absolute;
+            bottom: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            opacity: 0;
+            transition: opacity 0.2s;
+            white-space: nowrap;
+        }
+
+        .chart-bar:hover::after {
+            opacity: 1;
+        }
+
+        .chart-labels {
+            display: flex;
+            gap: 0.5rem;
+            margin-top: 0.5rem;
+        }
+
+        .chart-labels span {
+            flex: 1;
+            text-align: center;
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+        }
+
+        /* Heatmap */
+        .heatmap {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 3px;
+        }
+
+        .heatmap-cell {
+            aspect-ratio: 1;
+            border-radius: 2px;
+            background: var(--bg-tertiary);
+        }
+
+        .heatmap-cell[data-level="1"] { background: rgba(37, 99, 235, 0.2); }
+        .heatmap-cell[data-level="2"] { background: rgba(37, 99, 235, 0.4); }
+        .heatmap-cell[data-level="3"] { background: rgba(37, 99, 235, 0.6); }
+        .heatmap-cell[data-level="4"] { background: rgba(37, 99, 235, 0.8); }
+        .heatmap-cell[data-level="5"] { background: rgba(37, 99, 235, 1); }
+
+        .heatmap-legend {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-top: 1rem;
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+        }
+
+        .heatmap-legend .legend-item {
+            width: 12px;
+            height: 12px;
+            border-radius: 2px;
+        }
+
+        /* Tag Cloud */
+        .tag-cloud {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+        }
+
+        .tag-cloud-item {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.25rem;
+            padding: 0.5rem 1rem;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-full);
+            font-size: 0.875rem;
+            transition: all 0.2s;
+            cursor: default;
+        }
+
+        .tag-cloud-item:hover {
+            border-color: var(--primary-color);
+        }
+
+        .tag-cloud-item .count {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            background: var(--bg-tertiary);
+            padding: 0.125rem 0.5rem;
+            border-radius: var(--radius-full);
+        }
+
+        .tag-cloud-item[data-size="xl"] { font-size: 1.25rem; }
+        .tag-cloud-item[data-size="lg"] { font-size: 1.125rem; }
+        .tag-cloud-item[data-size="sm"] { font-size: 0.75rem; opacity: 0.8; }
+
+        /* Timeline */
+        .timeline {
+            display: flex;
+            align-items: flex-end;
+            gap: 1rem;
+            height: 120px;
+        }
+
+        .timeline-item {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .timeline-bar {
+            width: 100%;
+            background: var(--primary-color);
+            border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+            min-height: 4px;
+        }
+
+        .timeline-label {
+            margin-top: 0.5rem;
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+        }
+
+        /* Top Tags */
+        .top-tags-list {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+
+        .top-tag-item {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .top-tag-item .rank {
+            width: 24px;
+            height: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--bg-secondary);
+            border-radius: var(--radius-sm);
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        .top-tag-item .rank.gold { background: #fbbf24; color: black; }
+        .top-tag-item .rank.silver { background: #9ca3af; color: black; }
+        .top-tag-item .rank.bronze { background: #d97706; color: black; }
+
+        .top-tag-item .tag-name {
+            flex: 1;
+        }
+
+        .top-tag-item .tag-count {
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+        }
+
+        /* Back link */
+        .back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: var(--text-secondary);
+            text-decoration: none;
+            margin-bottom: 1rem;
+        }
+
+        .back-link:hover {
+            color: var(--text-primary);
+        }
+
+        @media (max-width: 768px) {
+            .stats-page {
+                padding: 1rem;
+            }
+
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .stat-card .stat-value {
+                font-size: 2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="stats-page">
+        <a href="/" class="back-link">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M19 12H5M12 19l-7-7 7-7"/>
+            </svg>
+            返回首页
+        </a>
+
+        <div class="stats-header">
+            <h1>📊 数据洞察</h1>
+            <span id="statsPeriod" class="text-secondary">最近 7 天</span>
+        </div>
+
+        <!-- Summary Cards -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-value" id="totalMemos">0</div>
+                <div class="stat-label">备忘录</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="totalTags">0</div>
+                <div class="stat-label">标签</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="totalFavorites">0</div>
+                <div class="stat-label">收藏</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="totalChars">0</div>
+                <div class="stat-label">总字符数</div>
+            </div>
+        </div>
+
+        <!-- Activity Chart -->
+        <div class="stats-section">
+            <h2>📈 活动趋势</h2>
+            <div class="activity-chart" id="activityChart"></div>
+            <div class="chart-labels" id="chartLabels"></div>
+        </div>
+
+        <!-- Heatmap -->
+        <div class="stats-section">
+            <h2>🔥 活跃度热力图</h2>
+            <div class="heatmap" id="heatmap"></div>
+            <div class="heatmap-legend">
+                <span>少</span>
+                <div class="legend-item" style="background: var(--bg-tertiary)"></div>
+                <div class="legend-item" style="background: rgba(37, 99, 235, 0.2)"></div>
+                <div class="legend-item" style="background: rgba(37, 99, 235, 0.4)"></div>
+                <div class="legend-item" style="background: rgba(37, 99, 235, 0.6)"></div>
+                <div class="legend-item" style="background: rgba(37, 99, 235, 0.8)"></div>
+                <div class="legend-item" style="background: rgba(37, 99, 235, 1)"></div>
+                <span>多</span>
+            </div>
+        </div>
+
+        <!-- Tag Cloud -->
+        <div class="stats-section">
+            <h2>🏷️ 标签云</h2>
+            <div class="tag-cloud" id="tagCloud">
+                <p class="text-secondary">加载中...</p>
+            </div>
+        </div>
+
+        <!-- Top Tags -->
+        <div class="stats-section">
+            <h2>🏆 热门标签</h2>
+            <div class="top-tags-list" id="topTags"></div>
+        </div>
+
+        <!-- Timeline -->
+        <div class="stats-section">
+            <h2>📅 创建时间线</h2>
+            <div class="timeline" id="timeline"></div>
+        </div>
+    </div>
+
+    <script>
+        const token = localStorage.getItem('token');
+
+        async function loadStats() {
+            try {
+                const res = await fetch('/api/stats/dashboard', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const data = await res.json();
+
+                if (data.success) {
+                    renderStats(data.data);
+                }
+            } catch (e) {
+                console.error('Failed to load stats:', e);
+            }
+        }
+
+        function renderStats(data) {
+            // Summary cards
+            document.getElementById('totalMemos').textContent = data.totals.memos;
+            document.getElementById('totalTags').textContent = data.totals.tags;
+            document.getElementById('totalFavorites').textContent = data.totals.favorites;
+            
+            // Format total chars
+            const chars = data.content.totalChars;
+            if (chars >= 10000) {
+                document.getElementById('totalChars').textContent = (chars / 10000).toFixed(1) + '万';
+            } else {
+                document.getElementById('totalChars').textContent = chars;
+            }
+
+            // Activity chart
+            renderActivityChart(data.activity.last7Days);
+
+            // Heatmap
+            renderHeatmap(data.activity.heatmap);
+
+            // Tag cloud
+            renderTagCloud(data.tags.usage);
+
+            // Top tags
+            renderTopTags(data.tags.top);
+
+            // Timeline
+            renderTimeline(data.timeline);
+        }
+
+        function renderActivityChart(activity) {
+            const container = document.getElementById('activityChart');
+            const labels = document.getElementById('chartLabels');
+            
+            container.innerHTML = '';
+            labels.innerHTML = '';
+
+            const maxValue = Math.max(...activity.map(d => d.memos_created + d.memos_edited), 1);
+            const dayNames = ['日', '一', '二', '三', '四', '五', '六'];
+
+            activity.forEach((day, i) => {
+                const total = day.memos_created + day.memos_edited;
+                const height = (total / maxValue) * 100;
+                const date = new Date(day.activity_date);
+                const dayName = dayNames[date.getDay()];
+
+                const bar = document.createElement('div');
+                bar.className = 'chart-bar';
+                bar.style.height = `${Math.max(height, 3)}%`;
+                bar.setAttribute('data-value', total);
+                container.appendChild(bar);
+
+                const label = document.createElement('span');
+                label.textContent = dayName;
+                labels.appendChild(label);
+            });
+        }
+
+        function renderHeatmap(heatmapData) {
+            const container = document.getElementById('heatmap');
+            container.innerHTML = '';
+
+            // Create 30 days of cells (5 weeks)
+            const today = new Date();
+            const cells = [];
+
+            // Fill from 30 days ago to today
+            for (let i = 29; i >= 0; i--) {
+                const date = new Date(today);
+                date.setDate(date.getDate() - i);
+                const dateStr = date.toISOString().split('T')[0];
+                
+                const dayData = heatmapData.find(d => d.activity_date === dateStr);
+                const activity = dayData?.total_activity || 0;
+
+                let level = 0;
+                if (activity > 0) level = 1;
+                if (activity > 5) level = 2;
+                if (activity > 10) level = 3;
+                if (activity > 20) level = 4;
+                if (activity > 30) level = 5;
+
+                cells.push({ date: dateStr, level, activity });
+            }
+
+            cells.forEach(cell => {
+                const div = document.createElement('div');
+                div.className = 'heatmap-cell';
+                div.setAttribute('data-level', cell.level);
+                div.title = `${cell.date}: ${cell.activity} 次活动`;
+                container.appendChild(div);
+            });
+        }
+
+        function renderTagCloud(tags) {
+            const container = document.getElementById('tagCloud');
+            container.innerHTML = '';
+
+            if (!tags || tags.length === 0) {
+                container.innerHTML = '<p class="text-secondary">暂无标签数据</p>';
+                return;
+            }
+
+            const maxCount = Math.max(...tags.map(t => t.usage_count), 1);
+
+            tags.forEach(tag => {
+                const item = document.createElement('span');
+                item.className = 'tag-cloud-item';
+                
+                const ratio = tag.usage_count / maxCount;
+                if (ratio > 0.7) item.setAttribute('data-size', 'xl');
+                else if (ratio > 0.5) item.setAttribute('data-size', 'lg');
+                else if (ratio < 0.2) item.setAttribute('data-size', 'sm');
+
+                if (tag.color) {
+                    item.style.borderColor = tag.color;
+                }
+
+                item.innerHTML = `
+                    ${tag.name}
+                    <span class="count">${tag.usage_count}</span>
+                `;
+                container.appendChild(item);
+            });
+        }
+
+        function renderTopTags(tags) {
+            const container = document.getElementById('topTags');
+            container.innerHTML = '';
+
+            if (!tags || tags.length === 0) {
+                container.innerHTML = '<p class="text-secondary">暂无标签数据</p>';
+                return;
+            }
+
+            const rankClasses = ['gold', 'silver', 'bronze'];
+
+            tags.forEach((tag, i) => {
+                const item = document.createElement('div');
+                item.className = 'top-tag-item';
+                
+                const rankClass = i < 3 ? rankClasses[i] : '';
+                item.innerHTML = `
+                    <span class="rank ${rankClass}">${i + 1}</span>
+                    <span class="tag-name">${tag.name}</span>
+                    <span class="tag-count">${tag.memo_count} 个备忘录</span>
+                `;
+                container.appendChild(item);
+            });
+        }
+
+        function renderTimeline(timeline) {
+            const container = document.getElementById('timeline');
+            container.innerHTML = '';
+
+            if (!timeline || timeline.length === 0) {
+                container.innerHTML = '<p class="text-secondary">暂无数据</p>';
+                return;
+            }
+
+            const maxCount = Math.max(...timeline.map(t => t.count), 1);
+
+            timeline.forEach(month => {
+                const item = document.createElement('div');
+                item.className = 'timeline-item';
+
+                const height = (month.count / maxCount) * 100;
+                item.innerHTML = `
+                    <div class="timeline-bar" style="height: ${Math.max(height, 5)}%"></div>
+                    <span class="timeline-label">${month.month.split('-')[1]}月</span>
+                `;
+                container.appendChild(item);
+            });
+        }
+
+        // Load stats on page load
+        loadStats();
+    </script>
+</body>
+</html>
