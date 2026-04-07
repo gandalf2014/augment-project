@@ -46,9 +46,6 @@ CREATE TABLE IF NOT EXISTS memo_templates (
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
--- Pinned memos
-ALTER TABLE memos ADD COLUMN is_pinned INTEGER DEFAULT 0;
-
 -- Memo versions (for history)
 CREATE TABLE IF NOT EXISTS memo_versions (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -93,4 +90,3 @@ CREATE INDEX IF NOT EXISTS idx_user_settings_user ON user_settings(user_id);
 CREATE INDEX IF NOT EXISTS idx_memo_versions_memo ON memo_versions(memo_id);
 CREATE INDEX IF NOT EXISTS idx_search_history_user ON search_history(user_id);
 CREATE INDEX IF NOT EXISTS idx_shared_memos_token ON shared_memos(share_token);
-CREATE INDEX IF NOT EXISTS idx_memos_pinned ON memos(user_id, is_pinned);

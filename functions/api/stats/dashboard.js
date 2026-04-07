@@ -38,42 +38,60 @@ export async function onRequest(context) {
       'SELECT COUNT(*) as count FROM memos WHERE user_id = ? AND archived = 1'
     ).bind(userId).first();
 
-    // Get activity for last 7 days
-    const activityData = await db.prepare(`
-      SELECT 
-        activity_date,
-        memos_created,
-        memos_edited,
-        memos_viewed
-      FROM user_activity
-      WHERE user_id = ?
-        AND activity_date >= date("now", "-7 days")
-      ORDER BY activity_date ASC
-    `).bind(userId).all();
+    // Get activity for last 7 days (may be empty if no activity)
+    let activityData = { results: [] };
+    try {
+      activityData = await db.prepare(`
+        SELECT 
+          activity_date,
+          memos_created,
+          memos_edited,
+          memos_viewed
+        FROM user_activity
+        WHERE user_id = ?
+          AND activity_date >= date("now", "-7 days")
+        ORDER BY activity_date ASC
+      `).bind(userId).all();
+    } catch (e) {
+      // Table may not exist
+    }
 
-    // Get tag usage stats
-    const tagStats = await db.prepare(`
-      SELECT 
-        t.id, t.name, t.color,
-        COALESCE(tu.usage_count, 0) as usage_count,
-        tu.last_used_at
-      FROM tags t
-      LEFT JOIN tag_usage tu ON t.id = tu.tag_id AND tu.user_id = ?
-      WHERE t.user_id = ?
-      ORDER BY usage_count DESC
-      LIMIT 20
-    `).bind(userId, userId).all();
+    // Get tag usage stats (simpler query)
+    let tagStats = { results: [] };
+    try {
+      tagStats = await db.prepare(`
+        SELECT 
+          t.id, t.name, t.color,
+          COUNT(DISTINCT m.id) as usage_count
+        FROM tags t
+        LEFT JOIN memos m ON m.user_id = ? AND m.tags LIKE '%' || t.name || '%'
+        WHERE t.user_id = ?
+        GROUP BY t.id
+        ORDER BY usage_count DESC
+        LIMIT 20
+      `).bind(userId, userId).all();
+    } catch (e) {
+      // Fall back to simple tag list
+      tagStats = await db.prepare(
+        'SELECT id, name, color FROM tags WHERE user_id = ?'
+      ).bind(userId).all();
+    }
 
-    // Get most active days (heatmap data for last 30 days)
-    const heatmapData = await db.prepare(`
-      SELECT 
-        activity_date,
-        (memos_created + memos_edited + memos_viewed) as total_activity
-      FROM user_activity
-      WHERE user_id = ?
-        AND activity_date >= date("now", "-30 days")
-      ORDER BY activity_date ASC
-    `).bind(userId).all();
+    // Get heatmap data (may be empty)
+    let heatmapData = { results: [] };
+    try {
+      heatmapData = await db.prepare(`
+        SELECT 
+          activity_date,
+          (memos_created + memos_edited + memos_viewed) as total_activity
+        FROM user_activity
+        WHERE user_id = ?
+          AND activity_date >= date("now", "-30 days")
+        ORDER BY activity_date ASC
+      `).bind(userId).all();
+    } catch (e) {
+      // Table may not exist
+    }
 
     // Get word count statistics
     const wordStats = await db.prepare(`
@@ -136,6 +154,6 @@ export async function onRequest(context) {
 
   } catch (error) {
     console.error('Stats API error:', error);
-    return ApiResponse.error('Failed to fetch statistics', 500, 'STATS_ERROR');
+    return ApiResponse.error('Failed to fetch statistics: ' + error.message, 500, 'STATS_ERROR');
   }
 }
