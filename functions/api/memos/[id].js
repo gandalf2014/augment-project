@@ -1,5 +1,5 @@
 import { generateTitleFromContent, ApiResponse } from '../../_shared/utils.js';
-import { MemoSchema, PartialMemoSchema, validateBody } from '../../_shared/validation.js';
+import { MemoSchema, PartialMemoSchema } from '../../_shared/validation.js';
 import { getUserIdFromRequest } from '../../_shared/auth.js';
 
 // Dynamic route for individual memo operations
@@ -53,18 +53,27 @@ export async function onRequestPut(context) {
     return ApiResponse.error('Invalid memo ID', 400, 'VALIDATION_ERROR');
   }
 
-  // Validate input - use PartialMemoSchema for partial updates
-  const body = await request.json();
+  // Parse body
+  let body;
+  try {
+    body = await request.json();
+  } catch {
+    return ApiResponse.error('Invalid JSON body', 400, 'VALIDATION_ERROR');
+  }
   
   // Check if this is a partial update (only pin/favorite/archive)
   const isPartialUpdate = body.is_pinned !== undefined || body.is_archived !== undefined || body.is_favorite !== undefined;
   
-  const validation = await validateBody(request, isPartialUpdate ? PartialMemoSchema : MemoSchema);
-  if (!validation.success) {
-    return ApiResponse.error(validation.error, 400, 'VALIDATION_ERROR');
+  // Validate with appropriate schema
+  const schema = isPartialUpdate ? PartialMemoSchema : MemoSchema;
+  const result = schema.safeParse(body);
+  
+  if (!result.success) {
+    const errors = result.error.issues.map(e => `${e.path.join('.')}: ${e.message}`);
+    return ApiResponse.error(errors.join('; '), 400, 'VALIDATION_ERROR');
   }
-
-  const { title, content, tags, is_favorite } = validation.data;
+  
+  const validatedData = result.data;
 
   try {
     // Verify memo belongs to user
@@ -83,19 +92,19 @@ export async function onRequestPut(context) {
       const updates = [];
       const values = [];
       
-      if (body.is_pinned !== undefined) {
+      if (validatedData.is_pinned !== undefined) {
         updates.push('is_pinned = ?');
-        values.push(body.is_pinned ? 1 : 0);
+        values.push(validatedData.is_pinned ? 1 : 0);
       }
       
-      if (body.is_archived !== undefined) {
+      if (validatedData.is_archived !== undefined) {
         updates.push('is_archived = ?');
-        values.push(body.is_archived ? 1 : 0);
+        values.push(validatedData.is_archived ? 1 : 0);
       }
       
-      if (body.is_favorite !== undefined) {
+      if (validatedData.is_favorite !== undefined) {
         updates.push('is_favorite = ?');
-        values.push(body.is_favorite ? 1 : 0);
+        values.push(validatedData.is_favorite ? 1 : 0);
       }
       
       if (updates.length === 0) {
@@ -110,13 +119,14 @@ export async function onRequestPut(context) {
       ).bind(...values).run();
     } else {
       // Full update
+      const { title, content, tags, is_favorite } = validatedData;
       const finalTitle = title || generateTitleFromContent(content);
       
       updateResult = await env.DB.prepare(`
         UPDATE memos
         SET title = ?, content = ?, tags = ?, is_favorite = ?, updated_at = datetime('now')
         WHERE id = ? AND user_id = ?
-      `).bind(finalTitle, content, tags, is_favorite, id, userId).run();
+      `).bind(finalTitle, content, tags, is_favorite || false, id, userId).run();
     }
 
     if (!updateResult.success) {
