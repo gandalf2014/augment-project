@@ -60,11 +60,18 @@
         .wrap('<p>', '</p>');
     }
 
-    // Get token from URL
-    const token = window.location.pathname.split('/').pop();
+    // Get token from URL query parameter
+    const urlParams = new URLSearchParams(window.location.search);
+    const token = urlParams.get('token');
+
+    if (!token) {
+      showError('无效的共享链接');
+    }
 
     // Load shared notebook
     async function loadSharedNotebook() {
+      if (!token) return;
+      
       try {
         const response = await fetch(`/api/shared/${token}`);
         const data = await response.json();

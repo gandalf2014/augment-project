@@ -126,7 +126,7 @@ async function handlePost(context, db, notebookId, userId) {
   return ApiResponse.success({
     token: share.share_token,
     expiresAt: share.expires_at,
-    shareUrl: `${baseUrl}/shared/${share.share_token}`
+    shareUrl: `${baseUrl}/shared.html?token=${share.share_token}`
   });
 }
 
