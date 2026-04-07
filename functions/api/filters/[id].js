@@ -2,13 +2,20 @@
 
 import { ApiResponse } from '../../_shared/utils.js';
 import { validateBody, SavedFilterUpdateSchema } from '../../_shared/validation.js';
+import { getUserIdFromRequest } from '../../_shared/auth.js';
 
 export async function onRequestGet(context) {
   const { DB } = context.env;
   const { id } = context.params;
   
-  const filter = await DB.prepare('SELECT * FROM saved_filters WHERE id = ?')
-    .bind(parseInt(id)).first();
+  // Get user ID
+  const userId = getUserIdFromRequest(context.request);
+  if (!userId) {
+    return ApiResponse.error('请先登录', 401, 'AUTH_REQUIRED');
+  }
+  
+  const filter = await DB.prepare('SELECT * FROM saved_filters WHERE id = ? AND user_id = ?')
+    .bind(parseInt(id), userId).first();
   
   if (!filter) {
     return ApiResponse.error('筛选预设不存在', 404, 'FILTER_NOT_FOUND');
@@ -24,13 +31,19 @@ export async function onRequestPut(context) {
   const { DB } = context.env;
   const { id } = context.params;
   
+  // Get user ID
+  const userId = getUserIdFromRequest(context.request);
+  if (!userId) {
+    return ApiResponse.error('请先登录', 401, 'AUTH_REQUIRED');
+  }
+  
   const validation = await validateBody(context.request, SavedFilterUpdateSchema);
   if (!validation.success) {
     return ApiResponse.error(validation.error, 400, 'VALIDATION_ERROR');
   }
   
-  const existing = await DB.prepare('SELECT * FROM saved_filters WHERE id = ?')
-    .bind(parseInt(id)).first();
+  const existing = await DB.prepare('SELECT * FROM saved_filters WHERE id = ? AND user_id = ?')
+    .bind(parseInt(id), userId).first();
   
   if (!existing) {
     return ApiResponse.error('筛选预设不存在', 404, 'FILTER_NOT_FOUND');
@@ -40,12 +53,13 @@ export async function onRequestPut(context) {
   const configStr = filter_config ? JSON.stringify(filter_config) : existing.filter_config;
   
   await DB.prepare(
-    'UPDATE saved_filters SET name = ?, icon = ?, filter_config = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?'
+    'UPDATE saved_filters SET name = ?, icon = ?, filter_config = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ? AND user_id = ?'
   ).bind(
     name || existing.name,
     icon || existing.icon,
     configStr,
-    parseInt(id)
+    parseInt(id),
+    userId
   ).run();
   
   const updated = await DB.prepare('SELECT * FROM saved_filters WHERE id = ?')
@@ -61,8 +75,14 @@ export async function onRequestDelete(context) {
   const { DB } = context.env;
   const { id } = context.params;
   
-  const result = await DB.prepare('DELETE FROM saved_filters WHERE id = ?')
-    .bind(parseInt(id)).run();
+  // Get user ID
+  const userId = getUserIdFromRequest(context.request);
+  if (!userId) {
+    return ApiResponse.error('请先登录', 401, 'AUTH_REQUIRED');
+  }
+  
+  const result = await DB.prepare('DELETE FROM saved_filters WHERE id = ? AND user_id = ?')
+    .bind(parseInt(id), userId).run();
   
   if (result.meta.changes === 0) {
     return ApiResponse.error('筛选预设不存在', 404, 'FILTER_NOT_FOUND');

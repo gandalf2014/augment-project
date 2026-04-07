@@ -2,9 +2,16 @@
 
 import { ApiResponse } from '../../_shared/utils.js';
 import { validateBody, BatchSchema, BatchMoveSchema, BatchTagsSchema } from '../../_shared/validation.js';
+import { getUserIdFromRequest } from '../../_shared/auth.js';
 
 export async function onRequestPost(context) {
-  const { DB } = context.env;
+  const { DB, request } = context.env;
+  
+  // Get user ID
+  const userId = getUserIdFromRequest(context.request);
+  if (!userId) {
+    return ApiResponse.error('请先登录', 401, 'AUTH_REQUIRED');
+  }
   
   const validation = await validateBody(context.request, BatchSchema);
   if (!validation.success) {
@@ -32,36 +39,47 @@ export async function onRequestPost(context) {
   
   for (const memoId of memo_ids) {
     try {
+      // First verify memo belongs to user
+      const memoCheck = await context.env.DB.prepare(
+        'SELECT id, tags FROM memos WHERE id = ? AND user_id = ?'
+      ).bind(memoId, userId).first();
+      
+      if (!memoCheck) {
+        results.failed.push({ id: memoId, reason: '备忘录不存在或不属于当前用户' });
+        continue;
+      }
+      
       switch (action) {
         case 'archive':
-          await DB.prepare('UPDATE memos SET is_archived = 1, updated_at = CURRENT_TIMESTAMP WHERE id = ?')
-            .bind(memoId).run();
+          await context.env.DB.prepare(
+            'UPDATE memos SET is_archived = 1, updated_at = CURRENT_TIMESTAMP WHERE id = ? AND user_id = ?'
+          ).bind(memoId, userId).run();
           break;
         case 'restore':
-          await DB.prepare('UPDATE memos SET is_archived = 0, updated_at = CURRENT_TIMESTAMP WHERE id = ?')
-            .bind(memoId).run();
+          await context.env.DB.prepare(
+            'UPDATE memos SET is_archived = 0, updated_at = CURRENT_TIMESTAMP WHERE id = ? AND user_id = ?'
+          ).bind(memoId, userId).run();
           break;
         case 'delete':
-          await DB.prepare('DELETE FROM memos WHERE id = ?').bind(memoId).run();
+          await context.env.DB.prepare(
+            'DELETE FROM memos WHERE id = ? AND user_id = ?'
+          ).bind(memoId, userId).run();
           break;
         case 'move':
-          // Check notebook exists inside loop for partial success
-          const notebook = await DB.prepare('SELECT id FROM notebooks WHERE id = ?')
-            .bind(params.notebook_id).first();
+          // Check notebook exists and belongs to user
+          const notebook = await context.env.DB.prepare(
+            'SELECT id FROM notebooks WHERE id = ? AND user_id = ?'
+          ).bind(params.notebook_id, userId).first();
           if (!notebook) {
-            results.failed.push({ id: memoId, reason: '笔记本不存在' });
+            results.failed.push({ id: memoId, reason: '笔记本不存在或不属于当前用户' });
             continue;
           }
-          await DB.prepare('UPDATE memos SET notebook_id = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?')
-            .bind(params.notebook_id, memoId).run();
+          await context.env.DB.prepare(
+            'UPDATE memos SET notebook_id = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ? AND user_id = ?'
+          ).bind(params.notebook_id, memoId, userId).run();
           break;
         case 'tags':
-          const memo = await DB.prepare('SELECT tags FROM memos WHERE id = ?').bind(memoId).first();
-          if (!memo) {
-            results.failed.push({ id: memoId, reason: '备忘录不存在' });
-            continue;
-          }
-          let newTags = memo.tags || '';
+          let newTags = memoCheck.tags || '';
           const inputTags = params.tags.split(',').map(t => t.trim()).filter(t => t);
           
           if (params.mode === 'add') {
@@ -75,8 +93,9 @@ export async function onRequestPost(context) {
             newTags = existingTags.filter(t => !inputTags.includes(t)).join(',');
           }
           
-          await DB.prepare('UPDATE memos SET tags = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?')
-            .bind(newTags, memoId).run();
+          await context.env.DB.prepare(
+            'UPDATE memos SET tags = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ? AND user_id = ?'
+          ).bind(newTags, memoId, userId).run();
           break;
       }
       results.affected++;

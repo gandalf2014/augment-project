@@ -1,7 +1,15 @@
 import { ApiResponse } from '../../_shared/utils.js';
+import { getUserIdFromRequest } from '../../_shared/auth.js';
 
 export async function onRequestDelete(context) {
-  const { env, params } = context;
+  const { env, params, request } = context;
+  
+  // Get user ID
+  const userId = getUserIdFromRequest(request);
+  if (!userId) {
+    return ApiResponse.error('请先登录', 401, 'AUTH_REQUIRED');
+  }
+  
   const { id } = params;
 
   // Validate ID
@@ -10,7 +18,10 @@ export async function onRequestDelete(context) {
   }
 
   try {
-    const result = await env.DB.prepare(`DELETE FROM tags WHERE id = ?`).bind(id).run();
+    // Only delete if tag belongs to this user
+    const result = await env.DB.prepare(
+      'DELETE FROM tags WHERE id = ? AND user_id = ?'
+    ).bind(id, userId).run();
 
     if (!result.success || result.meta.changes === 0) {
       return ApiResponse.error('Tag not found', 404, 'NOT_FOUND');

@@ -1,8 +1,16 @@
 import { generateTitleFromContent, ApiResponse } from '../_shared/utils.js';
 import { MemoSchema, PaginationSchema, validateBody, validateQuery } from '../_shared/validation.js';
+import { getUserIdFromRequest } from '../_shared/auth.js';
 
 export async function onRequestGet(context) {
   const { env, request } = context;
+  
+  // Get user ID
+  const userId = getUserIdFromRequest(request);
+  if (!userId) {
+    return ApiResponse.error('请先登录', 401, 'AUTH_REQUIRED');
+  }
+  
   const url = new URL(request.url);
   const search = url.searchParams.get('search') || '';
   const tag = url.searchParams.get('tag') || '';
@@ -19,17 +27,17 @@ export async function onRequestGet(context) {
   const offset = (page - 1) * limit;
 
   try {
-    // Count query for pagination
-    let countQuery = `SELECT COUNT(*) as total FROM memos WHERE 1=1`;
-    const countParams = [];
+    // Count query for pagination - filter by user
+    let countQuery = `SELECT COUNT(*) as total FROM memos WHERE user_id = ?`;
+    const countParams = [userId];
 
-    // Data query with pagination
+    // Data query with pagination - filter by user
     let dataQuery = `
       SELECT id, title, content, tags, is_favorite, notebook_id, is_archived, created_at, updated_at
       FROM memos
-      WHERE 1=1
+      WHERE user_id = ?
     `;
-    const dataParams = [];
+    const dataParams = [userId];
 
     if (search) {
       countQuery += ` AND (title LIKE ? OR content LIKE ?)`;
@@ -93,6 +101,13 @@ export async function onRequestGet(context) {
 
 export async function onRequestPost(context) {
   const { env, request } = context;
+  
+  // Get user ID
+  const userId = getUserIdFromRequest(request);
+  if (!userId) {
+    return ApiResponse.error('请先登录', 401, 'AUTH_REQUIRED');
+  }
+  
   const url = new URL(request.url);
 
   // Validate input
@@ -102,17 +117,38 @@ export async function onRequestPost(context) {
   }
 
   const { title, content, tags, is_favorite } = validation.data;
-  const notebook_id = parseInt(url.searchParams.get('notebook_id')) || 1;
+  let notebook_id = parseInt(url.searchParams.get('notebook_id')) || null;
 
   try {
     // Generate title if not provided
     const finalTitle = title || generateTitleFromContent(content);
 
-    // Insert the memo
+    // Verify notebook belongs to user
+    if (notebook_id) {
+      const notebook = await env.DB.prepare(
+        'SELECT id FROM notebooks WHERE id = ? AND user_id = ?'
+      ).bind(notebook_id, userId).first();
+      
+      if (!notebook) {
+        // Use user's default notebook (first notebook) instead
+        const defaultNotebook = await env.DB.prepare(
+          'SELECT id FROM notebooks WHERE user_id = ? ORDER BY id ASC LIMIT 1'
+        ).bind(userId).first();
+        notebook_id = defaultNotebook?.id || null;
+      }
+    } else {
+      // Get user's default notebook
+      const defaultNotebook = await env.DB.prepare(
+        'SELECT id FROM notebooks WHERE user_id = ? ORDER BY id ASC LIMIT 1'
+      ).bind(userId).first();
+      notebook_id = defaultNotebook?.id || null;
+    }
+
+    // Insert the memo with user_id
     const insertResult = await env.DB.prepare(`
-      INSERT INTO memos (title, content, tags, is_favorite, notebook_id, is_archived, created_at, updated_at)
-      VALUES (?, ?, ?, ?, ?, 0, datetime('now'), datetime('now'))
-    `).bind(finalTitle, content, tags, is_favorite, notebook_id).run();
+      INSERT INTO memos (title, content, tags, is_favorite, notebook_id, is_archived, user_id, created_at, updated_at)
+      VALUES (?, ?, ?, ?, ?, 0, ?, datetime('now'), datetime('now'))
+    `).bind(finalTitle, content, tags, is_favorite, notebook_id, userId).run();
 
     if (!insertResult.success) {
       throw new Error('Failed to insert memo');
@@ -128,92 +164,6 @@ export async function onRequestPost(context) {
     return ApiResponse.success(results[0], 201);
   } catch (error) {
     console.error('Error creating memo:', error);
-    return ApiResponse.error(error.message, 500, 'DATABASE_ERROR');
-  }
-}
-
-export async function onRequestPut(context) {
-  const { env, request, params } = context;
-  const url = new URL(request.url);
-
-  // Get ID from params or URL
-  let id = params?.id;
-  if (!id) {
-    const pathParts = url.pathname.split('/');
-    id = pathParts[pathParts.length - 1];
-  }
-
-  // Validate ID
-  if (!id || id === 'memos' || isNaN(parseInt(id))) {
-    return ApiResponse.error('Invalid memo ID', 400, 'VALIDATION_ERROR');
-  }
-
-  // Validate input
-  const validation = await validateBody(request, MemoSchema);
-  if (!validation.success) {
-    return ApiResponse.error(validation.error, 400, 'VALIDATION_ERROR');
-  }
-
-  const { title, content, tags, is_favorite } = validation.data;
-
-  try {
-    // Generate title if not provided
-    const finalTitle = title || generateTitleFromContent(content);
-
-    // Update the memo
-    const updateResult = await env.DB.prepare(`
-      UPDATE memos
-      SET title = ?, content = ?, tags = ?, is_favorite = ?, updated_at = datetime('now')
-      WHERE id = ?
-    `).bind(finalTitle, content, tags, is_favorite, id).run();
-
-    if (!updateResult.success || updateResult.meta.changes === 0) {
-      return ApiResponse.error('Memo not found', 404, 'NOT_FOUND');
-    }
-
-    // Get the updated memo
-    const { results } = await env.DB.prepare(`
-      SELECT id, title, content, tags, is_favorite, notebook_id, is_archived, created_at, updated_at
-      FROM memos
-      WHERE id = ?
-    `).bind(id).all();
-
-    return ApiResponse.success(results[0]);
-  } catch (error) {
-    console.error('Error updating memo:', error);
-    return ApiResponse.error(error.message, 500, 'DATABASE_ERROR');
-  }
-}
-
-export async function onRequestDelete(context) {
-  const { env, request, params } = context;
-  const url = new URL(request.url);
-
-  // Get ID from params or URL
-  let id = params?.id;
-  if (!id) {
-    const pathParts = url.pathname.split('/');
-    id = pathParts[pathParts.length - 1];
-  }
-
-  // Validate ID
-  if (!id || id === 'memos' || isNaN(parseInt(id))) {
-    return ApiResponse.error('Invalid memo ID', 400, 'VALIDATION_ERROR');
-  }
-
-  try {
-    const result = await env.DB.prepare(`DELETE FROM memos WHERE id = ?`).bind(id).run();
-
-    if (!result.success || result.meta.changes === 0) {
-      return ApiResponse.error('Memo not found', 404, 'NOT_FOUND');
-    }
-
-    return ApiResponse.success({
-      message: 'Memo deleted successfully',
-      deletedId: parseInt(id)
-    });
-  } catch (error) {
-    console.error('Error deleting memo:', error);
     return ApiResponse.error(error.message, 500, 'DATABASE_ERROR');
   }
 }

@@ -93,14 +93,57 @@ function initDomCache() {
   dom.includeArchived = $('includeArchived');
 }
 
+// Auth state
+let currentUser = null;
+
 // Initialize
 document.addEventListener('DOMContentLoaded', async () => {
   initDomCache();
   initTheme();
+  
+  // Check authentication first
+  const isAuthenticated = await checkAuth();
+  if (!isAuthenticated) {
+    return; // Will redirect to login page
+  }
+  
   loadDraft();
   setupEvents();
   await loadData();
 });
+
+// Check authentication status
+async function checkAuth() {
+  try {
+    const response = await fetch('/api/auth/status');
+    const result = await response.json();
+    
+    if (result.success && result.data?.authenticated) {
+      currentUser = result.data;
+      return true;
+    } else {
+      // Not authenticated - redirect to login
+      window.location.href = '/login.html';
+      return false;
+    }
+  } catch (error) {
+    console.error('Auth check failed:', error);
+    window.location.href = '/login.html';
+    return false;
+  }
+}
+
+// Logout
+async function logout() {
+  try {
+    await fetch('/api/auth/logout', { method: 'POST' });
+    window.location.href = '/login.html';
+  } catch (error) {
+    console.error('Logout failed:', error);
+    // Still redirect even if logout API fails
+    window.location.href = '/login.html';
+  }
+}
 
 // Theme
 function initTheme() {
