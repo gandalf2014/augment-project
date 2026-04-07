@@ -66,3 +66,10 @@ venv/
 target/
 vendor/
 .cache/
+
+# Test results
+test-results/
+playwright-report/
+
+# Background shell
+.bg-shell/
