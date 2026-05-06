@@ -85,7 +85,7 @@ export async function onRequestPost(context) {
     
     // Set cookie (expires in 30 days)
     const expires = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toUTCString();
-    response.headers.set('Set-Cookie', `auth_token=${token}; Path=/; Expires=${expires}; SameSite=Strict`);
+    response.headers.set('Set-Cookie', `auth_token=${token}; Path=/; HttpOnly; Expires=${expires}; SameSite=Strict`);
     
     return response;
     
@@ -101,7 +101,7 @@ export async function onRequestPost(context) {
  */
 export async function onRequestPostLogout(context) {
   const response = ApiResponse.success({ message: '已退出登录' });
-  response.headers.set('Set-Cookie', 'auth_token=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT');
+  response.headers.set('Set-Cookie', 'auth_token=; Path=/; HttpOnly; Expires=Thu, 01 Jan 1970 00:00:00 GMT');
   return response;
 }
 

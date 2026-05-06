@@ -38,9 +38,14 @@ npm run db:create
 - `_shared/validation.js` - Zod schemas for input validation: `MemoSchema`, `TagSchema`, `PaginationSchema`
 
 ### Database (migrations/)
-D1 (SQLite) schema with two tables:
-- `memos` - id, title, content, tags, is_favorite, created_at, updated_at
-- `tags` - id, name (unique), color, created_at
+D1 (SQLite) schema — 9 次迁移，核心表：
+- `memos` - id, title, content, tags, is_favorite, is_pinned, notebook_id, is_archived, user_id, created_at, updated_at
+- `tags` - id, name (unique per user), color, user_id, created_at
+- `notebooks` - id, name, icon, sort_order, user_id, created_at, updated_at
+- `users` - id, password_hash (SHA-256), login_count, created_at, last_login_at
+- `saved_filters` - id, name, icon, filter_config (JSON), user_id, created_at
+- `memo_versions` - id, memo_id, user_id, title, content, tags, version, created_at
+- Templates, Shares, Webhooks（预留表）
 
 ## Key Patterns
 

@@ -61,8 +61,11 @@ export async function onRequestPut(context) {
     return ApiResponse.error('Invalid JSON body', 400, 'VALIDATION_ERROR');
   }
   
-  // Check if this is a partial update (only pin/favorite/archive)
-  const isPartialUpdate = body.is_pinned !== undefined || body.is_archived !== undefined || body.is_favorite !== undefined;
+  // Check if this is a partial update (ONLY pin/favorite/archive fields, no content/title/tags)
+  const isPartialUpdate = (body.is_pinned !== undefined || body.is_archived !== undefined) 
+    && body.content === undefined 
+    && body.title === undefined 
+    && body.tags === undefined;
   
   // Validate with appropriate schema
   const schema = isPartialUpdate ? PartialMemoSchema : MemoSchema;
@@ -139,14 +142,14 @@ export async function onRequestPut(context) {
       }
       
       // Full update
-      const { title, content, tags, is_favorite } = validatedData;
+      const { title, content, tags, is_favorite, notebook_id } = validatedData;
       const finalTitle = title || generateTitleFromContent(content);
       
       updateResult = await env.DB.prepare(`
         UPDATE memos
-        SET title = ?, content = ?, tags = ?, is_favorite = ?, updated_at = datetime('now')
+        SET title = ?, content = ?, tags = ?, is_favorite = ?, notebook_id = ?, updated_at = datetime('now')
         WHERE id = ? AND user_id = ?
-      `).bind(finalTitle, content, tags, is_favorite || false, id, userId).run();
+      `).bind(finalTitle, content, tags, is_favorite || false, notebook_id ?? null, id, userId).run();
     }
 
     if (!updateResult.success) {

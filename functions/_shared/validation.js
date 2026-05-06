@@ -31,7 +31,11 @@ export const MemoSchema = z.object({
     .default(false),
     
   is_archived: z.boolean()
+    .optional(),
+
+  notebook_id: z.number().int().positive()
     .optional()
+    .nullable()
 });
 
 /**
