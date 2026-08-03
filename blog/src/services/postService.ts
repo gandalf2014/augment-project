@@ -282,6 +282,80 @@ export class PostService {
       .bind(id).run();
   }
 
+  // 获取上一篇和下一篇文章
+  async getAdjacentPosts(postId: number): Promise<{ prev: Post | null; next: Post | null }> {
+    // 获取上一篇（更早发布的文章）
+    const prevPost = await this.db.prepare(`
+      SELECT id, title, slug, published_at
+      FROM posts
+      WHERE status = 'published' AND published_at < (
+        SELECT published_at FROM posts WHERE id = ?
+      )
+      ORDER BY published_at DESC
+      LIMIT 1
+    `).bind(postId).first<Post>();
+
+    // 获取下一篇（更晚发布的文章）
+    const nextPost = await this.db.prepare(`
+      SELECT id, title, slug, published_at
+      FROM posts
+      WHERE status = 'published' AND published_at > (
+        SELECT published_at FROM posts WHERE id = ?
+      )
+      ORDER BY published_at ASC
+      LIMIT 1
+    `).bind(postId).first<Post>();
+
+    return { prev: prevPost || null, next: nextPost || null };
+  }
+
+  // 获取相关文章（基于相同分类或标签）
+  async getRelatedPosts(postId: number, categoryId?: number, tagIds?: number[], limit: number = 5): Promise<PostWithDetails[]> {
+    let query = `
+      SELECT DISTINCT
+        p.id, p.title, p.slug, p.excerpt, p.featured_image, p.view_count,
+        p.comment_count, p.published_at, p.created_at,
+        c.name as category_name, c.slug as category_slug, c.color as category_color
+      FROM posts p
+      LEFT JOIN categories c ON p.category_id = c.id
+      LEFT JOIN post_tags pt ON p.id = pt.post_id
+      WHERE p.status = 'published' AND p.id != ?
+    `;
+
+    const conditions: string[] = [];
+    const bindings: any[] = [postId];
+
+    if (categoryId) {
+      conditions.push('p.category_id = ?');
+      bindings.push(categoryId);
+    }
+
+    if (tagIds && tagIds.length > 0) {
+      conditions.push(`pt.tag_id IN (${tagIds.map(() => '?').join(',')})`);
+      bindings.push(...tagIds);
+    }
+
+    if (conditions.length > 0) {
+      query += ` AND (${conditions.join(' OR ')})`;
+    }
+
+    query += ` ORDER BY p.view_count DESC, p.published_at DESC LIMIT ?`;
+    bindings.push(limit);
+
+    const result = await this.db.prepare(query).bind(...bindings).all<any>();
+
+    return result.results?.map(post => ({
+      ...post,
+      category: post.category_name ? {
+        id: post.category_id,
+        name: post.category_name,
+        slug: post.category_slug,
+        color: post.category_color
+      } : undefined,
+      tags: []
+    })) || [];
+  }
+
   // 为文章附加标签信息
   private async attachTagsToPosts(posts: any[]): Promise<PostWithDetails[]> {
     if (posts.length === 0) return [];

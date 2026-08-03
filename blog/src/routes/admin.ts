@@ -23,7 +23,22 @@ function escapeHtml(text: string): string {
     .replace(/'/g, '&#39;');
 }
 
-// 辅助函数：获取评论状态徽章样式
+
+
+// Helper: embed a string safely into a single-quoted JS literal inside an onclick attribute.
+// JS-escape first (backslash and quote), then HTML-escape, to prevent
+// "HTML attribute decode -> JS string breakout" double-injection.
+// Example: payload x');alert(1)// becomes x\');alert(1)// — \' is an escaped quote in JS.
+function jsAttr(text: string): string {
+  if (!text) return '';
+  return escapeHtml(String(text)
+    .replace(/\\/g, '\\\\')
+    .replace(/'/g, "\\'")
+    .replace(/\r/g, '\\r')
+    .replace(/\n/g, '\\n')
+    .replace(/\u2028/g, '\\u2028')
+    .replace(/\u2029/g, '\\u2029'));
+}
 function getStatusBadgeClass(status: string): string {
   switch (status) {
     case 'pending':
@@ -55,28 +70,11 @@ function getStatusText(status: string): string {
   }
 }
 
-// 辅助函数：从请求中获取用户信息（支持 token 参数）
-async function getUserFromRequest(request: Request, env: Env): Promise<any> {
-  let user = (request as any).user;
-
-  // 如果没有用户但有 token 参数，尝试验证 token
-  if (!user) {
-    const url = new URL(request.url);
-    const token = url.searchParams.get('token');
-
-    if (token) {
-      try {
-        const { verifyJWT } = await import('../utils/auth');
-        user = await verifyJWT(token, env.JWT_SECRET);
-        // 将用户信息添加到请求中
-        (request as any).user = user;
-      } catch (error) {
-        console.error('Token verification failed:', error);
-      }
-    }
-  }
-
-  return user;
+// Helper: get the authenticated user from the request.
+// optionalAuthMiddleware parses Authorization: Bearer <token> into request.user.
+// Tokens are never accepted via URL params (would leak to logs/history/Referer).
+async function getUserFromRequest(request: Request): Promise<any> {
+  return (request as any).user || null;
 }
 
 export function registerAdminRoutes(router: Router) {
@@ -84,7 +82,7 @@ export function registerAdminRoutes(router: Router) {
   // 管理后台首页
   router.get('/admin', async (request, env: Env, ctx, params) => {
     try {
-      const user = await getUserFromRequest(request, env);
+      const user = await getUserFromRequest(request);
 
       if (!user) {
         // 返回一个检查 localStorage 的页面
@@ -127,6 +125,7 @@ export function registerAdminRoutes(router: Router) {
       return new Response(html, {
         headers: {
           'Content-Type': 'text/html; charset=utf-8',
+          'X-Authenticated': 'true',
         },
       });
     } catch (error) {
@@ -148,7 +147,7 @@ export function registerAdminRoutes(router: Router) {
   // 文章管理页面
   router.get('/admin/posts', async (request, env: Env, ctx, params) => {
     try {
-      const user = await getUserFromRequest(request, env);
+      const user = await getUserFromRequest(request);
 
       if (!user) {
         return new Response('Unauthorized', { status: 401 });
@@ -181,7 +180,7 @@ export function registerAdminRoutes(router: Router) {
   // 新建文章页面
   router.get('/admin/posts/new', async (request, env: Env, ctx, params) => {
     try {
-      const user = await getUserFromRequest(request, env);
+      const user = await getUserFromRequest(request);
 
       if (!user) {
         return new Response('Unauthorized', { status: 401 });
@@ -206,13 +205,13 @@ export function registerAdminRoutes(router: Router) {
   // 编辑文章页面
   router.get('/admin/posts/:id/edit', async (request, env: Env, ctx, params) => {
     try {
-      const user = await getUserFromRequest(request, env);
+      const user = await getUserFromRequest(request);
 
       if (!user) {
         return new Response('Unauthorized', { status: 401 });
       }
 
-      const postId = parseInt(params.id);
+      const postId = parseInt(params!.id);
       const postService = new PostService(env.DB);
       const categoryService = new CategoryService(env.DB);
 
@@ -241,7 +240,7 @@ export function registerAdminRoutes(router: Router) {
   // 评论管理页面
   router.get('/admin/comments', async (request, env: Env, ctx, params) => {
     try {
-      const user = await getUserFromRequest(request, env);
+      const user = await getUserFromRequest(request);
 
       if (!user) {
         return new Response('Unauthorized', { status: 401 });
@@ -274,7 +273,7 @@ export function registerAdminRoutes(router: Router) {
   // 分类管理页面
   router.get('/admin/categories', async (request, env: Env, ctx, params) => {
     try {
-      const user = await getUserFromRequest(request, env);
+      const user = await getUserFromRequest(request);
 
       if (!user) {
         return new Response('Unauthorized', { status: 401 });
@@ -299,7 +298,7 @@ export function registerAdminRoutes(router: Router) {
   // 标签管理页面
   router.get('/admin/tags', async (request, env: Env, ctx, params) => {
     try {
-      const user = await getUserFromRequest(request, env);
+      const user = await getUserFromRequest(request);
 
       if (!user) {
         return new Response('Unauthorized', { status: 401 });
@@ -324,7 +323,7 @@ export function registerAdminRoutes(router: Router) {
   // 用户管理页面（仅管理员）
   router.get('/admin/users', async (request, env: Env, ctx, params) => {
     try {
-      const user = await getUserFromRequest(request, env);
+      const user = await getUserFromRequest(request);
 
       if (!user) {
         return new Response('Unauthorized', { status: 401 });
@@ -393,16 +392,19 @@ function renderAdminCheckAuth(): string {
       }
 
       try {
-        // 验证 token 是否有效
-        const response = await fetch('/api/auth/me', {
+        // Request the admin page with the Authorization header so the token never appears in the URL
+        const response = await fetch('/admin', {
           headers: {
             'Authorization': 'Bearer ' + token
           }
         });
 
-        if (response.ok) {
-          // Token 有效，重新请求管理后台页面
-          window.location.href = '/admin?token=' + encodeURIComponent(token);
+        if (response.ok && response.headers.get('X-Authenticated') === 'true') {
+          // Token 有效，用服务端渲染的管理后台页面替换当前文档
+          const html = await response.text();
+          document.open();
+          document.write(html);
+          document.close();
         } else {
           // Token 无效，清除并跳转到登录页面
           localStorage.removeItem('auth_token');
@@ -438,38 +440,107 @@ function renderLoginPage(): string {
   </script>
 </head>
 <body class="bg-slate-900 dark:bg-slate-900 min-h-screen flex items-center justify-center">
-  <div class="max-w-md w-full bg-slate-800 dark:bg-slate-800 rounded-lg shadow-md p-8 border border-slate-700 dark:border-slate-700">
-    <h1 class="text-2xl font-bold text-center text-gray-100 dark:text-gray-100 mb-8">管理员登录</h1>
-    
-    <form id="login-form" class="space-y-6">
-      <div>
-        <label for="email" class="block text-sm font-medium text-gray-300 dark:text-gray-300 mb-1">邮箱</label>
-        <input type="email" id="email" name="email" required
-               class="w-full px-3 py-2 bg-slate-700 dark:bg-slate-700 border border-slate-600 dark:border-slate-600 rounded-md text-gray-100 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+  <div class="max-w-md w-full">
+    <!-- 返回首页链接 -->
+    <div class="mb-6">
+      <a href="/" class="inline-flex items-center text-gray-400 hover:text-gray-200 transition-colors">
+        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
+        </svg>
+        返回首页
+      </a>
+    </div>
+
+    <div class="bg-slate-800 dark:bg-slate-800 rounded-lg shadow-md p-8 border border-slate-700 dark:border-slate-700">
+      <div class="text-center mb-8">
+        <div class="w-16 h-16 bg-blue-600 rounded-full flex items-center justify-center mx-auto mb-4">
+          <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>
+          </svg>
+        </div>
+        <h1 class="text-2xl font-bold text-gray-100 dark:text-gray-100">管理员登录</h1>
+        <p class="text-gray-400 mt-2">请输入您的账户信息</p>
       </div>
 
-      <div>
-        <label for="password" class="block text-sm font-medium text-gray-300 dark:text-gray-300 mb-1">密码</label>
-        <input type="password" id="password" name="password" required
-               class="w-full px-3 py-2 bg-slate-700 dark:bg-slate-700 border border-slate-600 dark:border-slate-600 rounded-md text-gray-100 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-      </div>
+      <form id="login-form" class="space-y-6">
+        <div>
+          <label for="email" class="block text-sm font-medium text-gray-300 dark:text-gray-300 mb-2">邮箱</label>
+          <div class="relative">
+            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <svg class="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 12a4 4 0 10-8 0 4 4 0 008 0zm0 0v1.5a2.5 2.5 0 005 0V12a9 9 0 10-9 9m4.5-1.206a8.959 8.959 0 01-4.5 1.207"></path>
+              </svg>
+            </div>
+            <input type="email" id="email" name="email" required
+                   class="w-full pl-10 pr-3 py-3 bg-slate-700 dark:bg-slate-700 border border-slate-600 dark:border-slate-600 rounded-lg text-gray-100 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
+                   placeholder="admin@example.com">
+          </div>
+        </div>
 
-      <button type="submit"
-              class="w-full bg-blue-600 dark:bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 dark:hover:bg-blue-700 transition-colors">
-        登录
-      </button>
-    </form>
-    
-    <div id="error-message" class="mt-4 text-red-600 text-sm hidden"></div>
+        <div>
+          <label for="password" class="block text-sm font-medium text-gray-300 dark:text-gray-300 mb-2">密码</label>
+          <div class="relative">
+            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <svg class="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>
+              </svg>
+            </div>
+            <input type="password" id="password" name="password" required
+                   class="w-full pl-10 pr-12 py-3 bg-slate-700 dark:bg-slate-700 border border-slate-600 dark:border-slate-600 rounded-lg text-gray-100 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
+                   placeholder="请输入密码">
+            <button type="button" id="toggle-password" class="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-200 transition-colors">
+              <svg id="eye-icon" class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+              </svg>
+            </button>
+          </div>
+        </div>
+
+        <button type="submit"
+                class="w-full bg-blue-600 dark:bg-blue-600 text-white py-3 px-4 rounded-lg hover:bg-blue-700 dark:hover:bg-blue-700 transition-colors font-medium flex items-center justify-center">
+          <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1"></path>
+          </svg>
+          登录
+        </button>
+      </form>
+
+      <div id="error-message" class="mt-4 p-3 bg-red-900/50 border border-red-700 rounded-lg text-red-300 text-sm hidden"></div>
+    </div>
+
+    <p class="text-center text-gray-500 text-sm mt-6">
+      默认账户: admin@example.com / password
+    </p>
   </div>
-  
+
   <script>
+    // 密码可见性切换
+    document.getElementById('toggle-password').addEventListener('click', function() {
+      const passwordInput = document.getElementById('password');
+      const eyeIcon = document.getElementById('eye-icon');
+
+      if (passwordInput.type === 'password') {
+        passwordInput.type = 'text';
+        eyeIcon.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21"></path>';
+      } else {
+        passwordInput.type = 'password';
+        eyeIcon.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>';
+      }
+    });
+
+    // 登录表单提交
     document.getElementById('login-form').addEventListener('submit', async function(e) {
       e.preventDefault();
-      
+
+      const submitBtn = e.target.querySelector('button[type="submit"]');
+      const originalText = submitBtn.innerHTML;
+      submitBtn.disabled = true;
+      submitBtn.innerHTML = '<svg class="animate-spin h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>登录中...';
+
       const formData = new FormData(e.target);
       const data = Object.fromEntries(formData.entries());
-      
+
       try {
         const response = await fetch('/api/auth/login', {
           method: 'POST',
@@ -478,20 +549,25 @@ function renderLoginPage(): string {
           },
           body: JSON.stringify(data)
         });
-        
+
         const result = await response.json();
-        
+
         if (result.success) {
           localStorage.setItem('auth_token', result.data.token);
-          // 跳转到管理后台
           window.location.href = '/admin';
         } else {
-          document.getElementById('error-message').textContent = result.error;
-          document.getElementById('error-message').classList.remove('hidden');
+          const errorDiv = document.getElementById('error-message');
+          errorDiv.textContent = result.error;
+          errorDiv.classList.remove('hidden');
+          submitBtn.innerHTML = originalText;
+          submitBtn.disabled = false;
         }
       } catch (error) {
-        document.getElementById('error-message').textContent = '登录失败，请稍后重试';
-        document.getElementById('error-message').classList.remove('hidden');
+        const errorDiv = document.getElementById('error-message');
+        errorDiv.textContent = '登录失败，请稍后重试';
+        errorDiv.classList.remove('hidden');
+        submitBtn.innerHTML = originalText;
+        submitBtn.disabled = false;
       }
     });
   </script>
@@ -605,7 +681,21 @@ function renderAdminDashboard(data: any): string {
     function navigateWithToken(path) {
       const token = localStorage.getItem('auth_token');
       if (token) {
-        window.location.href = path + '?token=' + encodeURIComponent(token);
+        // Pass the token via the Authorization header so it never appears in the URL / logs / Referer
+        fetch(path, { headers: { 'Authorization': 'Bearer ' + token } })
+          .then(function (response) {
+            if (response.ok) {
+              return response.text().then(function (html) {
+                document.open();
+                document.write(html);
+                document.close();
+              });
+            }
+            window.location.href = '/admin/login';
+          })
+          .catch(function () {
+            window.location.href = '/admin/login';
+          });
       } else {
         window.location.href = '/admin/login';
       }
@@ -645,7 +735,21 @@ function renderAdminHeader(user: any): string {
     function navigateWithToken(path) {
       const token = localStorage.getItem('auth_token');
       if (token) {
-        window.location.href = path + '?token=' + encodeURIComponent(token);
+        // Pass the token via the Authorization header so it never appears in the URL / logs / Referer
+        fetch(path, { headers: { 'Authorization': 'Bearer ' + token } })
+          .then(function (response) {
+            if (response.ok) {
+              return response.text().then(function (html) {
+                document.open();
+                document.write(html);
+                document.close();
+              });
+            }
+            window.location.href = '/admin/login';
+          })
+          .catch(function () {
+            window.location.href = '/admin/login';
+          });
       } else {
         window.location.href = '/admin/login';
       }
@@ -733,7 +837,21 @@ function renderPostsManagement(user: any, postsResult: any): string {
     function navigateWithToken(path) {
       const token = localStorage.getItem('auth_token');
       if (token) {
-        window.location.href = path + '?token=' + encodeURIComponent(token);
+        // Pass the token via the Authorization header so it never appears in the URL / logs / Referer
+        fetch(path, { headers: { 'Authorization': 'Bearer ' + token } })
+          .then(function (response) {
+            if (response.ok) {
+              return response.text().then(function (html) {
+                document.open();
+                document.write(html);
+                document.close();
+              });
+            }
+            window.location.href = '/admin/login';
+          })
+          .catch(function () {
+            window.location.href = '/admin/login';
+          });
       } else {
         window.location.href = '/admin/login';
       }
@@ -912,7 +1030,7 @@ function renderCommentsManagement(commentsResult: any): string {
   <script>
     // 获取JWT token
     function getToken() {
-      return localStorage.getItem('token');
+      return localStorage.getItem('auth_token');
     }
 
     // 返回上一页
@@ -1086,7 +1204,7 @@ function renderCategoriesManagement(categories: any[]): string {
               </p>
             </div>
             <div class="flex items-center gap-2 ml-4">
-              <button onclick="editCategory(${category.id}, '${escapeHtml(category.name)}', '${escapeHtml(category.slug)}', '${escapeHtml(category.description || '')}', ${category.is_active})"
+              <button onclick="editCategory(${category.id}, '${jsAttr(category.name)}', '${jsAttr(category.slug)}', '${jsAttr(category.description || '')}', ${category.is_active})"
                       class="px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white text-sm rounded transition-colors">
                 编辑
               </button>
@@ -1094,7 +1212,7 @@ function renderCategoriesManagement(categories: any[]): string {
                       class="px-3 py-1 ${category.is_active ? 'bg-yellow-600 hover:bg-yellow-700' : 'bg-green-600 hover:bg-green-700'} text-white text-sm rounded transition-colors">
                 ${category.is_active ? '禁用' : '启用'}
               </button>
-              <button onclick="deleteCategory(${category.id}, '${escapeHtml(category.name)}')"
+              <button onclick="deleteCategory(${category.id}, '${jsAttr(category.name)}')"
                       class="px-3 py-1 bg-red-600 hover:bg-red-700 text-white text-sm rounded transition-colors">
                 删除
               </button>
@@ -1154,7 +1272,7 @@ function renderCategoriesManagement(categories: any[]): string {
   <script>
     // 获取JWT token
     function getToken() {
-      return localStorage.getItem('token');
+      return localStorage.getItem('auth_token');
     }
 
     // 返回上一页
@@ -1355,18 +1473,247 @@ function renderCategoriesManagement(categories: any[]): string {
 // 标签管理页面模板
 function renderTagsManagement(tags: any[]): string {
   return `<!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="zh-CN" class="dark">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>标签管理</title>
   <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = { darkMode: 'class' }
+  </script>
 </head>
-<body class="bg-gray-100">
+<body class="bg-slate-900 dark:bg-slate-900">
   <div class="container mx-auto px-4 py-8">
-    <h1 class="text-3xl font-bold text-gray-900 mb-8">标签管理</h1>
-    <p>共 ${tags.length} 个标签</p>
+    <div class="flex items-center justify-between mb-8">
+      <div>
+        <h1 class="text-3xl font-bold text-gray-100 dark:text-gray-100">标签管理</h1>
+        <p class="text-gray-300 dark:text-gray-300 mt-2">共 ${tags.length} 个标签</p>
+      </div>
+      <div class="flex items-center gap-4">
+        <button onclick="showCreateForm()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors">
+          新建标签
+        </button>
+        <button onclick="goBack()" class="bg-slate-700 hover:bg-slate-600 text-gray-100 px-4 py-2 rounded-lg transition-colors">
+          返回
+        </button>
+      </div>
+    </div>
+
+    <!-- 新建标签表单 -->
+    <div id="createForm" class="hidden mb-8 bg-slate-800 dark:bg-slate-800 rounded-lg border border-slate-700 dark:border-slate-700 p-6">
+      <h2 class="text-xl font-semibold text-gray-100 dark:text-gray-100 mb-4">新建标签</h2>
+      <form onsubmit="createTag(event)" class="space-y-4">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-sm font-medium text-gray-300 dark:text-gray-300 mb-2">标签名称</label>
+            <input type="text" id="tagName" required
+                   class="w-full px-3 py-2 bg-slate-700 dark:bg-slate-700 border border-slate-600 dark:border-slate-600 rounded-lg text-gray-100 dark:text-gray-100 focus:ring-2 focus:ring-blue-500">
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-300 dark:text-gray-300 mb-2">标签别名 (URL)</label>
+            <input type="text" id="tagSlug"
+                   class="w-full px-3 py-2 bg-slate-700 dark:bg-slate-700 border border-slate-600 dark:border-slate-600 rounded-lg text-gray-100 dark:text-gray-100 focus:ring-2 focus:ring-blue-500"
+                   placeholder="留空自动生成">
+          </div>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-300 dark:text-gray-300 mb-2">描述</label>
+          <textarea id="tagDescription" rows="2"
+                    class="w-full px-3 py-2 bg-slate-700 dark:bg-slate-700 border border-slate-600 dark:border-slate-600 rounded-lg text-gray-100 dark:text-gray-100 focus:ring-2 focus:ring-blue-500"></textarea>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-300 dark:text-gray-300 mb-2">颜色</label>
+          <div class="flex items-center gap-4">
+            <input type="color" id="tagColor" value="#10B981"
+                   class="w-16 h-10 rounded cursor-pointer border-0">
+            <input type="text" id="tagColorText" value="#10B981"
+                   class="px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-gray-100 w-32">
+          </div>
+        </div>
+        <div class="flex items-center gap-4">
+          <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors">
+            创建标签
+          </button>
+          <button type="button" onclick="hideCreateForm()" class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg transition-colors">
+            取消
+          </button>
+        </div>
+      </form>
+    </div>
+
+    <!-- 标签列表 -->
+    <div class="flex flex-wrap gap-4">
+      ${tags.map((tag: any) => `
+        <div class="bg-slate-800 dark:bg-slate-800 rounded-lg border border-slate-700 dark:border-slate-700 p-4 min-w-48">
+          <div class="flex items-center justify-between mb-2">
+            <span class="px-3 py-1 rounded-full text-sm font-medium" style="background-color: ${tag.color}20; color: ${tag.color}">
+              #${escapeHtml(tag.name)}
+            </span>
+            <span class="text-xs text-gray-400">${tag.usage_count || 0} 篇</span>
+          </div>
+          ${tag.description ? `<p class="text-sm text-gray-400 truncate">${escapeHtml(tag.description)}</p>` : ''}
+          <div class="flex items-center gap-2 mt-3">
+            <button onclick="editTag(${tag.id}, '${jsAttr(tag.name)}', '${jsAttr(tag.slug)}', '${jsAttr(tag.description || '')}', '${jsAttr(tag.color)}')"
+                    class="text-xs text-blue-400 hover:text-blue-300">编辑</button>
+            <button onclick="deleteTag(${tag.id}, '${jsAttr(tag.name)}')"
+                    class="text-xs text-red-400 hover:text-red-300">删除</button>
+          </div>
+        </div>
+      `).join('')}
+    </div>
+
+    ${tags.length === 0 ? `
+      <div class="text-center py-12">
+        <p class="text-gray-400 dark:text-gray-400 text-lg">暂无标签</p>
+        <button onclick="showCreateForm()" class="mt-4 bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg transition-colors">
+          创建第一个标签
+        </button>
+      </div>
+    ` : ''}
   </div>
+
+  <!-- 编辑标签模态框 -->
+  <div id="editModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+    <div class="bg-slate-800 rounded-lg border border-slate-700 p-6 w-full max-w-md mx-4">
+      <h2 class="text-xl font-semibold text-gray-100 mb-4">编辑标签</h2>
+      <form onsubmit="updateTag(event)" class="space-y-4">
+        <input type="hidden" id="editTagId">
+        <div>
+          <label class="block text-sm font-medium text-gray-300 mb-2">标签名称</label>
+          <input type="text" id="editTagName" required
+                 class="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-gray-100 focus:ring-2 focus:ring-blue-500">
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-300 mb-2">标签别名</label>
+          <input type="text" id="editTagSlug"
+                 class="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-gray-100 focus:ring-2 focus:ring-blue-500">
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-300 mb-2">描述</label>
+          <textarea id="editTagDescription" rows="2"
+                    class="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-gray-100 focus:ring-2 focus:ring-blue-500"></textarea>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-300 mb-2">颜色</label>
+          <div class="flex items-center gap-4">
+            <input type="color" id="editTagColor" class="w-16 h-10 rounded cursor-pointer border-0">
+            <input type="text" id="editTagColorText" class="px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-gray-100 w-32">
+          </div>
+        </div>
+        <div class="flex items-center gap-4">
+          <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors">更新</button>
+          <button type="button" onclick="hideEditModal()" class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg transition-colors">取消</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    function getToken() { return localStorage.getItem('auth_token'); }
+    function goBack() { window.location.href = '/admin'; }
+
+    function showCreateForm() {
+      document.getElementById('createForm').classList.remove('hidden');
+      document.getElementById('tagName').focus();
+    }
+
+    function hideCreateForm() {
+      document.getElementById('createForm').classList.add('hidden');
+      document.getElementById('tagName').value = '';
+      document.getElementById('tagSlug').value = '';
+      document.getElementById('tagDescription').value = '';
+      document.getElementById('tagColor').value = '#10B981';
+      document.getElementById('tagColorText').value = '#10B981';
+    }
+
+    // 颜色同步
+    document.getElementById('tagColor').addEventListener('input', function() {
+      document.getElementById('tagColorText').value = this.value;
+    });
+    document.getElementById('tagColorText').addEventListener('input', function() {
+      document.getElementById('tagColor').value = this.value;
+    });
+
+    // 自动生成别名
+    document.getElementById('tagName').addEventListener('input', function() {
+      const slug = this.value.toLowerCase().replace(/[^a-z0-9\u4e00-\u9fa5]/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '');
+      document.getElementById('tagSlug').value = slug;
+    });
+
+    async function createTag(event) {
+      event.preventDefault();
+      const token = getToken();
+      if (!token) { alert('请先登录'); return; }
+
+      try {
+        const response = await fetch('/api/tags', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+          body: JSON.stringify({
+            name: document.getElementById('tagName').value,
+            slug: document.getElementById('tagSlug').value || undefined,
+            description: document.getElementById('tagDescription').value || undefined,
+            color: document.getElementById('tagColor').value
+          })
+        });
+        const result = await response.json();
+        if (result.success) { location.reload(); }
+        else { alert('创建失败：' + result.error); }
+      } catch (error) { alert('创建失败'); }
+    }
+
+    function editTag(id, name, slug, description, color) {
+      document.getElementById('editTagId').value = id;
+      document.getElementById('editTagName').value = name;
+      document.getElementById('editTagSlug').value = slug;
+      document.getElementById('editTagDescription').value = description;
+      document.getElementById('editTagColor').value = color;
+      document.getElementById('editTagColorText').value = color;
+      document.getElementById('editModal').classList.remove('hidden');
+    }
+
+    function hideEditModal() { document.getElementById('editModal').classList.add('hidden'); }
+
+    async function updateTag(event) {
+      event.preventDefault();
+      const token = getToken();
+      if (!token) { alert('请先登录'); return; }
+
+      const id = document.getElementById('editTagId').value;
+      try {
+        const response = await fetch('/api/tags/' + id, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+          body: JSON.stringify({
+            name: document.getElementById('editTagName').value,
+            slug: document.getElementById('editTagSlug').value,
+            description: document.getElementById('editTagDescription').value || undefined,
+            color: document.getElementById('editTagColor').value
+          })
+        });
+        const result = await response.json();
+        if (result.success) { location.reload(); }
+        else { alert('更新失败：' + result.error); }
+      } catch (error) { alert('更新失败'); }
+    }
+
+    async function deleteTag(id, name) {
+      if (!confirm('确定要删除标签"' + name + '"吗？')) return;
+      const token = getToken();
+      if (!token) { alert('请先登录'); return; }
+
+      try {
+        const response = await fetch('/api/tags/' + id, {
+          method: 'DELETE',
+          headers: { 'Authorization': 'Bearer ' + token }
+        });
+        const result = await response.json();
+        if (result.success) { location.reload(); }
+        else { alert('删除失败：' + result.error); }
+      } catch (error) { alert('删除失败'); }
+    }
+  </script>
 </body>
 </html>`;
 }
@@ -1404,11 +1751,42 @@ function renderPostEditor(user: any, post: any, categories: any[]): string {
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>${title}</title>
   <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
   <script>
     tailwind.config = {
       darkMode: 'class'
     }
+    marked.setOptions({
+      highlight: function(code, lang) {
+        if (lang && hljs.getLanguage(lang)) {
+          return hljs.highlight(code, { language: lang }).value;
+        }
+        return hljs.highlightAuto(code).value;
+      },
+      breaks: true,
+      gfm: true
+    });
   </script>
+  <style>
+    .preview-content { line-height: 1.7; }
+    .preview-content h1, .preview-content h2, .preview-content h3 { font-weight: bold; margin-top: 1.5rem; margin-bottom: 0.5rem; }
+    .preview-content h1 { font-size: 1.875rem; }
+    .preview-content h2 { font-size: 1.5rem; }
+    .preview-content h3 { font-size: 1.25rem; }
+    .preview-content p { margin-bottom: 1rem; }
+    .preview-content pre { background: #1e1e1e; padding: 1rem; border-radius: 0.5rem; overflow-x: auto; margin: 1rem 0; }
+    .preview-content code { font-family: monospace; }
+    .preview-content ul, .preview-content ol { margin-left: 1.5rem; margin-bottom: 1rem; }
+    .preview-content li { margin-bottom: 0.25rem; }
+    .preview-content blockquote { border-left: 4px solid #60A5FA; padding-left: 1rem; color: #9CA3AF; margin: 1rem 0; }
+    .preview-content a { color: #60A5FA; text-decoration: underline; }
+    .preview-content img { max-width: 100%; border-radius: 0.5rem; margin: 1rem 0; }
+    .preview-content table { width: 100%; border-collapse: collapse; margin: 1rem 0; }
+    .preview-content th, .preview-content td { border: 1px solid #374151; padding: 0.5rem; }
+    .preview-content th { background: #1F2937; }
+  </style>
 </head>
 <body class="bg-slate-900 dark:bg-slate-900">
   ${renderAdminHeader(user)}
@@ -1447,12 +1825,32 @@ function renderPostEditor(user: any, post: any, categories: any[]): string {
                     placeholder="请输入文章摘要">${isEdit ? escapeHtml(post.excerpt || '') : ''}</textarea>
         </div>
 
-        <!-- 文章内容 -->
+        <!-- 文章内容与预览 -->
         <div>
-          <label for="content" class="block text-sm font-medium text-gray-300 dark:text-gray-300 mb-2">文章内容</label>
-          <textarea id="content" name="content" rows="15"
-                    class="w-full px-3 py-2 bg-slate-700 dark:bg-slate-700 border border-slate-600 dark:border-slate-600 rounded-md text-gray-100 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-500"
-                    placeholder="请输入文章内容（支持 Markdown）" required>${isEdit ? escapeHtml(post.content || '') : ''}</textarea>
+          <div class="flex items-center justify-between mb-2">
+            <label for="content" class="block text-sm font-medium text-gray-300 dark:text-gray-300">文章内容 (Markdown)</label>
+            <div class="flex items-center space-x-4 text-sm">
+              <span id="wordCount" class="text-gray-400">0 字</span>
+              <span id="readTime" class="text-gray-400">约 1 分钟阅读</span>
+              <button type="button" onclick="togglePreview()" class="text-blue-400 hover:text-blue-300">
+                <span id="previewBtn">显示预览</span>
+              </button>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 gap-4" id="editorContainer">
+            <!-- 编辑器 -->
+            <div id="editorPanel">
+              <textarea id="content" name="content" rows="20"
+                        class="w-full px-3 py-2 bg-slate-700 dark:bg-slate-700 border border-slate-600 dark:border-slate-600 rounded-md text-gray-100 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-500 font-mono text-sm"
+                        placeholder="请输入文章内容（支持 Markdown）" required>${isEdit ? escapeHtml(post.content || '') : ''}</textarea>
+            </div>
+
+            <!-- 预览面板 -->
+            <div id="previewPanel" class="hidden">
+              <div id="preview" class="w-full min-h-96 px-4 py-3 bg-slate-700 dark:bg-slate-700 border border-slate-600 dark:border-slate-600 rounded-md text-gray-100 dark:text-gray-100 overflow-auto preview-content"></div>
+            </div>
+          </div>
         </div>
 
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -1506,13 +1904,65 @@ function renderPostEditor(user: any, post: any, categories: any[]): string {
   </div>
 
   <script>
+    let previewVisible = false;
+
     function navigateWithToken(path) {
       const token = localStorage.getItem('auth_token');
       if (token) {
-        window.location.href = path + '?token=' + encodeURIComponent(token);
+        // Pass the token via the Authorization header so it never appears in the URL / logs / Referer
+        fetch(path, { headers: { 'Authorization': 'Bearer ' + token } })
+          .then(function (response) {
+            if (response.ok) {
+              return response.text().then(function (html) {
+                document.open();
+                document.write(html);
+                document.close();
+              });
+            }
+            window.location.href = '/admin/login';
+          })
+          .catch(function () {
+            window.location.href = '/admin/login';
+          });
       } else {
         window.location.href = '/admin/login';
       }
+    }
+
+    function togglePreview() {
+      previewVisible = !previewVisible;
+      const editorPanel = document.getElementById('editorPanel');
+      const previewPanel = document.getElementById('previewPanel');
+      const previewBtn = document.getElementById('previewBtn');
+      const editorContainer = document.getElementById('editorContainer');
+
+      if (previewVisible) {
+        editorContainer.classList.remove('grid-cols-1');
+        editorContainer.classList.add('grid-cols-2');
+        previewPanel.classList.remove('hidden');
+        previewBtn.textContent = '隐藏预览';
+        updatePreview();
+      } else {
+        editorContainer.classList.remove('grid-cols-2');
+        editorContainer.classList.add('grid-cols-1');
+        previewPanel.classList.add('hidden');
+        previewBtn.textContent = '显示预览';
+      }
+    }
+
+    function updatePreview() {
+      const content = document.getElementById('content').value;
+      const preview = document.getElementById('preview');
+      preview.innerHTML = marked.parse(content);
+    }
+
+    function updateStats() {
+      const content = document.getElementById('content').value;
+      const wordCount = content.length;
+      const readTime = Math.max(1, Math.ceil(wordCount / 400));
+
+      document.getElementById('wordCount').textContent = wordCount + ' 字';
+      document.getElementById('readTime').textContent = '约 ' + readTime + ' 分钟阅读';
     }
 
     // 自动生成别名
@@ -1524,6 +1974,17 @@ function renderPostEditor(user: any, post: any, categories: any[]): string {
         .replace(/^-|-$/g, '');
       document.getElementById('slug').value = slug;
     });
+
+    // 实时预览和统计
+    document.getElementById('content').addEventListener('input', function() {
+      updateStats();
+      if (previewVisible) {
+        updatePreview();
+      }
+    });
+
+    // 初始化统计
+    updateStats();
 
     // 表单提交
     document.getElementById('postForm').addEventListener('submit', async function(e) {

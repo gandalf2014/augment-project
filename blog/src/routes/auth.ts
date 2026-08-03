@@ -3,413 +3,313 @@
  */
 
 import type { Router } from '../utils/router';
-import type { Env, LoginRequest } from '../types/database';
+import type { Env } from '../types/database';
 import { UserService } from '../services/userService';
-import { authMiddleware, jsonResponse, getRequestBody } from '../middleware';
+import { authMiddleware, adminMiddleware, jsonResponse, getRequestBody, rateLimitMiddleware } from '../middleware';
+import { validate, LoginSchema, RegisterSchema } from '../utils/validation';
+import { NotFoundError, ValidationError, UnauthorizedError, ForbiddenError } from '../utils/errors';
 
 export function registerAuthRoutes(router: Router) {
-  
-  // 用户登录
+
+  // Login (rate-limited per IP: 5/min to prevent brute force)
   router.post('/api/auth/login', async (request, env: Env, ctx, params) => {
+    const rawData = getRequestBody(ctx);
+    const credentials = validate(LoginSchema, rawData);
+
+    const userService = new UserService(env.DB);
+
     try {
-      const credentials = getRequestBody(ctx) as LoginRequest;
-      
-      // 验证必填字段
-      if (!credentials.email || !credentials.password) {
-        return jsonResponse({ 
-          success: false, 
-          error: 'Email and password are required' 
-        }, 400);
-      }
-      
-      const userService = new UserService(env.DB);
       const result = await userService.login(credentials, env.JWT_SECRET);
-      
-      return jsonResponse({ 
-        success: true, 
+      return jsonResponse({
+        success: true,
         data: result,
-        message: 'Login successful' 
+        message: '登录成功'
       });
     } catch (error) {
-      console.error('Login error:', error);
       if (error instanceof Error && error.message === 'Invalid credentials') {
-        return jsonResponse({ success: false, error: 'Invalid email or password' }, 401);
+        throw new UnauthorizedError('邮箱或密码错误');
       }
-      return jsonResponse({ success: false, error: 'Login failed' }, 500);
+      throw error;
     }
-  });
+  }, [rateLimitMiddleware({
+    limit: 5,
+    windowMs: 60000,
+    keyGenerator: (req) => req.headers.get('CF-Connecting-IP') || req.headers.get('X-Forwarded-For') || 'unknown'
+  })]);
 
   // 获取当前用户信息
   router.get('/api/auth/me', async (request, env: Env, ctx, params) => {
-    try {
-      const user = (request as any).user;
-      
-      const userService = new UserService(env.DB);
-      const fullUser = await userService.getUserById(user.id);
-      
-      if (!fullUser) {
-        return jsonResponse({ success: false, error: 'User not found' }, 404);
-      }
-      
-      // 返回用户信息（不包含密码哈希）
-      const { password_hash, ...userInfo } = fullUser;
-      
-      return jsonResponse({ success: true, data: userInfo });
-    } catch (error) {
-      console.error('Get current user error:', error);
-      return jsonResponse({ success: false, error: 'Failed to fetch user info' }, 500);
+    const user = (request as any).user;
+
+    const userService = new UserService(env.DB);
+    const fullUser = await userService.getUserById(user.id);
+
+    if (!fullUser) {
+      throw new NotFoundError('User', user.id);
     }
+
+    const { password_hash, ...userInfo } = fullUser;
+    return jsonResponse({ success: true, data: userInfo });
   }, [authMiddleware]);
 
   // 更新当前用户信息
   router.put('/api/auth/profile', async (request, env: Env, ctx, params) => {
+    const user = (request as any).user;
+    const updateData = getRequestBody(ctx);
+
+    const userService = new UserService(env.DB);
+
     try {
-      const user = (request as any).user;
-      const updateData = (request as any).body as {
-        username?: string;
-        email?: string;
-        display_name?: string;
-        avatar_url?: string;
-        bio?: string;
-      };
-      
-      const userService = new UserService(env.DB);
       const updatedUser = await userService.updateUser(user.id, updateData);
-      
-      // 返回更新后的用户信息（不包含密码哈希）
       const { password_hash, ...userInfo } = updatedUser;
-      
-      return jsonResponse({ 
-        success: true, 
+      return jsonResponse({
+        success: true,
         data: userInfo,
-        message: 'Profile updated successfully' 
+        message: '资料更新成功'
       });
     } catch (error) {
-      console.error('Update profile error:', error);
-      if (error instanceof Error) {
-        if (error.message.includes('already exists')) {
-          return jsonResponse({ success: false, error: error.message }, 400);
-        }
-        if (error.message.includes('Invalid email')) {
-          return jsonResponse({ success: false, error: error.message }, 400);
-        }
+      if (error instanceof Error && error.message.includes('already exists')) {
+        throw new ValidationError('用户名或邮箱已被使用');
       }
-      return jsonResponse({ success: false, error: 'Failed to update profile' }, 500);
+      throw error;
     }
   }, [authMiddleware]);
 
   // 更改密码
   router.put('/api/auth/password', async (request, env: Env, ctx, params) => {
+    const user = (request as any).user;
+    const { currentPassword, newPassword } = getRequestBody(ctx) as {
+      currentPassword: string;
+      newPassword: string;
+    };
+
+    if (!currentPassword || !newPassword) {
+      throw new ValidationError('请提供当前密码和新密码');
+    }
+
+    if (newPassword.length < 6) {
+      throw new ValidationError('新密码至少需要6个字符');
+    }
+
+    const userService = new UserService(env.DB);
+
     try {
-      const user = (request as any).user;
-      const { currentPassword, newPassword } = (request as any).body as {
-        currentPassword: string;
-        newPassword: string;
-      };
-      
-      // 验证必填字段
-      if (!currentPassword || !newPassword) {
-        return jsonResponse({ 
-          success: false, 
-          error: 'Current password and new password are required' 
-        }, 400);
-      }
-      
-      // 验证新密码长度
-      if (newPassword.length < 6) {
-        return jsonResponse({ 
-          success: false, 
-          error: 'New password must be at least 6 characters long' 
-        }, 400);
-      }
-      
-      const userService = new UserService(env.DB);
       await userService.updatePassword(user.id, currentPassword, newPassword);
-      
-      return jsonResponse({ 
-        success: true, 
-        message: 'Password updated successfully' 
+      return jsonResponse({
+        success: true,
+        message: '密码更新成功'
       });
     } catch (error) {
-      console.error('Update password error:', error);
       if (error instanceof Error && error.message === 'Current password is incorrect') {
-        return jsonResponse({ success: false, error: 'Current password is incorrect' }, 400);
+        throw new ValidationError('当前密码不正确');
       }
-      return jsonResponse({ success: false, error: 'Failed to update password' }, 500);
+      throw error;
     }
   }, [authMiddleware]);
 
-  // 获取所有用户（管理员功能）
+  // ==================== 管理员路由 ====================
+
+  // 获取所有用户
   router.get('/api/admin/users', async (request, env: Env, ctx, params) => {
-    try {
-      const user = (request as any).user;
-      
-      // 检查管理员权限
-      if (user.role !== 'admin') {
-        return jsonResponse({ success: false, error: 'Admin access required' }, 403);
-      }
-      
-      const url = new URL(request.url);
-      const includeInactive = url.searchParams.get('include_inactive') === 'true';
-      
-      const userService = new UserService(env.DB);
-      const users = await userService.getUsers(includeInactive);
-      
-      return jsonResponse({ success: true, data: users });
-    } catch (error) {
-      console.error('Get users error:', error);
-      return jsonResponse({ success: false, error: 'Failed to fetch users' }, 500);
+    const user = (request as any).user;
+
+    if (user.role !== 'admin') {
+      throw new ForbiddenError('需要管理员权限');
     }
+
+    const url = new URL(request.url);
+    const includeInactive = url.searchParams.get('include_inactive') === 'true';
+
+    const userService = new UserService(env.DB);
+    const users = await userService.getUsers(includeInactive);
+
+    // 移除密码哈希
+    const safeUsers = users.map((u: any) => {
+      const { password_hash, ...rest } = u;
+      return rest;
+    });
+
+    return jsonResponse({ success: true, data: safeUsers });
   }, [authMiddleware]);
 
-  // 创建用户（管理员功能）
+  // 获取用户统计
+  router.get('/api/admin/users/stats', async (request, env: Env, ctx, params) => {
+    const user = (request as any).user;
+
+    if (user.role !== 'admin') {
+      throw new ForbiddenError('需要管理员权限');
+    }
+
+    const userService = new UserService(env.DB);
+    const stats = await userService.getUserStats();
+
+    return jsonResponse({ success: true, data: stats });
+  }, [authMiddleware]);
+
+  // 创建用户
   router.post('/api/admin/users', async (request, env: Env, ctx, params) => {
+    const user = (request as any).user;
+
+    if (user.role !== 'admin') {
+      throw new ForbiddenError('需要管理员权限');
+    }
+
+    const rawData = getRequestBody(ctx);
+
+    if (!rawData.username || !rawData.email || !rawData.password || !rawData.display_name) {
+      throw new ValidationError('用户名、邮箱、密码和显示名称都是必填项');
+    }
+
+    if (rawData.password.length < 6) {
+      throw new ValidationError('密码至少需要6个字符');
+    }
+
+    const userService = new UserService(env.DB);
+
     try {
-      const user = (request as any).user;
-      
-      // 检查管理员权限
-      if (user.role !== 'admin') {
-        return jsonResponse({ success: false, error: 'Admin access required' }, 403);
-      }
-      
-      const userData = (request as any).body as {
-        username: string;
-        email: string;
-        password: string;
-        display_name: string;
-        avatar_url?: string;
-        bio?: string;
-        role?: 'admin' | 'editor';
-      };
-      
-      // 验证必填字段
-      if (!userData.username || !userData.email || !userData.password || !userData.display_name) {
-        return jsonResponse({ 
-          success: false, 
-          error: 'Username, email, password, and display name are required' 
-        }, 400);
-      }
-      
-      // 验证密码长度
-      if (userData.password.length < 6) {
-        return jsonResponse({ 
-          success: false, 
-          error: 'Password must be at least 6 characters long' 
-        }, 400);
-      }
-      
-      const userService = new UserService(env.DB);
-      const newUser = await userService.createUser(userData);
-      
-      // 返回创建的用户信息（不包含密码哈希）
+      const newUser = await userService.createUser(rawData);
       const { password_hash, ...userInfo } = newUser;
-      
-      return jsonResponse({ 
-        success: true, 
+      return jsonResponse({
+        success: true,
         data: userInfo,
-        message: 'User created successfully' 
+        message: '用户创建成功'
       }, 201);
     } catch (error) {
-      console.error('Create user error:', error);
-      if (error instanceof Error) {
-        if (error.message.includes('already exists')) {
-          return jsonResponse({ success: false, error: error.message }, 400);
-        }
-        if (error.message.includes('Invalid email')) {
-          return jsonResponse({ success: false, error: error.message }, 400);
-        }
+      if (error instanceof Error && error.message.includes('already exists')) {
+        throw new ValidationError('用户名或邮箱已存在');
       }
-      return jsonResponse({ success: false, error: 'Failed to create user' }, 500);
+      throw error;
     }
   }, [authMiddleware]);
 
-  // 更新用户（管理员功能）
+  // 更新用户
   router.put('/api/admin/users/:id', async (request, env: Env, ctx, params) => {
+    const user = (request as any).user;
+    const userId = parseInt(params!.id);
+
+    if (user.role !== 'admin') {
+      throw new ForbiddenError('需要管理员权限');
+    }
+
+    if (isNaN(userId)) {
+      throw new ValidationError('无效的用户ID');
+    }
+
+    const updateData = getRequestBody(ctx);
+    const userService = new UserService(env.DB);
+
     try {
-      const user = (request as any).user;
-      const userId = parseInt(params!.id);
-      
-      // 检查管理员权限
-      if (user.role !== 'admin') {
-        return jsonResponse({ success: false, error: 'Admin access required' }, 403);
-      }
-      
-      if (isNaN(userId)) {
-        return jsonResponse({ success: false, error: 'Invalid user ID' }, 400);
-      }
-      
-      const updateData = (request as any).body as {
-        username?: string;
-        email?: string;
-        display_name?: string;
-        avatar_url?: string;
-        bio?: string;
-        role?: 'admin' | 'editor';
-        is_active?: boolean;
-      };
-      
-      const userService = new UserService(env.DB);
       const updatedUser = await userService.updateUser(userId, updateData);
-      
-      // 返回更新后的用户信息（不包含密码哈希）
       const { password_hash, ...userInfo } = updatedUser;
-      
-      return jsonResponse({ 
-        success: true, 
+      return jsonResponse({
+        success: true,
         data: userInfo,
-        message: 'User updated successfully' 
+        message: '用户更新成功'
       });
     } catch (error) {
-      console.error('Update user error:', error);
-      if (error instanceof Error) {
-        if (error.message === 'User not found') {
-          return jsonResponse({ success: false, error: 'User not found' }, 404);
-        }
-        if (error.message.includes('already exists')) {
-          return jsonResponse({ success: false, error: error.message }, 400);
-        }
-        if (error.message.includes('Invalid email')) {
-          return jsonResponse({ success: false, error: error.message }, 400);
-        }
-      }
-      return jsonResponse({ success: false, error: 'Failed to update user' }, 500);
-    }
-  }, [authMiddleware]);
-
-  // 重置用户密码（管理员功能）
-  router.put('/api/admin/users/:id/password', async (request, env: Env, ctx, params) => {
-    try {
-      const user = (request as any).user;
-      const userId = parseInt(params!.id);
-      
-      // 检查管理员权限
-      if (user.role !== 'admin') {
-        return jsonResponse({ success: false, error: 'Admin access required' }, 403);
-      }
-      
-      if (isNaN(userId)) {
-        return jsonResponse({ success: false, error: 'Invalid user ID' }, 400);
-      }
-      
-      const { newPassword } = (request as any).body as { newPassword: string };
-      
-      // 验证新密码
-      if (!newPassword || newPassword.length < 6) {
-        return jsonResponse({ 
-          success: false, 
-          error: 'New password must be at least 6 characters long' 
-        }, 400);
-      }
-      
-      const userService = new UserService(env.DB);
-      await userService.resetPassword(userId, newPassword);
-      
-      return jsonResponse({ 
-        success: true, 
-        message: 'Password reset successfully' 
-      });
-    } catch (error) {
-      console.error('Reset password error:', error);
-      return jsonResponse({ success: false, error: 'Failed to reset password' }, 500);
-    }
-  }, [authMiddleware]);
-
-  // 切换用户状态（管理员功能）
-  router.patch('/api/admin/users/:id/toggle', async (request, env: Env, ctx, params) => {
-    try {
-      const user = (request as any).user;
-      const userId = parseInt(params!.id);
-      
-      // 检查管理员权限
-      if (user.role !== 'admin') {
-        return jsonResponse({ success: false, error: 'Admin access required' }, 403);
-      }
-      
-      if (isNaN(userId)) {
-        return jsonResponse({ success: false, error: 'Invalid user ID' }, 400);
-      }
-      
-      // 不能禁用自己
-      if (userId === user.id) {
-        return jsonResponse({ success: false, error: 'Cannot disable your own account' }, 400);
-      }
-      
-      const userService = new UserService(env.DB);
-      const updatedUser = await userService.toggleUserStatus(userId);
-      
-      // 返回更新后的用户信息（不包含密码哈希）
-      const { password_hash, ...userInfo } = updatedUser;
-      
-      return jsonResponse({ 
-        success: true, 
-        data: userInfo,
-        message: 'User status updated successfully' 
-      });
-    } catch (error) {
-      console.error('Toggle user status error:', error);
       if (error instanceof Error && error.message === 'User not found') {
-        return jsonResponse({ success: false, error: 'User not found' }, 404);
+        throw new NotFoundError('User', userId);
       }
-      return jsonResponse({ success: false, error: 'Failed to update user status' }, 500);
+      if (error instanceof Error && error.message.includes('already exists')) {
+        throw new ValidationError('用户名或邮箱已存在');
+      }
+      throw error;
     }
   }, [authMiddleware]);
 
-  // 删除用户（管理员功能）
-  router.delete('/api/admin/users/:id', async (request, env: Env, ctx, params) => {
+  // 重置用户密码
+  router.put('/api/admin/users/:id/password', async (request, env: Env, ctx, params) => {
+    const user = (request as any).user;
+    const userId = parseInt(params!.id);
+
+    if (user.role !== 'admin') {
+      throw new ForbiddenError('需要管理员权限');
+    }
+
+    if (isNaN(userId)) {
+      throw new ValidationError('无效的用户ID');
+    }
+
+    const { newPassword } = getRequestBody(ctx) as { newPassword: string };
+
+    if (!newPassword || newPassword.length < 6) {
+      throw new ValidationError('新密码至少需要6个字符');
+    }
+
+    const userService = new UserService(env.DB);
+    await userService.resetPassword(userId, newPassword);
+
+    return jsonResponse({
+      success: true,
+      message: '密码重置成功'
+    });
+  }, [authMiddleware]);
+
+  // 切换用户状态
+  router.patch('/api/admin/users/:id/toggle', async (request, env: Env, ctx, params) => {
+    const user = (request as any).user;
+    const userId = parseInt(params!.id);
+
+    if (user.role !== 'admin') {
+      throw new ForbiddenError('需要管理员权限');
+    }
+
+    if (isNaN(userId)) {
+      throw new ValidationError('无效的用户ID');
+    }
+
+    if (userId === user.id) {
+      throw new ValidationError('不能禁用自己的账户');
+    }
+
+    const userService = new UserService(env.DB);
+
     try {
-      const user = (request as any).user;
-      const userId = parseInt(params!.id);
-      
-      // 检查管理员权限
-      if (user.role !== 'admin') {
-        return jsonResponse({ success: false, error: 'Admin access required' }, 403);
-      }
-      
-      if (isNaN(userId)) {
-        return jsonResponse({ success: false, error: 'Invalid user ID' }, 400);
-      }
-      
-      // 不能删除自己
-      if (userId === user.id) {
-        return jsonResponse({ success: false, error: 'Cannot delete your own account' }, 400);
-      }
-      
-      const userService = new UserService(env.DB);
-      await userService.deleteUser(userId);
-      
-      return jsonResponse({ 
-        success: true, 
-        message: 'User deleted successfully' 
+      const updatedUser = await userService.toggleUserStatus(userId);
+      const { password_hash, ...userInfo } = updatedUser;
+      return jsonResponse({
+        success: true,
+        data: userInfo,
+        message: '用户状态已更新'
       });
     } catch (error) {
-      console.error('Delete user error:', error);
-      if (error instanceof Error && error.message.includes('associated posts')) {
-        return jsonResponse({ 
-          success: false, 
-          error: 'Cannot delete user with associated posts' 
-        }, 400);
+      if (error instanceof Error && error.message === 'User not found') {
+        throw new NotFoundError('User', userId);
       }
-      return jsonResponse({ success: false, error: 'Failed to delete user' }, 500);
+      throw error;
     }
   }, [authMiddleware]);
 
-  // 获取用户统计信息（管理员功能）
-  router.get('/api/admin/users/stats', async (request, env: Env, ctx, params) => {
+  // 删除用户
+  router.delete('/api/admin/users/:id', async (request, env: Env, ctx, params) => {
+    const user = (request as any).user;
+    const userId = parseInt(params!.id);
+
+    if (user.role !== 'admin') {
+      throw new ForbiddenError('需要管理员权限');
+    }
+
+    if (isNaN(userId)) {
+      throw new ValidationError('无效的用户ID');
+    }
+
+    if (userId === user.id) {
+      throw new ValidationError('不能删除自己的账户');
+    }
+
+    const userService = new UserService(env.DB);
+
     try {
-      const user = (request as any).user;
-      
-      // 检查管理员权限
-      if (user.role !== 'admin') {
-        return jsonResponse({ success: false, error: 'Admin access required' }, 403);
-      }
-      
-      const userService = new UserService(env.DB);
-      const stats = await userService.getUserStats();
-      
-      return jsonResponse({ success: true, data: stats });
+      await userService.deleteUser(userId);
+      return jsonResponse({
+        success: true,
+        message: '用户删除成功'
+      });
     } catch (error) {
-      console.error('Get user stats error:', error);
-      return jsonResponse({ success: false, error: 'Failed to fetch user stats' }, 500);
+      if (error instanceof Error && error.message.includes('associated posts')) {
+        throw new ValidationError('无法删除有文章关联的用户');
+      }
+      throw error;
     }
   }, [authMiddleware]);
 }

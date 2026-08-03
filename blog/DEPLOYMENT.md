@@ -90,11 +90,13 @@ npx wrangler d1 execute blog-db-production --file=database/seed.sql
 ### 步骤 6: 设置环境变量
 
 ```bash
-# 设置 JWT 密钥
+# 设置 JWT 密钥（wrangler.jsonc 中的 "{JWT_SECRET}" 占位符会从该 secret 取值）
 npx wrangler secret put JWT_SECRET
 ```
 
-输入一个强密码，例如：`your-super-secret-jwt-key-here-make-it-long-and-random`
+输入一个强随机密钥，例如：`your-super-secret-jwt-key-here-make-it-long-and-random`
+
+> ⚠️ 密钥不要写入 `wrangler.jsonc` 或任何版本控制文件。本地开发在 `.dev.vars` 中提供。
 
 ### 步骤 7: 部署应用
 
@@ -193,8 +195,19 @@ npm run deploy
 ### 2. JWT 密钥安全
 
 - 使用强随机密钥
-- 定期轮换密钥
-- 不要在代码中硬编码密钥
+- 定期轮换密钥（`wrangler secret put` 覆盖后旧 token 立即失效）
+- 不要在代码或 `wrangler.jsonc` 中硬编码密钥（配置中为 `{JWT_SECRET}` 占位符）
+
+### 3. 跨域访问配置
+
+如业务需要允许外部站点跨域调用 API，设置来源白名单：
+
+```bash
+npx wrangler secret put ALLOWED_ORIGINS
+# 输入例如：https://admin.example.com,https://another.site
+```
+
+未配置时默认仅允许同源请求。
 
 ### 3. 数据库安全
 

@@ -48,7 +48,19 @@ npm run db:init
 - 插入初始化数据
 - 更新 wrangler.jsonc 配置
 
-### 4. 启动开发服务器
+### 4. 配置本地密钥（开发环境）
+
+`JWT_SECRET` 是必需的签名密钥，禁止硬编码进 `wrangler.jsonc`（其中为 `{JWT_SECRET}` secret 占位符）。
+本地开发时在项目根目录创建 `.dev.vars`（已被 .gitignore 忽略）：
+
+```bash
+# .dev.vars
+JWT_SECRET=请替换为随机强密钥
+```
+
+> 生成随机密钥：`node -e "console.log(require('crypto').randomBytes(32).toString('base64url'))"`
+
+### 5. 启动开发服务器
 
 ```bash
 npm run dev
@@ -56,7 +68,7 @@ npm run dev
 
 访问 http://localhost:8787 查看博客。
 
-### 5. 管理后台
+### 6. 管理后台
 
 访问 http://localhost:8787/admin 进入管理后台。
 
@@ -218,9 +230,18 @@ npm run deploy
 
 ## 🔧 配置
 
-### 环境变量
+### 环境变量 / Secret
 
-- `JWT_SECRET`: JWT 签名密钥（必需）
+- `JWT_SECRET` (Secret): JWT 签名密钥（必需）。生产环境用 `npx wrangler secret put JWT_SECRET` 注入，本地开发写入 `.dev.vars`。禁止硬编码进配置文件。
+- `ALLOWED_ORIGINS`: 允许跨域调用 API 的来源白名单（逗号分隔，可选）。默认不配置时仅允许同源请求；需要外部站点跨域访问 API 时再配置。
+
+### 安全特性
+
+- **认证方式**：所有接口仅接受 `Authorization: Bearer <token>` 请求头；token 不允许通过 URL 参数传递（防止泄漏到日志 / 浏览器历史 / Referer）。
+- **速率限制**：登录接口按 IP 限流 5 次/分钟；评论提交按 IP 限流 20 次/分钟（基于 KV）。
+- **CORS**：默认仅同源；跨域需配置 `ALLOWED_ORIGINS` 白名单。
+- **安全响应头**：所有响应附带 `X-Content-Type-Options: nosniff`、`X-Frame-Options: DENY`、`Referrer-Policy: no-referrer`。
+- **Markdown**：渲染前转义并过滤危险协议（`javascript:` / `data:` / `vbscript:`）。
 
 ### 数据库配置
 

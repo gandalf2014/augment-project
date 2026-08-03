@@ -16,10 +16,16 @@ export type Middleware = (request: Request, env: any, ctx: ExecutionContext, nex
 export class Router {
   private routes: Route[] = [];
   private globalMiddleware: Middleware[] = [];
+  private notFoundHandler: RouteHandler | null = null;
 
   // 添加全局中间件
   use(middleware: Middleware) {
     this.globalMiddleware.push(middleware);
+  }
+
+  // 设置 404 处理器
+  setNotFound(handler: RouteHandler) {
+    this.notFoundHandler = handler;
   }
 
   // 添加路由
@@ -66,16 +72,22 @@ export class Router {
       const params = this.matchRoute(route.pattern, pathname);
       if (params !== null) {
         // 构建中间件链
-        const middlewareChain = [...this.globalMiddleware, ...route.middleware];
-        
+        const middlewareChain = [...this.globalMiddleware, ...(route.middleware || [])];
+
         // 执行中间件链
-        return this.executeMiddleware(middlewareChain, request, env, ctx, () => 
+        return this.executeMiddleware(middlewareChain, request, env, ctx, () =>
           route.handler(request, env, ctx, params)
         );
       }
     }
 
-    // 没有找到匹配的路由
+    // 没有找到匹配的路由，使用自定义 404 处理器或默认响应
+    if (this.notFoundHandler) {
+      return this.executeMiddleware(this.globalMiddleware, request, env, ctx, () =>
+        this.notFoundHandler!(request, env, ctx, undefined)
+      );
+    }
+
     return new Response('Not Found', { status: 404 });
   }
 

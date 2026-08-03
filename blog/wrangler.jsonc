@@ -23,10 +23,26 @@
 	],
 
 	/**
-	 * Environment Variables
+	 * KV Namespace for caching
 	 */
-	"vars": {
-		"JWT_SECRET": "XkV!uR2$pL9@mN4#sQ7*vG3&zJ8^wH5%dF1(cB6)qY3~nT7+wE4-rU8?jM2*aS5"
+	"kv_namespaces": [
+		{
+			"binding": "KV",
+			"id": "cdc1516d100c43f49116a2572d8d8ded"
+		}
+	],
+	/**
+	 * Environment Variables
+	 *
+	 * JWT_SECRET is injected as a secret; never hardcode it here:
+	 * - Local dev: put JWT_SECRET=<random strong key> in .dev.vars (git-ignored)
+	 * - Production: npx wrangler secret put JWT_SECRET
+	 * "{JWT_SECRET}" is wrangler's secret-placeholder syntax, resolved from secrets / .dev.vars at deploy.
+	 */
+"vars": {
+		"JWT_SECRET": "{JWT_SECRET}",
+		"NODE_ENV": "development",
+		"ALLOWED_ORIGINS": ""
 	}
 
 	/**

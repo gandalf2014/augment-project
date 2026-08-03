@@ -211,5 +211,9 @@ export interface CommentQueryParams {
 // 数据库环境类型
 export interface Env {
   DB: D1Database;
+  KV: KVNamespace;
   JWT_SECRET: string;
+  NODE_ENV?: string;
+  /** 允许跨域访问 API 的来源白名单（逗号分隔）。未配置时默认仅允许同源请求。 */
+  ALLOWED_ORIGINS?: string;
 }
