@@ -34,13 +34,12 @@
 	/**
 	 * Environment Variables
 	 *
-	 * JWT_SECRET is injected as a secret; never hardcode it here:
-	 * - Local dev: put JWT_SECRET=<random strong key> in .dev.vars (git-ignored)
-	 * - Production: npx wrangler secret put JWT_SECRET
-	 * "{JWT_SECRET}" is wrangler's secret-placeholder syntax, resolved from secrets / .dev.vars at deploy.
+	 * JWT_SECRET 是 secret（不在 vars 中定义）：
+	 * - 本地开发: 在 .dev.vars 写入 JWT_SECRET=<随机强密钥>（已被 .gitignore 忽略）
+	 * - 生产部署: npx wrangler secret put JWT_SECRET
+	 * - 测试: vitest.config.mts 的 miniflare bindings 注入
 	 */
-"vars": {
-		"JWT_SECRET": "{JWT_SECRET}",
+	"vars": {
 		"NODE_ENV": "development",
 		"ALLOWED_ORIGINS": ""
 	}
