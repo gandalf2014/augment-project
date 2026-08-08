@@ -1,0 +1,13 @@
+{
+  "name": "pinyin-games",
+  "version": "1.0.0",
+  "private": true,
+  "description": "汉语拼音学习游戏（幼儿识字）",
+  "scripts": {
+    "serve": "python -m http.server 8765",
+    "test": "node tests/smoke.js"
+  },
+  "devDependencies": {
+    "playwright": "^1.40.0"
+  }
+}

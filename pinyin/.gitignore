@@ -8,3 +8,8 @@
 # 豁免根目录 .gitignore 的全局规则（这些是本项目的正式文件）
 !requirements.txt
 !下载拼音音频.bat
+# 豁免（根 .gitignore 的 *.json 规则）
+!package.json
+!tests/*.js
+# gsd_exec 运行产物
+.gsd/exec/

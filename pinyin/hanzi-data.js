@@ -3093,7 +3093,7 @@ const HANZI_SETS = [
                 {hanzi: '叉', pinyin: 'chā', word: '交叉'},
                 {hanzi: '艄', pinyin: 'shāo', word: '艄公'},
                 {hanzi: '翘', pinyin: 'qiào', word: '变翘'},
-                {hanzi: '翘', pinyin: 'qiào', word: '变翘'},
+                {hanzi: '雇', pinyin: 'gù', word: '雇员'},
                 {hanzi: '舱', pinyin: 'cāng', word: '船舱'},
             ],
             // 第282关 - 五年级下册/六年级上册生字

@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" href="data:,">
     <title>汉字消消乐游戏</title>
     <style>
         * {
@@ -836,6 +837,7 @@
     </div>
 
     <script src="hanzi-data.js"></script>
+    <script src="common-audio.js"></script>
     <script>
         // 常用汉字库 - 按关卡分组，每关8个汉字（每个出现2次，总共16个）
 
@@ -936,130 +938,47 @@
         }
 
         // 初始化游戏
-        // ===== 音量开关（跨游戏共享）=====
-        let soundEnabled = localStorage.getItem('pinyinSoundEnabled') !== 'off';
-
-        function toggleSound() {
-            soundEnabled = !soundEnabled;
-            localStorage.setItem('pinyinSoundEnabled', soundEnabled ? 'on' : 'off');
-            updateSoundBtn();
-        }
-
-        function updateSoundBtn() {
-            const btn = document.getElementById('soundToggle');
-            if (btn) {
-                btn.textContent = soundEnabled ? '🔊' : '🔇';
-            }
-        }
-
-        // ===== 烟花爆竹音效（Web Audio API 合成，无需音频文件）=====
-        let fireworkAudioCtx = null;
-
-        // 确保音频上下文已解锁（须在用户手势中调用）
-        function ensureFireworkAudio() {
-            if (!fireworkAudioCtx) {
-                const AC = window.AudioContext || window.webkitAudioContext;
-                if (AC) {
-                    fireworkAudioCtx = new AC();
+        // 数据完整性检查：字独一性 / word 非空 / 无 HTML 危险字符
+        function validateData() {
+            let issues = 0;
+            HANZI_SETS.forEach((lv, li) => {
+                if (lv.length < 1) {
+                    console.error('关卡 ' + (li + 1) + ' 为空');
+                    issues++;
+                    return;
                 }
-            }
-            if (fireworkAudioCtx && fireworkAudioCtx.state === 'suspended') {
-                fireworkAudioCtx.resume();
-            }
-        }
-
-        // 烟花爆炸低频轰鸣
-        function playBoom(startTime, pan) {
-            const ctx = fireworkAudioCtx;
-            const dur = 0.9;
-            const osc = ctx.createOscillator();
-            const gain = ctx.createGain();
-            osc.type = 'sine';
-            osc.frequency.setValueAtTime(110 + Math.random() * 30, startTime);
-            osc.frequency.exponentialRampToValueAtTime(35, startTime + dur);
-            gain.gain.setValueAtTime(0.5, startTime);
-            gain.gain.exponentialRampToValueAtTime(0.001, startTime + dur);
-            if (ctx.createStereoPanner) {
-                const p = ctx.createStereoPanner();
-                p.pan.value = pan;
-                osc.connect(p);
-                p.connect(gain);
+                const seen = {};
+                lv.forEach(e => {
+                    if (seen[e.hanzi]) {
+                        console.error('关卡 ' + (li + 1) + ' 重复字: ' + e.hanzi);
+                        issues++;
+                    }
+                    seen[e.hanzi] = true;
+                    if (!e.word) {
+                        console.error('缺少组词: ' + e.hanzi);
+                        issues++;
+                    }
+                    if (/[<>&"]/.test(e.pinyin + (e.word || ''))) {
+                        console.error('含 HTML 危险字符: ' + e.hanzi);
+                        issues++;
+                    }
+                });
+            });
+            if (issues > 0) {
+                console.warn('数据检验发现 ' + issues + ' 个问题');
             } else {
-                osc.connect(gain);
-            }
-            gain.connect(ctx.destination);
-            osc.start(startTime);
-            osc.stop(startTime + dur + 0.05);
-        }
-
-        // 鞭炮噼啪声（短促白噪声 burst）
-        function playCrackle(startTime) {
-            const ctx = fireworkAudioCtx;
-            const dur = 0.03 + Math.random() * 0.07;
-            const n = Math.floor(ctx.sampleRate * dur);
-            const buffer = ctx.createBuffer(1, n, ctx.sampleRate);
-            const data = buffer.getChannelData(0);
-            for (let i = 0; i < n; i++) {
-                data[i] = (Math.random() * 2 - 1) * (1 - i / n);
-            }
-            const src = ctx.createBufferSource();
-            src.buffer = buffer;
-            const filter = ctx.createBiquadFilter();
-            filter.type = 'highpass';
-            filter.frequency.value = 1200 + Math.random() * 2800;
-            const gain = ctx.createGain();
-            gain.gain.value = 0.2 + Math.random() * 0.4;
-            src.connect(filter);
-            filter.connect(gain);
-            gain.connect(ctx.destination);
-            src.start(startTime);
-        }
-
-        // 播放烟花爆竹音效
-        function playFireworkSound() {
-            if (!soundEnabled) return;
-            try {
-                ensureFireworkAudio();
-                if (!fireworkAudioCtx) return;
-                const now = fireworkAudioCtx.currentTime;
-                // 三声烟花轰鸣
-                playBoom(now, -0.6);
-                playBoom(now + 0.35, 0.6);
-                playBoom(now + 0.75, 0);
-                // 一串鞭炮噼啪
-                for (let i = 0; i < 36; i++) {
-                    playCrackle(now + Math.random() * 2.0);
-                }
-            } catch (e) {
-                console.warn('烟花爆竹音效播放失败:', e);
-            }
-        }
-
-        // 配对成功提示音（清脆的“叮”）
-        function playMatchSound() {
-            if (!soundEnabled) return;
-            try {
-                ensureFireworkAudio();
-                if (!fireworkAudioCtx) return;
-                const ctx = fireworkAudioCtx;
-                const now = ctx.currentTime;
-                const osc = ctx.createOscillator();
-                const gain = ctx.createGain();
-                osc.type = 'triangle';
-                osc.frequency.setValueAtTime(880, now);
-                osc.frequency.exponentialRampToValueAtTime(660, now + 0.18);
-                gain.gain.setValueAtTime(0.35, now);
-                gain.gain.exponentialRampToValueAtTime(0.001, now + 0.35);
-                osc.connect(gain);
-                gain.connect(ctx.destination);
-                osc.start(now);
-                osc.stop(now + 0.4);
-            } catch (e) {
-                console.warn('配对提示音播放失败:', e);
+                console.log('数据检验通过: ' + HANZI_SETS.length + ' 关 / ' +
+                    HANZI_SETS.reduce((n, lv) => n + lv.length, 0) + ' 字');
             }
         }
 
         function initGame() {
+            validateData();
+            // 设置跳关输入上限（与数据同步）
+            const lvInput = document.getElementById('levelInput');
+            if (lvInput) {
+                lvInput.max = HANZI_SETS.length;
+            }
             // 用户首次交互时解锁音频上下文（通关音效需要）
             document.addEventListener('click', ensureFireworkAudio, { once: true });
             document.addEventListener('touchstart', ensureFireworkAudio, { once: true });
@@ -1126,7 +1045,17 @@
                     cell.className = 'cell';
                     cell.dataset.row = i;
                     cell.dataset.col = j;
+                    // 无障碍：键盘可达
+                    cell.setAttribute('role', 'button');
+                    cell.setAttribute('tabindex', '0');
+                    cell.setAttribute('aria-label', hanziData.hanzi + '汉字卡片');
                     cell.addEventListener('click', () => selectCell(i, j));
+                    cell.addEventListener('keydown', (e) => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                            e.preventDefault();
+                            selectCell(i, j);
+                        }
+                    });
 
                     // 创建卡片内部结构
                     const cellInner = document.createElement('div');
@@ -1557,8 +1486,8 @@
             document.getElementById('score').textContent = gameState.score;
             document.getElementById('level').textContent = gameState.level;
             document.getElementById('time').textContent = gameState.timeLeft;
-            // 数字变化弹跳动画
-            ['score', 'level', 'time'].forEach(id => {
+            // 数字变化弹跳动画（计时每秒变化不弹跳，避免视觉噪音）
+            ['score', 'level'].forEach(id => {
                 const el = document.getElementById(id);
                 el.classList.remove('bump');
                 void el.offsetWidth;
