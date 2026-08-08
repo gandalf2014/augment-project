@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>汉语拼音乐园</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Microsoft YaHei', Arial, sans-serif;
+            background: linear-gradient(135deg, #ff9a9e 0%, #fecfef 50%, #fecfef 100%);
+            min-height: 100vh;
+            padding: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .container {
+            max-width: 900px;
+            width: 100%;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .title {
+            font-size: 3rem;
+            color: #ff6b6b;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 10px;
+        }
+
+        .subtitle {
+            font-size: 1.2rem;
+            color: #666;
+        }
+
+        .game-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 25px;
+            padding: 10px;
+        }
+
+        .game-card {
+            background: white;
+            border-radius: 25px;
+            padding: 30px 25px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            border: 3px solid transparent;
+            text-decoration: none;
+            display: block;
+        }
+
+        .game-card:hover {
+            transform: translateY(-6px) scale(1.03);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            border-color: #ff6b6b;
+        }
+
+        .game-icon {
+            font-size: 4rem;
+            margin-bottom: 15px;
+            display: block;
+        }
+
+        .game-name {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #ff6b6b;
+            margin-bottom: 10px;
+        }
+
+        .game-desc {
+            font-size: 0.95rem;
+            color: #666;
+            line-height: 1.6;
+        }
+
+        .game-tag {
+            display: inline-block;
+            margin-top: 15px;
+            padding: 6px 18px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: bold;
+            color: white;
+            background: linear-gradient(45deg, #ff6b6b, #ffa500);
+        }
+
+        .game-tag.green {
+            background: linear-gradient(45deg, #4CAF50, #45a049);
+        }
+
+        .game-tag.purple {
+            background: linear-gradient(45deg, #7c4dff, #651fff);
+        }
+
+        .footer {
+            text-align: center;
+            margin-top: 40px;
+            color: #999;
+            font-size: 0.9rem;
+        }
+
+        @media (max-width: 600px) {
+            .title {
+                font-size: 2.2rem;
+            }
+
+            .game-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1 class="title">🎵 汉语拼音乐园 🎵</h1>
+            <p class="subtitle">选择一个游戏，快乐学拼音！</p>
+        </div>
+
+        <div class="game-grid">
+            <a class="game-card" href="pinyin-game.html">
+                <span class="game-icon">🔤</span>
+                <div class="game-name">拼音学习</div>
+                <div class="game-desc">23 个声母 + 24 个韵母卡片，点击卡片听标准发音，查看示例词汇。</div>
+                <span class="game-tag">适合初学</span>
+            </a>
+
+            <a class="game-card" href="pinyin-连连看.html">
+                <span class="game-icon">🎮</span>
+                <div class="game-name">拼音配对</div>
+                <div class="game-desc">翻卡片找对子，把拼音和词汇配对起来，配对成功还有烟花庆祝！</div>
+                <span class="game-tag green">记忆挑战</span>
+            </a>
+
+            <a class="game-card" href="hanzi-xiaoxiaole.html">
+                <span class="game-icon">🀄</span>
+                <div class="game-name">汉字消消乐</div>
+                <div class="game-desc">8 大主题 64 个常用汉字，翻牌配对学汉字，边玩边记读音。</div>
+                <span class="game-tag purple">进阶挑战</span>
+            </a>
+        </div>
+
+        <div class="footer">💡 建议家长陪同孩子一起学习，点击卡片即可听到标准发音</div>
+    </div>
+</body>
+</html>

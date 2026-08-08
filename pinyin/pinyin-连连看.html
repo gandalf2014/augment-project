@@ -565,8 +565,8 @@
         </div>
 
         <div class="tabs">
-            <button class="tab-button active" onclick="switchTab('shengmu')">声母消消乐</button>
-            <button class="tab-button" onclick="switchTab('yunmu')">韵母消消乐</button>
+            <button class="tab-button active" data-tab="shengmu" onclick="switchTab('shengmu')">声母消消乐</button>
+            <button class="tab-button" data-tab="yunmu" onclick="switchTab('yunmu')">韵母消消乐</button>
         </div>
 
         <div id="shengmu" class="content active">
@@ -659,7 +659,7 @@
             {pinyin: 'r', example: '日出'},
             {pinyin: 'z', example: '桌子'},
             {pinyin: 'c', example: '草地'},
-            {pinyin: 's', example: '太阳'},
+            {pinyin: 's', example: '三'},
             {pinyin: 'y', example: '月亮'},
             {pinyin: 'w', example: '我们'}
         ];
@@ -684,7 +684,7 @@
             {pinyin: 'an', example: '山'},
             {pinyin: 'en', example: '门'},
             {pinyin: 'in', example: '心'},
-            {pinyin: 'un', example: '云'},
+            {pinyin: 'un', example: '春天'},
             {pinyin: 'ün', example: '云'},
             {pinyin: 'ang', example: '糖'},
             {pinyin: 'eng', example: '灯'},
@@ -1004,15 +1004,25 @@
             document.getElementById(`${prefix}-progress-fill`).style.width = `${progressPercent}%`;
         }
 
+        // 计算星级评分（基于步数）
+        function calculateStars() {
+            const perfectMoves = gameState.totalPairs; // 完美步数
+            const stars = gameState.moves <= perfectMoves ? 3 :
+                         gameState.moves <= perfectMoves * 1.5 ? 2 : 1;
+            return '⭐'.repeat(stars) + '☆'.repeat(3 - stars);
+        }
+
         // 显示关卡完成消息
         function showLevelCompleteMessage() {
             const message = document.createElement('div');
             message.className = 'level-complete-message';
+            const starDisplay = calculateStars();
 
             if (gameState.currentLevel < gameState.totalLevels) {
                 // 还有下一关
                 message.innerHTML = `
                     <div>🎉 第${gameState.currentLevel}关完成！</div>
+                    <div style="font-size: 1.5rem; margin: 10px 0;">${starDisplay}</div>
                     <div style="font-size: 1rem; margin: 15px 0;">
                         得分: ${gameState.score} 分 | 步数: ${gameState.moves} 步
                     </div>
@@ -1035,6 +1045,7 @@
                 const totalMoves = gameState.moves;
                 message.innerHTML = `
                     <div>🏆 恭喜通关！</div>
+                    <div style="font-size: 1.5rem; margin: 10px 0;">${starDisplay}</div>
                     <div style="font-size: 1.2rem; margin: 15px 0;">
                         🎊 所有${gameState.currentTab === 'shengmu' ? '声母' : '韵母'}学习完成！
                     </div>
@@ -1305,6 +1316,9 @@
                 gameState.moves++;
                 updateStats();
 
+                // 立即锁定输入，防止在检查窗口内点击第3张卡导致卡片卡死
+                gameState.isProcessing = true;
+
                 // 清理之前的匹配检查定时器（防止重复调用）
                 if (gameState.matchCheckTimer) {
                     clearTimeout(gameState.matchCheckTimer);
@@ -1414,42 +1428,6 @@
             updateLevelProgress();
         }
 
-        // 显示成功消息
-        function showSuccessMessage() {
-            const message = document.createElement('div');
-            message.className = 'success-message';
-
-            // 计算星级评分（基于步数）
-            const perfectMoves = gameState.totalPairs; // 完美步数
-            const stars = gameState.moves <= perfectMoves ? 3 :
-                         gameState.moves <= perfectMoves * 1.5 ? 2 : 1;
-            const starDisplay = '⭐'.repeat(stars) + '☆'.repeat(3 - stars);
-
-            message.innerHTML = `
-                <div>🎉 恭喜完成！</div>
-                <div style="font-size: 1.2rem; margin: 15px 0;">
-                    ${starDisplay}
-                </div>
-                <div style="font-size: 1rem; margin-top: 10px;">
-                    得分: ${gameState.score} 分<br>
-                    步数: ${gameState.moves} 步
-                </div>
-                <button onclick="resetGame()"
-                        style="margin-top: 20px; padding: 10px 20px; border: none;
-                               border-radius: 10px; background: white; color: #4CAF50;
-                               cursor: pointer; font-weight: bold; font-size: 1rem;">
-                    再玩一次
-                </button>
-            `;
-            document.body.appendChild(message);
-
-            setTimeout(() => {
-                if (message.parentElement) {
-                    message.remove();
-                }
-            }, 8000);
-        }
-
         // 切换标签页
         function switchTab(tabName) {
             // 清理所有定时器和效果
@@ -1460,15 +1438,13 @@
 
             // 更新标签按钮状态
             document.querySelectorAll('.tab-button').forEach(btn => {
-                btn.classList.remove('active');
+                btn.classList.toggle('active', btn.dataset.tab === tabName);
             });
-            event.target.classList.add('active');
 
             // 更新内容显示
             document.querySelectorAll('.content').forEach(content => {
-                content.classList.remove('active');
+                content.classList.toggle('active', content.id === tabName);
             });
-            document.getElementById(tabName).classList.add('active');
 
             // 重置游戏状态
             gameState.currentTab = tabName;
@@ -1581,7 +1557,7 @@
             `;
             instructions.innerHTML = `
                 <div style="font-size: 1.5rem; font-weight: bold; color: #ff6b6b; margin-bottom: 20px;">
-                    � 游戏说明
+                    🎮 游戏说明
                 </div>
                 <div style="text-align: left; line-height: 1.6; margin-bottom: 20px;">
                     <div style="margin-bottom: 10px;">🎯 <strong>游戏目标：</strong>翻开卡片找到拼音字母和对应词汇的配对</div>

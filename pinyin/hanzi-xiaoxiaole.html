@@ -497,7 +497,6 @@
 
         // 语音播放相关
         let currentAudio = null;
-        let isPlaying = false;
 
         // 播放汉字读音
         function playHanziSound(hanzi) {
@@ -514,8 +513,6 @@
 
                 // 短暂延迟确保之前的语音完全停止
                 setTimeout(() => {
-                    isPlaying = true;
-
                     const utterance = new SpeechSynthesisUtterance(hanzi);
 
                     // 获取中文语音
@@ -536,15 +533,6 @@
                     utterance.rate = 0.8;  // 语速
                     utterance.pitch = 1.0; // 音调
                     utterance.volume = 1.0; // 音量
-
-                    // 播放完成后重置状态
-                    utterance.onend = () => {
-                        isPlaying = false;
-                    };
-
-                    utterance.onerror = () => {
-                        isPlaying = false;
-                    };
 
                     speechSynthesis.speak(utterance);
                 }, 50); // 50ms延迟
@@ -840,7 +828,6 @@
             if ('speechSynthesis' in window) {
                 speechSynthesis.cancel();
             }
-            isPlaying = false;
 
             const currentTimerEnabled = gameState.timerEnabled; // 保持计时器开关状态
             gameState = {
@@ -1045,7 +1032,6 @@
                 if ('speechSynthesis' in window) {
                     speechSynthesis.cancel();
                 }
-                isPlaying = false;
             }
         });
     </script>
