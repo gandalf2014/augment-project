@@ -310,6 +310,21 @@
             border-color: #7c4dff;
         }
 
+        #soundToggle {
+            position: fixed;
+            top: 12px;
+            right: 12px;
+            z-index: 1000;
+            width: 44px;
+            height: 44px;
+            border: none;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.92);
+            font-size: 1.3rem;
+            cursor: pointer;
+            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.2);
+        }
+
         .game-over {
             position: fixed;
             top: 0;
@@ -410,6 +425,7 @@
     </style>
 </head>
 <body>
+    <button id="soundToggle" onclick="toggleSound()" title="声音开关">🔊</button>
     <div class="container">
         <div class="header">
             <h1 class="title">🀄 汉字消消乐 🀄</h1>
@@ -475,6 +491,7 @@
 
         // 播放汉字读音
         function playHanziSound(hanzi) {
+            if (!soundEnabled) return;
             // 停止当前播放的音频
             if (currentAudio) {
                 currentAudio.pause();
@@ -554,6 +571,22 @@
         }
 
         // 初始化游戏
+        // ===== 音量开关（跨游戏共享）=====
+        let soundEnabled = localStorage.getItem('pinyinSoundEnabled') !== 'off';
+
+        function toggleSound() {
+            soundEnabled = !soundEnabled;
+            localStorage.setItem('pinyinSoundEnabled', soundEnabled ? 'on' : 'off');
+            updateSoundBtn();
+        }
+
+        function updateSoundBtn() {
+            const btn = document.getElementById('soundToggle');
+            if (btn) {
+                btn.textContent = soundEnabled ? '🔊' : '🔇';
+            }
+        }
+
         // ===== 烟花爆竹音效（Web Audio API 合成，无需音频文件）=====
         let fireworkAudioCtx = null;
 
@@ -619,6 +652,7 @@
 
         // 播放烟花爆竹音效
         function playFireworkSound() {
+            if (!soundEnabled) return;
             try {
                 ensureFireworkAudio();
                 if (!fireworkAudioCtx) return;
@@ -636,11 +670,36 @@
             }
         }
 
+        // 配对成功提示音（清脆的“叮”）
+        function playMatchSound() {
+            if (!soundEnabled) return;
+            try {
+                ensureFireworkAudio();
+                if (!fireworkAudioCtx) return;
+                const ctx = fireworkAudioCtx;
+                const now = ctx.currentTime;
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(880, now);
+                osc.frequency.exponentialRampToValueAtTime(660, now + 0.18);
+                gain.gain.setValueAtTime(0.35, now);
+                gain.gain.exponentialRampToValueAtTime(0.001, now + 0.35);
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+                osc.start(now);
+                osc.stop(now + 0.4);
+            } catch (e) {
+                console.warn('配对提示音播放失败:', e);
+            }
+        }
+
         function initGame() {
             // 用户首次交互时解锁音频上下文（通关音效需要）
             document.addEventListener('click', ensureFireworkAudio, { once: true });
             document.addEventListener('touchstart', ensureFireworkAudio, { once: true });
             renderGroupButtons();
+            updateSoundBtn();
             createGrid();
             updateDisplay();
             // 初始化时间开关显示状态
@@ -824,6 +883,8 @@
             const cell1 = gameState.grid[row1][col1];
             const cell2 = gameState.grid[row2][col2];
 
+            // 配对成功，播放提示音
+            playMatchSound();
             // 添加匹配动画
             cell1.element.classList.add('matched');
             cell2.element.classList.add('matched');
