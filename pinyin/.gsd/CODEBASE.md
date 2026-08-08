@@ -1,23 +1,30 @@
 # Codebase Map
 
-Generated: 2026-08-08T02:58:39Z | Files: 58 | Described: 0/58
-<!-- gsd:codebase-meta {"generatedAt":"2026-08-08T02:58:39Z","fingerprint":"497a2953cc92691c9ea9e9e65b27751aacf59c43","fileCount":58,"truncated":false} -->
+Generated: 2026-08-08T12:54:45Z | Files: 67 | Described: 0/67
+<!-- gsd:codebase-meta {"generatedAt":"2026-08-08T12:54:45Z","fingerprint":"75d4e955f0aba1f3e5e88d49b7ba22e4581e2307","fileCount":67,"truncated":false} -->
 
 ### (root)/
+- `.gitignore`
+- `common-audio.js`
+- `DEPLOY.md`
 - `download_pinyin_audio.py`
 - `download-audio.html`
+- `feishu_bot_worker.js`
+- `feishu_bot.py`
+- `hanzi-data.js`
 - `hanzi-xiaoxiaole.html`
-- `page1.html`
-- `page2.html`
+- `index.html`
+- `package.json`
+- `pinyin-data.js`
 - `pinyin-game.html`
 - `README.md`
-- `test.py`
+- `requirements.txt`
+
+### "\344\270\213\350\275\275\346\213\274\351\237\263\351\237\263\351\242/
+- `"\344\270\213\350\275\275\346\213\274\351\237\263\351\237\263\351\242\221.bat"`
 
 ### "\344\275\277\347\224\250\350\257\264\346\230/
 - `"\344\275\277\347\224\250\350\257\264\346\230\216.md"`
-
-### "\345\205\254\345\221/
-- `"\345\205\254\345\221\212.pdf"`
 
 ### "audio/\303/
 - `"audio/\303\274.mp3"`
@@ -27,5 +34,11 @@ Generated: 2026-08-08T02:58:39Z | Files: 58 | Described: 0/58
 ### "pinyin-\350\277\236\350\277\236\347\234/
 - `"pinyin-\350\277\236\350\277\236\347\234\213.html"`
 
+### archive/
+- `archive/opencode_bridge.py`
+
 ### audio/
 - *(44 files: 44 .mp3)*
+
+### tests/
+- `tests/smoke.js`
