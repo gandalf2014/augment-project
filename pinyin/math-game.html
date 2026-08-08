@@ -1,0 +1,779 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" href="data:,">
+    <title>数学大冒险</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        :root {
+            --blue: #4c6ef5;
+            --cyan: #15aabf;
+            --teal: #20c997;
+            --orange: #fd7e14;
+            --red: #fa5252;
+            --gold: #ffd43b;
+            --ink: #343a40;
+        }
+
+        body {
+            font-family: 'Yuanti SC', 'YouYuan', '幼圆', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+            min-height: 100vh;
+            overflow-x: hidden;
+            background:
+                radial-gradient(900px 600px at 10% -10%, rgba(76, 110, 245, 0.2) 0%, transparent 60%),
+                radial-gradient(800px 600px at 110% 20%, rgba(21, 170, 191, 0.18) 0%, transparent 55%),
+                radial-gradient(900px 700px at 50% 120%, rgba(32, 201, 151, 0.15) 0%, transparent 60%),
+                linear-gradient(160deg, #f8f9fa 0%, #e7f5ff 55%, #f1f3ff 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 640px;
+            width: 100%;
+            position: relative;
+            z-index: 1;
+        }
+
+        #soundToggle {
+            position: fixed;
+            top: 12px;
+            right: 12px;
+            z-index: 1000;
+            width: 44px;
+            height: 44px;
+            border: none;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.92);
+            font-size: 1.3rem;
+            cursor: pointer;
+            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.15);
+        }
+
+        .header { text-align: center; margin-bottom: 18px; }
+        .title {
+            font-size: 2.4rem;
+            font-weight: 900;
+            background: linear-gradient(120deg, #4c6ef5, #15aabf, #20c997);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            display: inline-block;
+            animation: floatTitle 3s ease-in-out infinite;
+            margin-bottom: 12px;
+        }
+        @keyframes floatTitle {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-4px); }
+        }
+
+        .tabs {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-bottom: 16px;
+        }
+        .tab-btn {
+            padding: 10px 22px;
+            border: none;
+            border-radius: 25px;
+            background: rgba(255, 255, 255, 0.85);
+            color: #868e96;
+            font-size: 1rem;
+            font-weight: 800;
+            cursor: pointer;
+            box-shadow: 0 3px 12px rgba(0, 0, 0, 0.08);
+            transition: all 0.3s ease;
+        }
+        .tab-btn.active {
+            background: linear-gradient(120deg, #4c6ef5, #15aabf);
+            color: white;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 18px rgba(76, 110, 245, 0.35);
+        }
+
+        .stats {
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            background: rgba(255, 255, 255, 0.75);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 12px 10px;
+            margin-bottom: 18px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.07);
+            border: 1px solid rgba(255, 255, 255, 0.8);
+        }
+        .stat-item { text-align: center; min-width: 70px; }
+        .stat-value { font-size: 1.6rem; font-weight: 900; color: var(--blue); display: block; }
+        .stat-value.combo-hot { color: var(--orange); animation: comboPulse 0.5s ease; }
+        @keyframes comboPulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.4); }
+            100% { transform: scale(1); }
+        }
+        .stat-label { font-size: 0.78rem; color: #868e96; margin-top: 2px; }
+        .stars { font-size: 1.1rem; letter-spacing: 2px; }
+        .star-off { opacity: 0.25; filter: grayscale(1); }
+
+        .question-card {
+            background: linear-gradient(135deg, #4c6ef5, #15aabf);
+            border-radius: 28px;
+            padding: 34px 20px;
+            text-align: center;
+            box-shadow: 0 12px 34px rgba(76, 110, 245, 0.3);
+            margin-bottom: 18px;
+            position: relative;
+            min-height: 150px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+        .question-label {
+            font-size: 0.85rem;
+            color: rgba(255, 255, 255, 0.75);
+            letter-spacing: 2px;
+            margin-bottom: 6px;
+        }
+        .question-expr {
+            font-size: 3.2rem;
+            font-weight: 900;
+            color: white;
+            text-shadow: 0 3px 12px rgba(0, 0, 0, 0.25);
+            font-family: 'Arial', sans-serif;
+        }
+        .question-card.correct { animation: cardFlashGreen 0.5s ease; }
+        .question-card.wrong { animation: cardFlashRed 0.5s ease; }
+        @keyframes cardFlashGreen {
+            0%, 100% { box-shadow: 0 12px 34px rgba(76, 110, 245, 0.3); }
+            40% { box-shadow: 0 0 0 8px rgba(32, 201, 151, 0.4); }
+        }
+        @keyframes cardFlashRed {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-6px); }
+            75% { transform: translateX(6px); }
+        }
+
+        .options {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 14px;
+            margin-bottom: 14px;
+        }
+        .option-btn {
+            padding: 20px 10px;
+            border: none;
+            border-radius: 20px;
+            background: white;
+            font-size: 1.7rem;
+            font-weight: 900;
+            font-family: 'Arial', sans-serif;
+            color: var(--ink);
+            cursor: pointer;
+            box-shadow: 0 5px 18px rgba(0, 0, 0, 0.1);
+            transition: transform 0.15s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.2s ease;
+            position: relative;
+        }
+        .option-btn:hover { transform: translateY(-3px); box-shadow: 0 8px 22px rgba(0, 0, 0, 0.15); }
+        .option-btn:active { transform: scale(0.95); }
+        .option-btn.correct {
+            background: linear-gradient(120deg, #20c997, #38d9a9);
+            color: white;
+        }
+        .option-btn.wrong {
+            background: linear-gradient(120deg, #fa5252, #ff8787);
+            color: white;
+            animation: shakeX 0.4s ease;
+        }
+        @keyframes shakeX {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-6px); }
+            75% { transform: translateX(6px); }
+        }
+        .option-btn.disabled { pointer-events: none; }
+
+        .hint {
+            background: rgba(255, 255, 255, 0.8);
+            border-radius: 16px;
+            padding: 12px 18px;
+            font-size: 0.98rem;
+            color: #495057;
+            line-height: 1.7;
+            min-height: 46px;
+            text-align: center;
+            box-shadow: 0 3px 12px rgba(0, 0, 0, 0.05);
+            transition: all 0.3s ease;
+        }
+        .hint.show-hint { border-left: 4px solid var(--orange); }
+        .hint-title { font-weight: 800; color: var(--orange); }
+
+        .score-pop {
+            position: fixed;
+            font-size: 1.5rem;
+            font-weight: 900;
+            color: var(--teal);
+            pointer-events: none;
+            z-index: 1600;
+            text-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+            animation: popFloat 0.9s ease-out forwards;
+        }
+        @keyframes popFloat {
+            0% { transform: translateY(0) scale(0.6); opacity: 0; }
+            25% { opacity: 1; }
+            100% { transform: translateY(-50px) scale(1.15); opacity: 0; }
+        }
+
+        /* 结果弹窗 */
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(6px);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+        }
+        .modal-overlay.show { display: flex; }
+        .modal-box {
+            background: white;
+            border-radius: 28px;
+            padding: 34px 40px;
+            text-align: center;
+            max-width: 380px;
+            width: 90%;
+            box-shadow: 0 24px 60px rgba(0, 0, 0, 0.4);
+            animation: modalPop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+        @keyframes modalPop {
+            from { transform: scale(0.4) translateY(30px); opacity: 0; }
+            to { transform: scale(1) translateY(0); opacity: 1; }
+        }
+        .modal-emoji { font-size: 3.4rem; display: block; margin-bottom: 10px; }
+        .modal-title { font-size: 1.7rem; font-weight: 900; color: var(--ink); margin-bottom: 8px; }
+        .modal-sub { color: #868e96; font-size: 1rem; line-height: 1.9; margin-bottom: 14px; }
+        .modal-stars { font-size: 1.8rem; letter-spacing: 4px; margin-bottom: 18px; }
+        .modal-actions { display: flex; justify-content: center; gap: 12px; }
+        .btn {
+            padding: 12px 26px;
+            border: none;
+            border-radius: 25px;
+            font-size: 1rem;
+            font-weight: 800;
+            cursor: pointer;
+            color: white;
+            background: linear-gradient(120deg, #4c6ef5, #15aabf);
+            box-shadow: 0 5px 16px rgba(76, 110, 245, 0.35);
+            transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.2s ease;
+        }
+        .btn:active { transform: scale(0.94); }
+        .btn.ghost { background: #e9ecef; color: #495057; box-shadow: none; }
+
+        /* 彩带（通关庆祝） */
+        .confetti {
+            position: fixed;
+            top: -24px;
+            width: 10px;
+            height: 16px;
+            border-radius: 2px;
+            z-index: 2050;
+            pointer-events: none;
+            animation: confettiFall linear forwards;
+        }
+        @keyframes confettiFall {
+            0% { transform: translateY(0) rotate(0deg); opacity: 1; }
+            100% { transform: translateY(110vh) rotate(720deg); opacity: 0.7; }
+        }
+
+        @media (max-width: 520px) {
+            .question-expr { font-size: 2.5rem; }
+            .option-btn { font-size: 1.4rem; padding: 16px 8px; }
+            .stats { padding: 10px 6px; }
+            .stat-value { font-size: 1.3rem; }
+        }
+    </style>
+</head>
+<body>
+    <button id="soundToggle" onclick="toggleSound()" title="声音开关">🔊</button>
+
+    <div class="container">
+        <div class="header">
+            <h1 class="title">🧮 数学大冒险</h1>
+            <div class="tabs">
+                <button class="tab-btn active" data-mode="addsub">口算冲刺</button>
+                <button class="tab-btn" data-mode="muldiv">乘法风暴</button>
+                <button class="tab-btn" data-mode="compare">比大小</button>
+            </div>
+        </div>
+
+        <div class="stats">
+            <div class="stat-item">
+                <span class="stat-value" id="score">0</span>
+                <div class="stat-label">得分</div>
+            </div>
+            <div class="stat-item">
+                <span class="stat-value" id="combo">0</span>
+                <div class="stat-label">🔥 连击</div>
+            </div>
+            <div class="stat-item">
+                <span class="stat-value" id="time">60</span>
+                <div class="stat-label">⏱ 时间</div>
+            </div>
+            <div class="stat-item">
+                <div class="stars" id="stars">★★★</div>
+                <div class="stat-label">星级</div>
+            </div>
+        </div>
+
+        <div class="question-card" id="questionCard">
+            <div class="question-label" id="qLabel">加法挑战</div>
+            <div class="question-expr" id="qExpr">3 + 5 = ?</div>
+        </div>
+
+        <div class="options" id="options"></div>
+
+        <div class="hint" id="hint">🎯 选出正确答案，连击越多得分越高！答对加时间，答错扣时间。</div>
+    </div>
+
+    <!-- 结果弹窗 -->
+    <div class="modal-overlay" id="resultModal">
+        <div class="modal-box">
+            <span class="modal-emoji" id="resultEmoji">🎉</span>
+            <div class="modal-title" id="resultTitle">太棒了！</div>
+            <div class="modal-sub" id="resultSub">得分 0 · 正确 0/0</div>
+            <div class="modal-stars" id="resultStars">⭐⭐⭐</div>
+            <div class="modal-actions">
+                <button class="btn" onclick="restart()">再玩一次</button>
+                <button class="btn ghost" onclick="closeResult()">继续看看</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="common-audio.js"></script>
+    <script>
+        // ================= 游戏状态 =================
+        const state = {
+            mode: 'addsub',
+            score: 0,
+            combo: 0,
+            bestCombo: 0,
+            timeLeft: 60,
+            answered: 0,
+            correct: 0,
+            level: 1,           // 难度级别 1-3
+            timer: null,
+            locked: false,      // 答题锁定（防止连点）
+            question: null
+        };
+
+        const MODE_NAMES = {
+            addsub: '口算冲刺',
+            muldiv: '乘法风暴',
+            compare: '比大小'
+        };
+
+        const NUM_CN = ['一', '二', '三', '四', '五', '六', '七', '八', '九', '十'];
+
+        // ================= 题目生成 =================
+        function rand(min, max) {
+            return Math.floor(Math.random() * (max - min + 1)) + min;
+        }
+
+        // 生成加/减题目（难度自适应）
+        function genAddSub() {
+            let a, b, op;
+            if (state.level === 1) {
+                // 10 以内不进位/不退位
+                op = Math.random() < 0.5 ? '+' : '-';
+                if (op === '+') {
+                    a = rand(1, 8); b = rand(1, 9 - a);
+                } else {
+                    a = rand(2, 9); b = rand(1, a);
+                }
+            } else if (state.level === 2) {
+                // 20 以内进位加法 / 退位减法
+                op = Math.random() < 0.5 ? '+' : '-';
+                if (op === '+') {
+                    a = rand(6, 14); b = rand(3, 9);
+                } else {
+                    a = rand(11, 18); b = rand(2, 9);
+                }
+            } else {
+                // 20 以内混合 + 整十整百（三位数不进位）
+                if (Math.random() < 0.4) {
+                    a = rand(1, 9) * 10; b = rand(1, 9) * 10;
+                    return { text: a + ' + ' + b, answer: a + b, hint: a / 10 + ' 个十 + ' + b / 10 + ' 个十 = ' + (a + b) / 10 + ' 个十 = ' + (a + b) };
+                }
+                op = Math.random() < 0.5 ? '+' : '-';
+                if (op === '+') {
+                    a = rand(12, 19); b = rand(3, 9);
+                } else {
+                    a = rand(12, 19); b = rand(3, 9);
+                }
+            }
+            const answer = op === '+' ? a + b : a - b;
+            return { text: a + ' ' + op + ' ' + b, answer: answer, hint: explainAddSub(a, b, op) };
+        }
+
+        // 凑十法 / 破十法解释
+        function explainAddSub(a, b, op) {
+            if (op === '+') {
+                // 凑十法：从 b 借 (10-a) 给 a
+                const need = 10 - a;
+                if (need > 0 && b >= need) {
+                    const rest = b - need;
+                    const big = need > 0 ? '10' : String(a);
+                    return `凑十法：${a} + ${b} = ${a} + ${need} + ${rest} = ${big} + ${rest} = ${a + b}`;
+                }
+                return `想想：${a} + ${b}，从 ${b} 里拿出 ${10 - a}，和 ${a} 凑成 10，再加 ${b - (10 - a)}，等于 ${a + b}`;
+            } else {
+                // 破十法：a - b，把 a 拆成 10 和 (a-10)
+                if (a >= 11 && b >= 2) {
+                    const rest = a - 10;
+                    return `破十法：${a} - ${b} = 10 - ${b} + ${rest} = ${10 - b} + ${rest} = ${a - b}`;
+                }
+                return `${a} 减 ${b}，剩下 ${a - b}`;
+            }
+        }
+
+        // 乘法口诀文本
+        function koujue(a, b) {
+            const [x, y] = a <= b ? [a, b] : [b, a];
+            const val = x * y;
+            let s = NUM_CN[x - 1] + NUM_CN[y - 1];
+            if (val < 10) {
+                s += '得' + NUM_CN[val - 1];
+            } else {
+                const tens = Math.floor(val / 10), ones = val % 10;
+                s += (tens > 1 ? NUM_CN[tens - 1] : '') + '十' + (ones > 0 ? NUM_CN[ones - 1] : '');
+            }
+            return s;
+        }
+
+        // 生成乘/除题目
+        function genMulDiv() {
+            const a = rand(2, 9), b = rand(2, 9);
+            if (Math.random() < 0.6) {
+                // 乘法
+                return { text: a + ' × ' + b, answer: a * b, hint: `口诀：${koujue(a, b)}` };
+            } else {
+                // 除法（整除）
+                const q = a * b;
+                return { text: q + ' ÷ ' + b, answer: a, hint: `想：${b} × 几 = ${q}？口诀：${koujue(b, a)}，所以 ${q} ÷ ${b} = ${a}` };
+            }
+        }
+
+        // 生成比大小题目
+        function genCompare() {
+            let left, right;
+            const useExpr = Math.random() < 0.7;
+            if (useExpr) {
+                if (state.mode === 'muldiv' || Math.random() < 0.5) {
+                    const a = rand(2, 9), b = rand(2, 9), c = rand(2, 9), d = rand(2, 9);
+                    left = a * b; right = c * d;
+                    return {
+                        text: a + ' × ' + b + '  ○  ' + c + ' × ' + d,
+                        answer: left > right ? '>' : (left < right ? '<' : '='),
+                        hint: `${a} × ${b} = ${left}，${c} × ${d} = ${right}，${left} ${left > right ? '>' : (left < right ? '<' : '=')} ${right}`
+                    };
+                } else {
+                    const a = rand(3, 15), b = rand(2, 9), c = rand(3, 15), d = rand(2, 9);
+                    left = a + b; right = c + d;
+                    return {
+                        text: a + ' + ' + b + '  ○  ' + c + ' + ' + d,
+                        answer: left > right ? '>' : (left < right ? '<' : '='),
+                        hint: `${a} + ${b} = ${left}，${c} + ${d} = ${right}，所以填 ${left > right ? '>' : (left < right ? '<' : '=')}`
+                    };
+                }
+            } else {
+                left = rand(1, 99); right = rand(1, 99);
+                return {
+                    text: left + '  ○  ' + right,
+                    answer: left > right ? '>' : (left < right ? '<' : '='),
+                    hint: `${left} 和 ${right} 比大小，${left} ${left > right ? '>' : (left < right ? '<' : '=')} ${right}`
+                };
+            }
+        }
+
+        function genQuestion() {
+            if (state.mode === 'addsub') return genAddSub();
+            if (state.mode === 'muldiv') return genMulDiv();
+            return genCompare();
+        }
+
+        // ================= 选项生成 =================
+        function genOptions(answer) {
+            const opts = new Set([answer]);
+            let guard = 0;
+            while (opts.size < 4 && guard++ < 100) {
+                const offset = rand(1, 3) * (Math.random() < 0.5 ? 1 : -1);
+                const cand = answer + offset;
+                if (cand >= 0 && cand <= 200 && cand !== answer) {
+                    opts.add(cand);
+                } else {
+                    const cand2 = answer + rand(1, 9);
+                    if (cand2 >= 0) opts.add(cand2);
+                }
+            }
+            const arr = [...opts].slice(0, 4);
+            // 打乱
+            for (let i = arr.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [arr[i], arr[j]] = [arr[j], arr[i]];
+            }
+            return arr;
+        }
+
+        // 比大小模式选项
+        const COMPARE_OPTS = ['>', '<', '='];
+
+        // ================= 渲染 =================
+        function renderQuestion() {
+            state.question = genQuestion();
+            state.locked = false;
+            const q = state.question;
+            document.getElementById('qLabel').textContent = MODE_NAMES[state.mode];
+            document.getElementById('qExpr').textContent = q.text + ' = ?';
+            const box = document.getElementById('options');
+            box.innerHTML = '';
+            const hint = document.getElementById('hint');
+            hint.className = 'hint';
+            hint.innerHTML = '🎯 选出正确答案，连击越多得分越高！答对加时间，答错扣时间。';
+
+            const opts = state.mode === 'compare' ? COMPARE_OPTS.slice() : genOptions(q.answer);
+            if (state.mode === 'compare') {
+                // 打乱比较符号
+                for (let i = opts.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [opts[i], opts[j]] = [opts[j], opts[i]];
+                }
+            }
+            opts.forEach((v, i) => {
+                const btn = document.createElement('button');
+                btn.className = 'option-btn';
+                btn.textContent = v;
+                btn.dataset.value = v;
+                btn.onclick = () => selectAnswer(v, btn);
+                box.appendChild(btn);
+            });
+            document.getElementById('questionCard').classList.remove('correct', 'wrong');
+        }
+
+        // ================= 答题 =================
+        function selectAnswer(value, btn) {
+            if (state.locked) return;
+            state.locked = true;
+            state.answered++;
+
+            const q = state.question;
+            const isRight = String(value) === String(q.answer);
+            const card = document.getElementById('questionCard');
+            const allBtns = document.querySelectorAll('.option-btn');
+            const hint = document.getElementById('hint');
+
+            if (isRight) {
+                state.correct++;
+                state.combo++;
+                state.bestCombo = Math.max(state.bestCombo, state.combo);
+                // 得分 = 10 × 连击倍率
+                const gain = 10 * (1 + Math.floor(state.combo / 3));
+                state.score += gain;
+                state.timeLeft = Math.min(99, state.timeLeft + 2);
+                // 反馈
+                btn.classList.add('correct');
+                card.classList.add('correct');
+                playMatchSound();
+                spawnScorePop(btn, '+' + gain);
+                // 提示：连续答对展示方法
+                if (state.combo >= 2) {
+                    hint.className = 'hint show-hint';
+                    hint.innerHTML = '<span class="hint-title">💡 方法：</span>' + q.hint;
+                }
+            } else {
+                state.combo = 0;
+                state.timeLeft = Math.max(0, state.timeLeft - 3);
+                btn.classList.add('wrong');
+                card.classList.add('wrong');
+                playWrongSound();
+                // 标出正确答案
+                document.querySelectorAll('.option-btn').forEach(b => {
+                    if (String(b.dataset.value) === String(q.answer)) {
+                        b.classList.add('correct');
+                    }
+                });
+                // 展示方法和正确答案
+                hint.className = 'hint show-hint';
+                hint.innerHTML = '<span class="hint-title">💡 正确答案 ' + q.answer + '：</span>' + q.hint;
+            }
+
+            document.querySelectorAll('.option-btn').forEach(b => b.classList.add('disabled'));
+            updateStats();
+
+            // 下一题
+            setTimeout(() => {
+                adjustLevel();
+                renderQuestion();
+            }, 1300);
+        }
+
+        // 难度自适应：连续 3 对升级，答错 2 次降级
+        let recentCorrect = 0, recentWrong = 0;
+        function adjustLevel() {
+            if (state.combo > 0) {
+                recentCorrect++;
+                recentWrong = 0;
+            } else {
+                recentWrong++;
+                recentCorrect = 0;
+            }
+            if (recentCorrect >= 3 && state.level < 3) {
+                state.level++;
+                recentCorrect = 0;
+            } else if (recentWrong >= 2 && state.level > 1) {
+                state.level--;
+                recentWrong = 0;
+            }
+        }
+
+        function updateStats() {
+            document.getElementById('score').textContent = state.score;
+            const comboEl = document.getElementById('combo');
+            comboEl.textContent = state.combo;
+            comboEl.classList.toggle('combo-hot', state.combo >= 3);
+            document.getElementById('time').textContent = state.timeLeft;
+            updateStars();
+        }
+
+        // 星级实时预览
+        function updateStars() {
+            const el = document.getElementById('stars');
+            const stars = state.correct >= 15 ? 3 : state.correct >= 8 ? 2 : state.correct >= 3 ? 1 : 0;
+            el.innerHTML = '★'.repeat(stars) + '<span class="star-off">' + '★'.repeat(3 - stars) + '</span>';
+        }
+
+        // 得分浮动
+        function spawnScorePop(btn, text) {
+            const rect = btn.getBoundingClientRect();
+            const pop = document.createElement('div');
+            pop.className = 'score-pop';
+            pop.textContent = text;
+            pop.style.left = (rect.left + rect.width / 2 - 20) + 'px';
+            pop.style.top = rect.top + 'px';
+            document.body.appendChild(pop);
+            setTimeout(() => pop.remove(), 950);
+        }
+
+        // ================= 计时与结束 =================
+        function startTimer() {
+            if (state.timer) clearInterval(state.timer);
+            state.timer = setInterval(() => {
+                state.timeLeft--;
+                document.getElementById('time').textContent = state.timeLeft;
+                if (state.timeLeft <= 0) {
+                    endGame();
+                }
+            }, 1000);
+        }
+
+        function endGame() {
+            clearInterval(state.timer);
+            state.timer = null;
+            state.locked = true;
+            // 星级与评语
+            const stars = state.correct >= 15 ? 3 : state.correct >= 8 ? 2 : state.correct >= 3 ? 1 : 0;
+            const emoji = stars === 3 ? '🏆' : stars === 2 ? '🎉' : stars === 1 ? '👍' : '💪';
+            const title = stars === 3 ? '数学小天才！' : stars === 2 ? '真棒！' : stars === 1 ? '不错哦！' : '再试试！';
+            const sub = '得分 ' + state.score + ' · 答对 ' + state.correct + '/' + state.answered +
+                (state.bestCombo > 1 ? ' · 最高连击 x' + state.bestCombo : '');
+            document.getElementById('resultEmoji').textContent = emoji;
+            document.getElementById('resultTitle').textContent = title;
+            document.getElementById('resultSub').textContent = sub;
+            document.getElementById('resultStars').innerHTML = '★'.repeat(stars) + '<span class="star-off">' + '★'.repeat(3 - stars) + '</span>';
+            document.getElementById('resultModal').classList.add('show');
+            // 庆祝
+            if (stars >= 2) {
+                spawnConfetti(stars === 3 ? 90 : 50);
+                playFireworkSound();
+            } else {
+                playWrongSound();
+            }
+        }
+
+        function spawnConfetti(count) {
+            const colors = ['#4c6ef5', '#15aabf', '#20c997', '#ffd43b', '#fa5252', '#fd7e14', '#f783ac'];
+            for (let i = 0; i < count; i++) {
+                const c = document.createElement('div');
+                c.className = 'confetti';
+                c.style.left = Math.random() * 100 + 'vw';
+                c.style.background = colors[Math.floor(Math.random() * colors.length)];
+                c.style.animationDuration = (1.4 + Math.random() * 1.6) + 's';
+                c.style.animationDelay = (Math.random() * 0.8) + 's';
+                document.body.appendChild(c);
+            }
+            setTimeout(() => document.querySelectorAll('.confetti').forEach(el => el.remove()), 4000);
+        }
+
+        function restart() {
+            document.getElementById('resultModal').classList.remove('show');
+            state.score = 0;
+            state.combo = 0;
+            state.bestCombo = 0;
+            state.timeLeft = 60;
+            state.answered = 0;
+            state.correct = 0;
+            state.level = 1;
+            recentCorrect = 0;
+            recentWrong = 0;
+            updateStats();
+            startTimer();
+            renderQuestion();
+        }
+
+        function closeResult() {
+            document.getElementById('resultModal').classList.remove('show');
+            restart();
+        }
+
+        // ================= 模式切换 =================
+        function switchMode(mode) {
+            state.mode = mode;
+            document.querySelectorAll('.tab-btn').forEach(b => {
+                b.classList.toggle('active', b.dataset.mode === mode);
+            });
+            restart();
+        }
+
+        // ================= 初始化 =================
+        function init() {
+            updateSoundBtn();
+            // 加载声音设置
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.addEventListener('click', () => switchMode(btn.dataset.mode));
+            });
+            // 键盘支持：1-4 选答案，Enter 重开
+            document.addEventListener('keydown', (e) => {
+                if (state.locked) return;
+                const n = parseInt(e.key, 10);
+                if (n >= 1 && n <= 4) {
+                    const btns = document.querySelectorAll('.option-btn');
+                    if (btns[n - 1]) {
+                        btns[n - 1].click();
+                    }
+                }
+            });
+            updateStats();
+            renderQuestion();
+            startTimer();
+        }
+
+        document.addEventListener('DOMContentLoaded', init);
+    </script>
+</body>
+</html>

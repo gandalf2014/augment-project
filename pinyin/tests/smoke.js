@@ -76,7 +76,25 @@ function check(name, cond, detail) {
   console.log('\n=== 索引页 ===');
   await page.goto(BASE + '/index.html', { waitUntil: 'networkidle' });
   const links = await page.locator('.game-card').count();
-  check('3 个游戏入口', links === 3, 'links=' + links);
+  check('4 个游戏入口', links === 4, 'links=' + links);
+
+  // ===== 4b. 数学大冒险 =====
+  console.log('=== 数学大冒险 ===');
+  await page.goto(BASE + '/math-game.html', { waitUntil: 'networkidle' });
+  await page.waitForTimeout(400);
+  const qExpr = await page.locator('#qExpr').textContent();
+  const optCount = await page.locator('.option-btn').count();
+  check('题目生成', !!qExpr && qExpr.includes('?'), qExpr);
+  check('4 个选项', optCount === 4, 'opts=' + optCount);
+  // 答一题
+  const answer = await page.evaluate(() => {
+    const q = state.question;
+    return q.answer;
+  });
+  await page.locator('.option-btn').filter({ hasText: String(answer) }).first().click().catch(() => {});
+  await page.waitForTimeout(300);
+  const score = await page.locator('#score').textContent();
+  check('答对加分', parseInt(score) > 0, 'score=' + score);
 
   // ===== 5. 全局 JS 错误 =====
   check('无 JS 错误 / 资源 404', errors.length === 0, errors.slice(0, 3).join(' ; '));

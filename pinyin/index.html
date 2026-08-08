@@ -177,6 +177,9 @@
         .game-card:nth-child(3) {
             animation-delay: 0.45s;
         }
+        .game-card:nth-child(4) {
+            animation-delay: 0.6s;
+        }
 
         @keyframes cardIn {
             from {
@@ -207,6 +210,9 @@
         }
         .game-card:nth-child(3)::before {
             background: linear-gradient(90deg, #9775fa, #f783ac);
+        }
+        .game-card:nth-child(4)::before {
+            background: linear-gradient(90deg, #4c6ef5, #15aabf);
         }
 
         .game-card:hover {
@@ -240,6 +246,9 @@
         .game-card:nth-child(3) .game-icon-wrap {
             background: linear-gradient(135deg, #e5dbff, #fcc2d7);
         }
+        .game-card:nth-child(4) .game-icon-wrap {
+            background: linear-gradient(135deg, #d0ebff, #c5f6fa);
+        }
 
         .game-card:hover .game-icon-wrap {
             transform: scale(1.12) rotate(-6deg);
@@ -258,6 +267,9 @@
         }
         .game-card:nth-child(3) .game-icon {
             animation-delay: 1.6s;
+        }
+        .game-card:nth-child(4) .game-icon {
+            animation-delay: 2.4s;
         }
 
         @keyframes iconWiggle {
@@ -304,6 +316,9 @@
         }
         .game-card:nth-child(3) .game-tag {
             background: linear-gradient(120deg, #9775fa, #f783ac);
+        }
+        .game-card:nth-child(4) .game-tag {
+            background: linear-gradient(120deg, #4c6ef5, #15aabf);
         }
 
         /* 进度装饰条 */
@@ -366,7 +381,7 @@
                 汉语拼音乐园
                 <span class="title-deco">🎈</span>
             </h1>
-            <p class="subtitle">选择一个游戏，<b>快乐学拼音</b>！</p>
+            <p class="subtitle">选择一个游戏，<b>快乐学习</b>！</p>
         </div>
 
         <div class="game-grid">
@@ -399,6 +414,18 @@
                 <div class="game-name">汉字消消乐</div>
                 <div class="game-desc">主题识字 + 1-6 年级课内生字<br>305 关 2400+ 汉字，支持跳关</div>
                 <span class="game-tag">进阶挑战</span>
+                <div class="game-stats-row">
+                    <span class="mini-star">⭐</span>
+                    <span class="mini-star">⭐</span>
+                    <span class="mini-star">⭐</span>
+                </div>
+            </a>
+
+            <a class="game-card" href="math-game.html">
+                <div class="game-icon-wrap"><span class="game-icon">🧮</span></div>
+                <div class="game-name">数学大冒险</div>
+                <div class="game-desc">口算冲刺 + 乘法风暴 + 比大小<br>限时闯关，连击加分，挑战数学小天才</div>
+                <span class="game-tag">数学挑战</span>
                 <div class="game-stats-row">
                     <span class="mini-star">⭐</span>
                     <span class="mini-star">⭐</span>

@@ -127,6 +127,30 @@ function playMatchSound() {
 }
 
 // 翻卡“哒”音效（短促高频点击）
+
+// 错误提示音（低沉哄哄）
+function playWrongSound() {
+    if (!soundEnabled) return;
+    try {
+        ensureFireworkAudio();
+        if (!fireworkAudioCtx) return;
+        const ctx = fireworkAudioCtx;
+        const now = ctx.currentTime;
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(220, now);
+        osc.frequency.exponentialRampToValueAtTime(110, now + 0.3);
+        gain.gain.setValueAtTime(0.15, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.35);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start(now);
+        osc.stop(now + 0.36);
+    } catch (e) {
+        console.warn('错误音效播放失败:', e);
+    }
+}
 function playFlipSound() {
     if (!soundEnabled) return;
     try {
