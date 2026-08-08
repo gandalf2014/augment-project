@@ -1,7 +1,7 @@
 # Codebase Map
 
-Generated: 2026-08-08T12:54:45Z | Files: 67 | Described: 0/67
-<!-- gsd:codebase-meta {"generatedAt":"2026-08-08T12:54:45Z","fingerprint":"75d4e955f0aba1f3e5e88d49b7ba22e4581e2307","fileCount":67,"truncated":false} -->
+Generated: 2026-08-08T13:38:44Z | Files: 68 | Described: 0/68
+<!-- gsd:codebase-meta {"generatedAt":"2026-08-08T13:38:44Z","fingerprint":"8654065609568131c3d156dc8ed2e4af386e3567","fileCount":68,"truncated":false} -->
 
 ### (root)/
 - `.gitignore`
@@ -14,6 +14,7 @@ Generated: 2026-08-08T12:54:45Z | Files: 67 | Described: 0/67
 - `hanzi-data.js`
 - `hanzi-xiaoxiaole.html`
 - `index.html`
+- `math-game.html`
 - `package.json`
 - `pinyin-data.js`
 - `pinyin-game.html`
