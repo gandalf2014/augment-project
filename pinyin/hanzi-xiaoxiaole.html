@@ -857,7 +857,8 @@
         let currentAudio = null;
 
         // 播放汉字读音
-        function playHanziSound(hanzi) {
+        // 朗读汉字及其组词（如：山，山地）
+        function playHanziSound(hanzi, word) {
             if (!soundEnabled) return;
             // 停止当前播放的音频
             if (currentAudio) {
@@ -872,7 +873,7 @@
 
                 // 短暂延迟确保之前的语音完全停止
                 setTimeout(() => {
-                    const utterance = new SpeechSynthesisUtterance(hanzi);
+                    const utterance = new SpeechSynthesisUtterance(hanzi + (word ? '，' + word : ''));
 
                     // 获取中文语音
                     const voices = speechSynthesis.getVoices();
@@ -1078,6 +1079,7 @@
                     gameState.grid[i][j] = {
                         hanzi: hanziData.hanzi,
                         pinyin: hanziData.pinyin,
+                        word: hanziData.word || '',
                         element: cell
                     };
                 }
@@ -1105,8 +1107,8 @@
             const cellElement = cell.element;
             const cellId = `${row}-${col}`;
 
-            // 播放汉字读音
-            playHanziSound(cell.hanzi);
+            // 播放汉字读音（含组词）
+            playHanziSound(cell.hanzi, cell.word);
 
             // 如果已经选中，取消选中
             if (gameState.selectedCells.includes(cellId)) {
@@ -1404,7 +1406,8 @@
                     if (gameState.grid[i][j].hanzi) {
                         remainingHanziData.push({
                             hanzi: gameState.grid[i][j].hanzi,
-                            pinyin: gameState.grid[i][j].pinyin
+                            pinyin: gameState.grid[i][j].pinyin,
+                            word: gameState.grid[i][j].word || ''
                         });
                     }
                 }
@@ -1422,6 +1425,7 @@
                         const hanziData = remainingHanziData[hanziIndex];
                         cell.hanzi = hanziData.hanzi;
                         cell.pinyin = hanziData.pinyin;
+                        cell.word = hanziData.word || '';
 
                         // 更新显示
                         const cellFront = cell.element.querySelector('.cell-front');
