@@ -12,10 +12,14 @@
         }
 
         body {
-            font-family: 'Microsoft YaHei', Arial, sans-serif;
-            background: linear-gradient(135deg, #ff9a9e 0%, #fecfef 50%, #fecfef 100%);
+            font-family: 'Yuanti SC', 'YouYuan', '幼圆', 'Microsoft YaHei', Arial, sans-serif;
+            background:
+                radial-gradient(700px 500px at 10% 0%, rgba(255, 255, 255, 0.55) 0%, transparent 60%),
+                radial-gradient(800px 600px at 100% 30%, rgba(255, 182, 193, 0.5) 0%, transparent 55%),
+                linear-gradient(135deg, #ff9a9e 0%, #fecfef 50%, #fecfef 100%);
             min-height: 100vh;
             padding: 20px;
+            overflow-x: hidden;
         }
 
         .container {
@@ -30,9 +34,20 @@
 
         .title {
             font-size: 2.5rem;
-            color: #ff6b6b;
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+            font-weight: 900;
+            background: linear-gradient(120deg, #ff6b6b, #f783ac, #ffa94d);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            filter: drop-shadow(0 3px 6px rgba(255, 107, 107, 0.25));
             margin-bottom: 10px;
+            display: inline-block;
+            animation: titleFloat 3s ease-in-out infinite;
+        }
+
+        @keyframes titleFloat {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-4px); }
         }
 
         .subtitle {
@@ -124,9 +139,32 @@
             perspective: 1000px;
         }
 
+        .card {
+            animation: cardIn 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+        }
+
+        .card:nth-child(n+2) {
+            animation-delay: 0.03s;
+        }
+
+        @keyframes cardIn {
+            from {
+                transform: scale(0.7) translateY(14px);
+                opacity: 0;
+            }
+            to {
+                transform: scale(1) translateY(0);
+                opacity: 1;
+            }
+        }
+
         .card:hover {
-            transform: translateY(-3px) scale(1.05);
-            box-shadow: 0 6px 20px rgba(0,0,0,0.2);
+            transform: translateY(-5px) scale(1.05);
+            box-shadow: 0 10px 28px rgba(255, 107, 107, 0.3);
+        }
+
+        .card:active {
+            transform: scale(0.95);
         }
 
         .card-inner {
