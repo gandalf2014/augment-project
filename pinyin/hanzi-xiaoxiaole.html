@@ -254,6 +254,32 @@
             box-shadow: 0 6px 20px rgba(255, 64, 129, 0.4);
         }
 
+        .level-jump {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: rgba(30, 30, 60, 0.9);
+            padding: 6px 16px;
+            border-radius: 25px;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .level-input {
+            width: 64px;
+            padding: 8px 10px;
+            border: 1px solid rgba(255,255,255,0.2);
+            border-radius: 10px;
+            background: #1a1a2e;
+            color: #e8eaf6;
+            font-size: 1rem;
+            text-align: center;
+            outline: none;
+        }
+
+        .level-input:focus {
+            border-color: #7c4dff;
+        }
+
         .game-over {
             position: fixed;
             top: 0;
@@ -380,6 +406,11 @@
         <div class="controls">
             <button class="btn btn-primary" onclick="startNewGame()">新游戏</button>
             <button class="btn btn-secondary" onclick="shuffleBoard()">重新排列</button>
+            <div class="level-jump">
+                <span class="toggle-label">跳关</span>
+                <input type="number" id="levelInput" min="1" max="305" value="1" class="level-input">
+                <button class="btn btn-primary" onclick="goToLevel()">跳转</button>
+            </div>
         </div>
     </div>
 
@@ -1160,6 +1191,2593 @@
                 {hanzi: '澡', pinyin: 'zǎo'},
                 {hanzi: '盆', pinyin: 'pén'},
             ],
+            // 第71关 - 一年级上册生字
+            [
+                {hanzi: '十', pinyin: 'shí'},
+                {hanzi: '木', pinyin: 'mù'},
+                {hanzi: '禾', pinyin: 'hé'},
+                {hanzi: '上', pinyin: 'shàng'},
+                {hanzi: '下', pinyin: 'xià'},
+                {hanzi: '土', pinyin: 'tǔ'},
+                {hanzi: '个', pinyin: 'gè'},
+                {hanzi: '天', pinyin: 'tiān'},
+            ],
+            // 第72关 - 一年级上册生字
+            [
+                {hanzi: '儿', pinyin: 'ér'},
+                {hanzi: '九', pinyin: 'jiǔ'},
+                {hanzi: '中', pinyin: 'zhōng'},
+                {hanzi: '了', pinyin: 'le'},
+                {hanzi: '子', pinyin: 'zi'},
+                {hanzi: '不', pinyin: 'bù'},
+                {hanzi: '开', pinyin: 'kāi'},
+                {hanzi: '目', pinyin: 'mù'},
+            ],
+            // 第73关 - 一年级上册生字
+            [
+                {hanzi: '见', pinyin: 'jiàn'},
+                {hanzi: '田', pinyin: 'tián'},
+                {hanzi: '长', pinyin: 'zhǎng'},
+                {hanzi: '出', pinyin: 'chū'},
+                {hanzi: '公', pinyin: 'gōng'},
+                {hanzi: '车', pinyin: 'chē'},
+                {hanzi: '少', pinyin: 'shǎo'},
+                {hanzi: '牙', pinyin: 'yá'},
+            ],
+            // 第74关 - 一年级上册生字
+            [
+                {hanzi: '尺', pinyin: 'chǐ'},
+                {hanzi: '卜', pinyin: 'bo'},
+                {hanzi: '又', pinyin: 'yòu'},
+                {hanzi: '力', pinyin: 'lì'},
+                {hanzi: '升', pinyin: 'shēng'},
+                {hanzi: '半', pinyin: 'bàn'},
+                {hanzi: '巴', pinyin: 'bā'},
+                {hanzi: '业', pinyin: 'yè'},
+            ],
+            // 第75关 - 一年级上册生字
+            [
+                {hanzi: '本', pinyin: 'běn'},
+                {hanzi: '书', pinyin: 'shū'},
+                {hanzi: '自', pinyin: 'zì'},
+                {hanzi: '东', pinyin: 'dōng'},
+                {hanzi: '西', pinyin: 'xī'},
+                {hanzi: '回', pinyin: 'huí'},
+                {hanzi: '片', pinyin: 'piàn'},
+                {hanzi: '皮', pinyin: 'pí'},
+            ],
+            // 第76关 - 一年级上册生字
+            [
+                {hanzi: '里', pinyin: 'lǐ'},
+                {hanzi: '几', pinyin: 'jǐ'},
+                {hanzi: '用', pinyin: 'yòng'},
+                {hanzi: '今', pinyin: 'jīn'},
+                {hanzi: '正', pinyin: 'zhèng'},
+                {hanzi: '两', pinyin: 'liǎng'},
+                {hanzi: '衣', pinyin: 'yī'},
+                {hanzi: '来', pinyin: 'lái'},
+            ],
+            // 第77关 - 一年级上册/二年级上册生字
+            [
+                {hanzi: '年', pinyin: 'nián'},
+                {hanzi: '宜', pinyin: 'yí'},
+                {hanzi: '实', pinyin: 'shí'},
+                {hanzi: '华', pinyin: 'huá'},
+                {hanzi: '谷', pinyin: 'gǔ'},
+                {hanzi: '尽', pinyin: 'jǐn'},
+                {hanzi: '层', pinyin: 'céng'},
+                {hanzi: '丰', pinyin: 'fēng'},
+            ],
+            // 第78关 - 二年级上册生字
+            [
+                {hanzi: '波', pinyin: 'bō'},
+                {hanzi: '浪', pinyin: 'làng'},
+                {hanzi: '灯', pinyin: 'dēng'},
+                {hanzi: '作', pinyin: 'zuò'},
+                {hanzi: '苹', pinyin: 'píng'},
+                {hanzi: '丽', pinyin: 'lì'},
+                {hanzi: '劳', pinyin: 'láo'},
+                {hanzi: '尤', pinyin: 'yóu'},
+            ],
+            // 第79关 - 二年级上册生字
+            [
+                {hanzi: '其', pinyin: 'qí'},
+                {hanzi: '区', pinyin: 'qū'},
+                {hanzi: '巨', pinyin: 'jù'},
+                {hanzi: '它', pinyin: 'tā'},
+                {hanzi: '站', pinyin: 'zhàn'},
+                {hanzi: '甲', pinyin: 'jiǎ'},
+                {hanzi: '识', pinyin: 'shí'},
+                {hanzi: '纷', pinyin: 'fēn'},
+            ],
+            // 第80关 - 二年级上册生字
+            [
+                {hanzi: '如', pinyin: 'rú'},
+                {hanzi: '好', pinyin: 'hǎo'},
+                {hanzi: '娃', pinyin: 'wá'},
+                {hanzi: '洼', pinyin: 'wā'},
+                {hanzi: '于', pinyin: 'yú'},
+                {hanzi: '枝', pinyin: 'zhī'},
+                {hanzi: '枫', pinyin: 'fēng'},
+                {hanzi: '记', pinyin: 'jì'},
+            ],
+            // 第81关 - 二年级上册生字
+            [
+                {hanzi: '刘', pinyin: 'liú'},
+                {hanzi: '胡', pinyin: 'hú'},
+                {hanzi: '棋', pinyin: 'qí'},
+                {hanzi: '钢', pinyin: 'gāng'},
+                {hanzi: '弹', pinyin: 'tán'},
+                {hanzi: '琴', pinyin: 'qín'},
+                {hanzi: '养', pinyin: 'yǎng'},
+                {hanzi: '休', pinyin: 'xiū'},
+            ],
+            // 第82关 - 二年级上册生字
+            [
+                {hanzi: '歌', pinyin: 'gē'},
+                {hanzi: '院', pinyin: 'yuàn'},
+                {hanzi: '除', pinyin: 'chú'},
+                {hanzi: '牵', pinyin: 'qiān'},
+                {hanzi: '困', pinyin: 'kùn'},
+                {hanzi: '员', pinyin: 'yuán'},
+                {hanzi: '宁', pinyin: 'níng'},
+                {hanzi: '室', pinyin: 'shì'},
+            ],
+            // 第83关 - 二年级上册生字
+            [
+                {hanzi: '切', pinyin: 'qiè'},
+                {hanzi: '班', pinyin: 'bān'},
+                {hanzi: '欠', pinyin: 'qiàn'},
+                {hanzi: '哈', pinyin: 'hā'},
+                {hanzi: '及', pinyin: 'jí'},
+                {hanzi: '计', pinyin: 'jì'},
+                {hanzi: '怦', pinyin: 'pēng'},
+                {hanzi: '礼', pinyin: 'lǐ'},
+            ],
+            // 第84关 - 二年级上册生字
+            [
+                {hanzi: '与', pinyin: 'yǔ'},
+                {hanzi: '川', pinyin: 'chuān'},
+                {hanzi: '州', pinyin: 'zhōu'},
+                {hanzi: '争', pinyin: 'zhēng'},
+                {hanzi: '民', pinyin: 'mín'},
+                {hanzi: '族', pinyin: 'zú'},
+                {hanzi: '亿', pinyin: 'yì'},
+                {hanzi: '洁', pinyin: 'jié'},
+            ],
+            // 第85关 - 二年级上册生字
+            [
+                {hanzi: '祖', pinyin: 'zǔ'},
+                {hanzi: '旗', pinyin: 'qí'},
+                {hanzi: '帜', pinyin: 'zhì'},
+                {hanzi: '庆', pinyin: 'qìng'},
+                {hanzi: '曲', pinyin: 'qǔ'},
+                {hanzi: '央', pinyin: 'yāng'},
+                {hanzi: '市', pinyin: 'shì'},
+                {hanzi: '旁', pinyin: 'páng'},
+            ],
+            // 第86关 - 二年级上册生字
+            [
+                {hanzi: '优', pinyin: 'yōu'},
+                {hanzi: '坛', pinyin: 'tán'},
+                {hanzi: '城', pinyin: 'chéng'},
+                {hanzi: '图', pinyin: 'tú'},
+                {hanzi: '申', pinyin: 'shēn'},
+                {hanzi: '泪', pinyin: 'lèi'},
+                {hanzi: '洋', pinyin: 'yáng'},
+                {hanzi: '拥', pinyin: 'yōng'},
+            ],
+            // 第87关 - 二年级上册生字
+            [
+                {hanzi: '扬', pinyin: 'yáng'},
+                {hanzi: '指', pinyin: 'zhǐ'},
+                {hanzi: '惊', pinyin: 'jīng'},
+                {hanzi: '侯', pinyin: 'hóu'},
+                {hanzi: '寸', pinyin: 'cùn'},
+                {hanzi: '补', pinyin: 'bǔ'},
+                {hanzi: '功', pinyin: 'gōng'},
+                {hanzi: '助', pinyin: 'zhù'},
+            ],
+            // 第88关 - 二年级上册生字
+            [
+                {hanzi: '取', pinyin: 'qǔ'},
+                {hanzi: '沿', pinyin: 'yán'},
+                {hanzi: '拾', pinyin: 'shí'},
+                {hanzi: '际', pinyin: 'jì'},
+                {hanzi: '蛙', pinyin: 'wā'},
+                {hanzi: '错', pinyin: 'cuò'},
+                {hanzi: '答', pinyin: 'dá'},
+                {hanzi: '挂', pinyin: 'guà'},
+            ],
+            // 第89关 - 二年级上册生字
+            [
+                {hanzi: '哇', pinyin: 'wa'},
+                {hanzi: '怪', pinyin: 'guài'},
+                {hanzi: '慢', pinyin: 'màn'},
+                {hanzi: '穿', pinyin: 'chuān'},
+                {hanzi: '弯', pinyin: 'wān'},
+                {hanzi: '比', pinyin: 'bǐ'},
+                {hanzi: '服', pinyin: 'fú'},
+                {hanzi: '浅', pinyin: 'qiǎn'},
+            ],
+            // 第90关 - 二年级上册生字
+            [
+                {hanzi: '漂', pinyin: 'piāo'},
+                {hanzi: '啊', pinyin: 'a'},
+                {hanzi: '夫', pinyin: 'fū'},
+                {hanzi: '表', pinyin: 'biǎo'},
+                {hanzi: '示', pinyin: 'shì'},
+                {hanzi: '号', pinyin: 'hào'},
+                {hanzi: '汗', pinyin: 'hàn'},
+                {hanzi: '伤', pinyin: 'shāng'},
+            ],
+            // 第91关 - 二年级上册生字
+            [
+                {hanzi: '吸', pinyin: 'xī'},
+                {hanzi: '极', pinyin: 'jí'},
+                {hanzi: '串', pinyin: 'chuàn'},
+                {hanzi: '免', pinyin: 'miǎn'},
+                {hanzi: '狐', pinyin: 'hú'},
+                {hanzi: '狸', pinyin: 'lí'},
+                {hanzi: '斤', pinyin: 'jīn'},
+                {hanzi: '折', pinyin: 'zhé'},
+            ],
+            // 第92关 - 二年级上册生字
+            [
+                {hanzi: '根', pinyin: 'gēn'},
+                {hanzi: '容', pinyin: 'róng'},
+                {hanzi: '易', pinyin: 'yì'},
+                {hanzi: '板', pinyin: 'bǎn'},
+                {hanzi: '椅', pinyin: 'yǐ'},
+                {hanzi: '但', pinyin: 'dàn'},
+                {hanzi: '傍', pinyin: 'bàng'},
+                {hanzi: '由', pinyin: 'yóu'},
+            ],
+            // 第93关 - 二年级上册生字
+            [
+                {hanzi: '术', pinyin: 'shù'},
+                {hanzi: '课', pinyin: 'kè'},
+                {hanzi: '笔', pinyin: 'bǐ'},
+                {hanzi: '桌', pinyin: 'zhuō'},
+                {hanzi: '景', pinyin: 'jǐng'},
+                {hanzi: '坏', pinyin: 'huài'},
+                {hanzi: '松', pinyin: 'sōng'},
+                {hanzi: '扎', pinyin: 'zhā'},
+            ],
+            // 第94关 - 二年级上册生字
+            [
+                {hanzi: '抓', pinyin: 'zhuā'},
+                {hanzi: '祝', pinyin: 'zhù'},
+                {hanzi: '福', pinyin: 'fú'},
+                {hanzi: '句', pinyin: 'jù'},
+                {hanzi: '幸', pinyin: 'xìng'},
+                {hanzi: '布', pinyin: 'bù'},
+                {hanzi: '期', pinyin: 'qī'},
+                {hanzi: '轮', pinyin: 'lún'},
+            ],
+            // 第95关 - 二年级上册生字
+            [
+                {hanzi: '丑', pinyin: 'chǒu'},
+                {hanzi: '永', pinyin: 'yǒng'},
+                {hanzi: '饥', pinyin: 'jī'},
+                {hanzi: '贫', pinyin: 'pín'},
+                {hanzi: '富', pinyin: 'fù'},
+                {hanzi: '户', pinyin: 'hù'},
+                {hanzi: '亚', pinyin: 'yà'},
+                {hanzi: '始', pinyin: 'shǐ'},
+            ],
+            // 第96关 - 二年级上册生字
+            [
+                {hanzi: '寻', pinyin: 'xún'},
+                {hanzi: '哭', pinyin: 'kū'},
+                {hanzi: '良', pinyin: 'liáng'},
+                {hanzi: '份', pinyin: 'fèn'},
+                {hanzi: '粉', pinyin: 'fěn'},
+                {hanzi: '昨', pinyin: 'zuó'},
+                {hanzi: '姑', pinyin: 'gū'},
+                {hanzi: '读', pinyin: 'dú'},
+            ],
+            // 第97关 - 二年级上册生字
+            [
+                {hanzi: '舟', pinyin: 'zhōu'},
+                {hanzi: '乘', pinyin: 'chéng'},
+                {hanzi: '客', pinyin: 'kè'},
+                {hanzi: '何', pinyin: 'hé'},
+                {hanzi: '汪', pinyin: 'wāng'},
+                {hanzi: '丛', pinyin: 'cóng'},
+                {hanzi: '牢', pinyin: 'láo'},
+                {hanzi: '鸡', pinyin: 'jī'},
+            ],
+            // 第98关 - 二年级上册生字
+            [
+                {hanzi: '理', pinyin: 'lǐ'},
+                {hanzi: '跃', pinyin: 'yuè'},
+                {hanzi: '灵', pinyin: 'líng'},
+                {hanzi: '失', pinyin: 'shī'},
+                {hanzi: '纸', pinyin: 'zhǐ'},
+                {hanzi: '船', pinyin: 'chuán'},
+                {hanzi: '久', pinyin: 'jiǔ'},
+                {hanzi: '乎', pinyin: 'hū'},
+            ],
+            // 第99关 - 二年级上册生字
+            [
+                {hanzi: '至', pinyin: 'zhì'},
+                {hanzi: '捡', pinyin: 'jiǎn'},
+                {hanzi: '粒', pinyin: 'lì'},
+                {hanzi: '被', pinyin: 'bèi'},
+                {hanzi: '并', pinyin: 'bìng'},
+                {hanzi: '重', pinyin: 'zhòng'},
+                {hanzi: '味', pinyin: 'wèi'},
+                {hanzi: '刻', pinyin: 'kè'},
+            ],
+            // 第100关 - 二年级上册生字
+            [
+                {hanzi: '群', pinyin: 'qún'},
+                {hanzi: '宇', pinyin: 'yǔ'},
+                {hanzi: '宙', pinyin: 'zhòu'},
+                {hanzi: '航', pinyin: 'háng'},
+                {hanzi: '舰', pinyin: 'jiàn'},
+                {hanzi: '冲', pinyin: 'chōng'},
+                {hanzi: '晒', pinyin: 'shài'},
+                {hanzi: '灾', pinyin: 'zāi'},
+            ],
+            // 第101关 - 二年级上册生字
+            [
+                {hanzi: '岸', pinyin: 'àn'},
+                {hanzi: '纹', pinyin: 'wén'},
+                {hanzi: '洞', pinyin: 'dòng'},
+                {hanzi: '影', pinyin: 'yǐng'},
+                {hanzi: '倒', pinyin: 'dào'},
+                {hanzi: '围', pinyin: 'wéi'},
+                {hanzi: '杯', pinyin: 'bēi'},
+                {hanzi: '件', pinyin: 'jiàn'},
+            ],
+            // 第102关 - 二年级上册生字
+            [
+                {hanzi: '须', pinyin: 'xū'},
+                {hanzi: '必', pinyin: 'bì'},
+                {hanzi: '历', pinyin: 'lì'},
+                {hanzi: '史', pinyin: 'shǐ'},
+                {hanzi: '灭', pinyin: 'miè'},
+                {hanzi: '克', pinyin: 'kè'},
+                {hanzi: '化', pinyin: 'huà'},
+                {hanzi: '代', pinyin: 'dài'},
+            ],
+            // 第103关 - 二年级上册生字
+            [
+                {hanzi: '植', pinyin: 'zhí'},
+                {hanzi: '厂', pinyin: 'chǎng'},
+                {hanzi: '产', pinyin: 'chǎn'},
+                {hanzi: '介', pinyin: 'jiè'},
+                {hanzi: '农', pinyin: 'nóng'},
+                {hanzi: '科', pinyin: 'kē'},
+                {hanzi: '技', pinyin: 'jì'},
+                {hanzi: '纺', pinyin: 'fǎng'},
+            ],
+            // 第104关 - 二年级上册/二年级下册生字
+            [
+                {hanzi: '织', pinyin: 'zhī'},
+                {hanzi: '脱', pinyin: 'tuō'},
+                {hanzi: '溪', pinyin: 'xī'},
+                {hanzi: '探', pinyin: 'tàn'},
+                {hanzi: '躲', pinyin: 'duǒ'},
+                {hanzi: '解', pinyin: 'jiě'},
+                {hanzi: '未', pinyin: 'wèi'},
+                {hanzi: '店', pinyin: 'diàn'},
+            ],
+            // 第105关 - 二年级下册生字
+            [
+                {hanzi: '枯', pinyin: 'kū'},
+                {hanzi: '徐', pinyin: 'xú'},
+                {hanzi: '烧', pinyin: 'shāo'},
+                {hanzi: '荣', pinyin: 'róng'},
+                {hanzi: '宿', pinyin: 'sù'},
+                {hanzi: '冈', pinyin: 'gāng'},
+                {hanzi: '世', pinyin: 'shì'},
+                {hanzi: '界', pinyin: 'jiè'},
+            ],
+            // 第106关 - 二年级下册生字
+            [
+                {hanzi: '轰', pinyin: 'hōng'},
+                {hanzi: '笋', pinyin: 'sǔn'},
+                {hanzi: '芽', pinyin: 'yá'},
+                {hanzi: '唤', pinyin: 'huàn'},
+                {hanzi: '骨', pinyin: 'gǔ'},
+                {hanzi: '抽', pinyin: 'chōu'},
+                {hanzi: '拐', pinyin: 'guǎi'},
+                {hanzi: '终', pinyin: 'zhōng'},
+            ],
+            // 第107关 - 二年级下册生字
+            [
+                {hanzi: '谢', pinyin: 'xiè'},
+                {hanzi: '渐', pinyin: 'jiàn'},
+                {hanzi: '瓦', pinyin: 'wǎ'},
+                {hanzi: '股', pinyin: 'gǔ'},
+                {hanzi: '脆', pinyin: 'cuì'},
+                {hanzi: '塔', pinyin: 'tǎ'},
+                {hanzi: '杜', pinyin: 'dù'},
+                {hanzi: '鹃', pinyin: 'juān'},
+            ],
+            // 第108关 - 二年级下册生字
+            [
+                {hanzi: '冒', pinyin: 'mào'},
+                {hanzi: '需', pinyin: 'xū'},
+                {hanzi: '迈', pinyin: 'mài'},
+                {hanzi: '叔', pinyin: 'shū'},
+                {hanzi: '锋', pinyin: 'fēng'},
+                {hanzi: '滴', pinyin: 'dī'},
+                {hanzi: '泥', pinyin: 'ní'},
+                {hanzi: '泞', pinyin: 'nìng'},
+            ],
+            // 第109关 - 二年级下册生字
+            [
+                {hanzi: '扑', pinyin: 'pū'},
+                {hanzi: '托', pinyin: 'tuō'},
+                {hanzi: '摸', pinyin: 'mō'},
+                {hanzi: '利', pinyin: 'lì'},
+                {hanzi: '弱', pinyin: 'ruò'},
+                {hanzi: '末', pinyin: 'mò'},
+                {hanzi: '芬', pinyin: 'fēn'},
+                {hanzi: '芳', pinyin: 'fāng'},
+            ],
+            // 第110关 - 二年级下册生字
+            [
+                {hanzi: '夏', pinyin: 'xià'},
+                {hanzi: '应', pinyin: 'yīng'},
+                {hanzi: '岛', pinyin: 'dǎo'},
+                {hanzi: '建', pinyin: 'jiàn'},
+                {hanzi: '纱', pinyin: 'shā'},
+                {hanzi: '环', pinyin: 'huán'},
+                {hanzi: '绕', pinyin: 'rào'},
+                {hanzi: '胜', pinyin: 'shèng'},
+            ],
+            // 第111关 - 二年级下册生字
+            [
+                {hanzi: '隐', pinyin: 'yǐn'},
+                {hanzi: '约', pinyin: 'yuē'},
+                {hanzi: '省', pinyin: 'shěng'},
+                {hanzi: '茂', pinyin: 'mào'},
+                {hanzi: '盛', pinyin: 'shèng'},
+                {hanzi: '吾', pinyin: 'wú'},
+                {hanzi: '季', pinyin: 'jì'},
+                {hanzi: '留', pinyin: 'liú'},
+            ],
+            // 第112关 - 二年级下册生字
+            [
+                {hanzi: '杏', pinyin: 'xìng'},
+                {hanzi: '密', pinyin: 'mì'},
+                {hanzi: '蜜', pinyin: 'mì'},
+                {hanzi: '搭', pinyin: 'dā'},
+                {hanzi: '钉', pinyin: 'dīng'},
+                {hanzi: '沟', pinyin: 'gōu'},
+                {hanzi: '够', pinyin: 'gòu'},
+                {hanzi: '龙', pinyin: 'lóng'},
+            ],
+            // 第113关 - 二年级下册生字
+            [
+                {hanzi: '恩', pinyin: 'ēn'},
+                {hanzi: '寿', pinyin: 'shòu'},
+                {hanzi: '柏', pinyin: 'bǎi'},
+                {hanzi: '泼', pinyin: 'pō'},
+                {hanzi: '特', pinyin: 'tè'},
+                {hanzi: '敬', pinyin: 'jìng'},
+                {hanzi: '鲜', pinyin: 'xiān'},
+                {hanzi: '度', pinyin: 'dù'},
+            ],
+            // 第114关 - 二年级下册生字
+            [
+                {hanzi: '凤', pinyin: 'fèng'},
+                {hanzi: '凰', pinyin: 'huáng'},
+                {hanzi: '束', pinyin: 'shù'},
+                {hanzi: '勾', pinyin: 'gōu'},
+                {hanzi: '府', pinyin: 'fǔ'},
+                {hanzi: '夺', pinyin: 'duó'},
+                {hanzi: '宫', pinyin: 'gōng'},
+                {hanzi: '扮', pinyin: 'bàn'},
+            ],
+            // 第115关 - 二年级下册生字
+            [
+                {hanzi: '雄', pinyin: 'xióng'},
+                {hanzi: '伟', pinyin: 'wěi'},
+                {hanzi: '烁', pinyin: 'shuò'},
+                {hanzi: '辉', pinyin: 'huī'},
+                {hanzi: '煌', pinyin: 'huáng'},
+                {hanzi: '另', pinyin: 'lìng'},
+                {hanzi: '志', pinyin: 'zhì'},
+                {hanzi: '题', pinyin: 'tí'},
+            ],
+            // 第116关 - 二年级下册生字
+            [
+                {hanzi: '漫', pinyin: 'màn'},
+                {hanzi: '朗', pinyin: 'lǎng'},
+                {hanzi: '哄', pinyin: 'hǒng'},
+                {hanzi: '喝', pinyin: 'hē'},
+                {hanzi: '骗', pinyin: 'piàn'},
+                {hanzi: '刀', pinyin: 'dāo'},
+                {hanzi: '尔', pinyin: 'ěr'},
+                {hanzi: '求', pinyin: 'qiú'},
+            ],
+            // 第117关 - 二年级下册生字
+            [
+                {hanzi: '仍', pinyin: 'réng'},
+                {hanzi: '使', pinyin: 'shǐ'},
+                {hanzi: '便', pinyin: 'biàn'},
+                {hanzi: '英', pinyin: 'yīng'},
+                {hanzi: '整', pinyin: 'zhěng'},
+                {hanzi: '式', pinyin: 'shì'},
+                {hanzi: '而', pinyin: 'ér'},
+                {hanzi: '且', pinyin: 'qiě'},
+            ],
+            // 第118关 - 二年级下册生字
+            [
+                {hanzi: '丹', pinyin: 'dān'},
+                {hanzi: '乌', pinyin: 'wū'},
+                {hanzi: '艺', pinyin: 'yì'},
+                {hanzi: '显', pinyin: 'xiǎn'},
+                {hanzi: '丝', pinyin: 'sī'},
+                {hanzi: '杆', pinyin: 'gān'},
+                {hanzi: '眨', pinyin: 'zhǎ'},
+                {hanzi: '涛', pinyin: 'tāo'},
+            ],
+            // 第119关 - 二年级下册生字
+            [
+                {hanzi: '陈', pinyin: 'chén'},
+                {hanzi: '斜', pinyin: 'xié'},
+                {hanzi: '含', pinyin: 'hán'},
+                {hanzi: '炉', pinyin: 'lú'},
+                {hanzi: '岭', pinyin: 'lǐng'},
+                {hanzi: '鸣', pinyin: 'míng'},
+                {hanzi: '绝', pinyin: 'jué'},
+                {hanzi: '银', pinyin: 'yín'},
+            ],
+            // 第120关 - 二年级下册生字
+            [
+                {hanzi: '烟', pinyin: 'yān'},
+                {hanzi: '泊', pinyin: 'pō'},
+                {hanzi: '柳', pinyin: 'liǔ'},
+                {hanzi: '垂', pinyin: 'chuí'},
+                {hanzi: '压', pinyin: 'yā'},
+                {hanzi: '越', pinyin: 'yuè'},
+                {hanzi: '彩', pinyin: 'cǎi'},
+                {hanzi: '蝉', pinyin: 'chán'},
+            ],
+            // 第121关 - 二年级下册生字
+            [
+                {hanzi: '岩', pinyin: 'yán'},
+                {hanzi: '宝', pinyin: 'bǎo'},
+                {hanzi: '趴', pinyin: 'pā'},
+                {hanzi: '印', pinyin: 'yìn'},
+                {hanzi: '刨', pinyin: 'páo'},
+                {hanzi: '埋', pinyin: 'mái'},
+                {hanzi: '陆', pinyin: 'lù'},
+                {hanzi: '铁', pinyin: 'tiě'},
+            ],
+            // 第122关 - 二年级下册生字
+            [
+                {hanzi: '质', pinyin: 'zhì'},
+                {hanzi: '厚', pinyin: 'hòu'},
+                {hanzi: '底', pinyin: 'dǐ'},
+                {hanzi: '忠', pinyin: 'zhōng'},
+                {hanzi: '导', pinyin: 'dǎo'},
+                {hanzi: '盏', pinyin: 'zhǎn'},
+                {hanzi: '积', pinyin: 'jī'},
+                {hanzi: '稠', pinyin: 'chóu'},
+            ],
+            // 第123关 - 二年级下册生字
+            [
+                {hanzi: '稀', pinyin: 'xī'},
+                {hanzi: '针', pinyin: 'zhēn'},
+                {hanzi: '碰', pinyin: 'pèng'},
+                {hanzi: '慌', pinyin: 'huāng'},
+                {hanzi: '兄', pinyin: 'xiōng'},
+                {hanzi: '呆', pinyin: 'dāi'},
+                {hanzi: '商', pinyin: 'shāng'},
+                {hanzi: '抹', pinyin: 'mǒ'},
+            ],
+            // 第124关 - 二年级下册生字
+            [
+                {hanzi: '挤', pinyin: 'jǐ'},
+                {hanzi: '拱', pinyin: 'gǒng'},
+                {hanzi: '价', pinyin: 'jià'},
+                {hanzi: '购', pinyin: 'gòu'},
+                {hanzi: '批', pinyin: 'pī'},
+                {hanzi: '评', pinyin: 'píng'},
+                {hanzi: '报', pinyin: 'bào'},
+                {hanzi: '玻', pinyin: 'bō'},
+            ],
+            // 第125关 - 二年级下册生字
+            [
+                {hanzi: '璃', pinyin: 'lí'},
+                {hanzi: '拾', pinyin: 'shí'},
+                {hanzi: '破', pinyin: 'pò'},
+                {hanzi: '碎', pinyin: 'suì'},
+                {hanzi: '滑', pinyin: 'huá'},
+                {hanzi: '继', pinyin: 'jì'},
+                {hanzi: '续', pinyin: 'xù'},
+                {hanzi: '封', pinyin: 'fēng'},
+            ],
+            // 第126关 - 二年级下册生字
+            [
+                {hanzi: '骄', pinyin: 'jiāo'},
+                {hanzi: '傲', pinyin: 'ào'},
+                {hanzi: '拎', pinyin: 'līn'},
+                {hanzi: '桶', pinyin: 'tǒng'},
+                {hanzi: '聪', pinyin: 'cōng'},
+                {hanzi: '胳', pinyin: 'gē'},
+                {hanzi: '膊', pinyin: 'bó'},
+                {hanzi: '甸', pinyin: 'diān'},
+            ],
+            // 第127关 - 二年级下册生字
+            [
+                {hanzi: '晃', pinyin: 'huǎng'},
+                {hanzi: '荡', pinyin: 'dàng'},
+                {hanzi: '叭', pinyin: 'bā'},
+                {hanzi: '玲', pinyin: 'líng'},
+                {hanzi: '糟', pinyin: 'zāo'},
+                {hanzi: '楼', pinyin: 'lóu'},
+                {hanzi: '梯', pinyin: 'tī'},
+                {hanzi: '肯', pinyin: 'kěn'},
+            ],
+            // 第128关 - 二年级下册生字
+            [
+                {hanzi: '脑', pinyin: 'nǎo'},
+                {hanzi: '筋', pinyin: 'jīn'},
+                {hanzi: '讶', pinyin: 'yà'},
+                {hanzi: '谈', pinyin: 'tán'},
+                {hanzi: '派', pinyin: 'pài'},
+                {hanzi: '引', pinyin: 'yǐn'},
+                {hanzi: '列', pinyin: 'liè'},
+                {hanzi: '峰', pinyin: 'fēng'},
+            ],
+            // 第129关 - 二年级下册生字
+            [
+                {hanzi: '敲', pinyin: 'qiāo'},
+                {hanzi: '附', pinyin: 'fù'},
+                {hanzi: '守', pinyin: 'shǒu'},
+                {hanzi: '焦', pinyin: 'jiāo'},
+                {hanzi: '费', pinyin: 'fèi'},
+                {hanzi: '算', pinyin: 'suàn'},
+                {hanzi: '此', pinyin: 'cǐ'},
+                {hanzi: '桩', pinyin: 'zhuāng'},
+            ],
+            // 第130关 - 二年级下册生字
+            [
+                {hanzi: '肥', pinyin: 'féi'},
+                {hanzi: '灰', pinyin: 'huī'},
+                {hanzi: '讨', pinyin: 'tǎo'},
+                {hanzi: '厌', pinyin: 'yàn'},
+                {hanzi: '壳', pinyin: 'ké'},
+                {hanzi: '鸭', pinyin: 'yā'},
+                {hanzi: '欺', pinyin: 'qī'},
+                {hanzi: '负', pinyin: 'fù'},
+            ],
+            // 第131关 - 二年级下册生字
+            [
+                {hanzi: '鹅', pinyin: 'é'},
+                {hanzi: '勺', pinyin: 'sháo'},
+                {hanzi: '斗', pinyin: 'dòu'},
+                {hanzi: '组', pinyin: 'zǔ'},
+                {hanzi: '珍', pinyin: 'zhēn'},
+                {hanzi: '数', pinyin: 'shù'},
+                {hanzi: '钻', pinyin: 'zuān'},
+                {hanzi: '研', pinyin: 'yán'},
+            ],
+            // 第132关 - 二年级下册生字
+            [
+                {hanzi: '睡', pinyin: 'shuì'},
+                {hanzi: '距', pinyin: 'jù'},
+                {hanzi: '离', pinyin: 'lí'},
+                {hanzi: '油', pinyin: 'yóu'},
+                {hanzi: '团', pinyin: 'tuán'},
+                {hanzi: '斥', pinyin: 'chì'},
+                {hanzi: '责', pinyin: 'zé'},
+                {hanzi: '炎', pinyin: 'yán'},
+            ],
+            // 第133关 - 二年级下册生字
+            [
+                {hanzi: '夸', pinyin: 'kuā'},
+                {hanzi: '奖', pinyin: 'jiǎng'},
+                {hanzi: '亡', pinyin: 'wáng'},
+                {hanzi: '耐', pinyin: 'nài'},
+                {hanzi: '谜', pinyin: 'mí'},
+                {hanzi: '传', pinyin: 'chuán'},
+                {hanzi: '染', pinyin: 'rǎn'},
+                {hanzi: '类', pinyin: 'lèi'},
+            ],
+            // 第134关 - 三年级上册生字
+            [
+                {hanzi: '坪', pinyin: 'píng'},
+                {hanzi: '坝', pinyin: 'bà'},
+                {hanzi: '戴', pinyin: 'dài'},
+                {hanzi: '蝴', pinyin: 'hú'},
+                {hanzi: '蝶', pinyin: 'dié'},
+                {hanzi: '孔', pinyin: 'kǒng'},
+                {hanzi: '雀', pinyin: 'què'},
+                {hanzi: '舞', pinyin: 'wǔ'},
+            ],
+            // 第135关 - 三年级上册生字
+            [
+                {hanzi: '铜', pinyin: 'tóng'},
+                {hanzi: '粗', pinyin: 'cū'},
+                {hanzi: '尾', pinyin: 'wěi'},
+                {hanzi: '装', pinyin: 'zhuāng'},
+                {hanzi: '劲', pinyin: 'jìn'},
+                {hanzi: '绒', pinyin: 'róng'},
+                {hanzi: '钓', pinyin: 'diào'},
+                {hanzi: '察', pinyin: 'chá'},
+            ],
+            // 第136关 - 三年级上册生字
+            [
+                {hanzi: '瓣', pinyin: 'bàn'},
+                {hanzi: '拢', pinyin: 'lǒng'},
+                {hanzi: '掌', pinyin: 'zhǎng'},
+                {hanzi: '峰', pinyin: 'fēng'},
+                {hanzi: '顶', pinyin: 'dǐng'},
+                {hanzi: '似', pinyin: 'sì'},
+                {hanzi: '苍', pinyin: 'cāng'},
+                {hanzi: '仰', pinyin: 'yǎng'},
+            ],
+            // 第137关 - 三年级上册生字
+            [
+                {hanzi: '咱', pinyin: 'zán'},
+                {hanzi: '奋', pinyin: 'fèn'},
+                {hanzi: '辫', pinyin: 'biàn'},
+                {hanzi: '郊', pinyin: 'jiāo'},
+                {hanzi: '步', pinyin: 'bù'},
+                {hanzi: '胸', pinyin: 'xiōng'},
+                {hanzi: '脯', pinyin: 'pú'},
+                {hanzi: '渣', pinyin: 'zhā'},
+            ],
+            // 第138关 - 三年级上册生字
+            [
+                {hanzi: '或', pinyin: 'huò'},
+                {hanzi: '者', pinyin: 'zhě'},
+                {hanzi: '惜', pinyin: 'xī'},
+                {hanzi: '诚', pinyin: 'chéng'},
+                {hanzi: '基', pinyin: 'jī'},
+                {hanzi: '突', pinyin: 'tū'},
+                {hanzi: '按', pinyin: 'àn'},
+                {hanzi: '摆', pinyin: 'bǎi'},
+            ],
+            // 第139关 - 三年级上册生字
+            [
+                {hanzi: '弄', pinyin: 'nòng'},
+                {hanzi: '备', pinyin: 'bèi'},
+                {hanzi: '侧', pinyin: 'cè'},
+                {hanzi: '胶', pinyin: 'jiāo'},
+                {hanzi: '卷', pinyin: 'juǎn'},
+                {hanzi: '秘', pinyin: 'mì'},
+                {hanzi: '杂', pinyin: 'zá'},
+                {hanzi: '社', pinyin: 'shè'},
+            ],
+            // 第140关 - 三年级上册生字
+            [
+                {hanzi: '著', pinyin: 'zhù'},
+                {hanzi: '悄', pinyin: 'qiāo'},
+                {hanzi: '闪', pinyin: 'shǎn'},
+                {hanzi: '坑', pinyin: 'kēng'},
+                {hanzi: '臣', pinyin: 'chén'},
+                {hanzi: '推', pinyin: 'tuī'},
+                {hanzi: '旅', pinyin: 'lǚ'},
+                {hanzi: '考', pinyin: 'kǎo'},
+            ],
+            // 第141关 - 三年级上册生字
+            [
+                {hanzi: '秦', pinyin: 'qín'},
+                {hanzi: '纪', pinyin: 'jì'},
+                {hanzi: '遗', pinyin: 'yí'},
+                {hanzi: '究', pinyin: 'jiū'},
+                {hanzi: '震', pinyin: 'zhèn'},
+                {hanzi: '促', pinyin: 'cù'},
+                {hanzi: '深', pinyin: 'shēn'},
+                {hanzi: '忆', pinyin: 'yì'},
+            ],
+            // 第142关 - 三年级上册生字
+            [
+                {hanzi: '异', pinyin: 'yì'},
+                {hanzi: '逢', pinyin: 'féng'},
+                {hanzi: '佳', pinyin: 'jiā'},
+                {hanzi: '倍', pinyin: 'bèi'},
+                {hanzi: '遥', pinyin: 'yáo'},
+                {hanzi: '插', pinyin: 'chā'},
+                {hanzi: '精', pinyin: 'jīng'},
+                {hanzi: '希', pinyin: 'xī'},
+            ],
+            // 第143关 - 三年级上册生字
+            [
+                {hanzi: '依', pinyin: 'yī'},
+                {hanzi: '拼', pinyin: 'pīn'},
+                {hanzi: '奔', pinyin: 'bēn'},
+                {hanzi: '抖', pinyin: 'dǒu'},
+                {hanzi: '丧', pinyin: 'sàng'},
+                {hanzi: '磨', pinyin: 'mó'},
+                {hanzi: '坊', pinyin: 'fāng'},
+                {hanzi: '扇', pinyin: 'shàn'},
+            ],
+            // 第144关 - 三年级上册生字
+            [
+                {hanzi: '枚', pinyin: 'méi'},
+                {hanzi: '邮', pinyin: 'yóu'},
+                {hanzi: '爽', pinyin: 'shuǎng'},
+                {hanzi: '柿', pinyin: 'shì'},
+                {hanzi: '仙', pinyin: 'xiān'},
+                {hanzi: '梨', pinyin: 'lí'},
+                {hanzi: '菠', pinyin: 'bō'},
+                {hanzi: '萝', pinyin: 'luó'},
+            ],
+            // 第145关 - 三年级上册生字
+            [
+                {hanzi: '紧', pinyin: 'jǐn'},
+                {hanzi: '艳', pinyin: 'yàn'},
+                {hanzi: '内', pinyin: 'nèi'},
+                {hanzi: '醒', pinyin: 'xǐng'},
+                {hanzi: '苏', pinyin: 'sū'},
+                {hanzi: '娇', pinyin: 'jiāo'},
+                {hanzi: '嫩', pinyin: 'nèn'},
+                {hanzi: '强', pinyin: 'qiáng'},
+            ],
+            // 第146关 - 三年级上册生字
+            [
+                {hanzi: '适', pinyin: 'shì'},
+                {hanzi: '昆', pinyin: 'kūn'},
+                {hanzi: '播', pinyin: 'bō'},
+                {hanzi: '修', pinyin: 'xiū'},
+                {hanzi: '致', pinyin: 'zhì'},
+                {hanzi: '论', pinyin: 'lùn'},
+                {hanzi: '试', pinyin: 'shì'},
+                {hanzi: '验', pinyin: 'yàn'},
+            ],
+            // 第147关 - 三年级上册生字
+            [
+                {hanzi: '袋', pinyin: 'dài'},
+                {hanzi: '证', pinyin: 'zhèng'},
+                {hanzi: '概', pinyin: 'gài'},
+                {hanzi: '减', pinyin: 'jiǎn'},
+                {hanzi: '阻', pinyin: 'zǔ'},
+                {hanzi: '测', pinyin: 'cè'},
+                {hanzi: '括', pinyin: 'kuò'},
+                {hanzi: '确', pinyin: 'què'},
+            ],
+            // 第148关 - 三年级上册生字
+            [
+                {hanzi: '误', pinyin: 'wù'},
+                {hanzi: '途', pinyin: 'tú'},
+                {hanzi: '超', pinyin: 'chāo'},
+                {hanzi: '堂', pinyin: 'táng'},
+                {hanzi: '闲', pinyin: 'xián'},
+                {hanzi: '待', pinyin: 'dài'},
+                {hanzi: '阅', pinyin: 'yuè'},
+                {hanzi: '随', pinyin: 'suí'},
+            ],
+            // 第149关 - 三年级上册生字
+            [
+                {hanzi: '调', pinyin: 'tiáo'},
+                {hanzi: '简', pinyin: 'jiǎn'},
+                {hanzi: '拜', pinyin: 'bài'},
+                {hanzi: '访', pinyin: 'fǎng'},
+                {hanzi: '闻', pinyin: 'wén'},
+                {hanzi: '尘', pinyin: 'chén'},
+                {hanzi: '仆', pinyin: 'pū'},
+                {hanzi: '纳', pinyin: 'nà'},
+            ],
+            // 第150关 - 三年级上册生字
+            [
+                {hanzi: '丘', pinyin: 'qiū'},
+                {hanzi: '迎', pinyin: 'yíng'},
+                {hanzi: '等', pinyin: 'děng'},
+                {hanzi: '止', pinyin: 'zhǐ'},
+                {hanzi: '境', pinyin: 'jìng'},
+                {hanzi: '授', pinyin: 'shòu'},
+                {hanzi: '品', pinyin: 'pǐn'},
+                {hanzi: '暗', pinyin: 'àn'},
+            ],
+            // 第151关 - 三年级上册生字
+            [
+                {hanzi: '丈', pinyin: 'zhàng'},
+                {hanzi: '肢', pinyin: 'zhī'},
+                {hanzi: '肌', pinyin: 'jī'},
+                {hanzi: '肤', pinyin: 'fū'},
+                {hanzi: '辽', pinyin: 'liáo'},
+                {hanzi: '阔', pinyin: 'kuò'},
+                {hanzi: '血', pinyin: 'xuè'},
+                {hanzi: '液', pinyin: 'yè'},
+            ],
+            // 第152关 - 三年级上册生字
+            [
+                {hanzi: '滋', pinyin: 'zī'},
+                {hanzi: '润', pinyin: 'rùn'},
+                {hanzi: '创', pinyin: 'chuàng'},
+                {hanzi: '县', pinyin: 'xiàn'},
+                {hanzi: '设', pinyin: 'shè'},
+                {hanzi: '参', pinyin: 'cān'},
+                {hanzi: '部', pinyin: 'bù'},
+                {hanzi: '横', pinyin: 'héng'},
+            ],
+            // 第153关 - 三年级上册生字
+            [
+                {hanzi: '跨', pinyin: 'kuà'},
+                {hanzi: '击', pinyin: 'jī'},
+                {hanzi: '坚', pinyin: 'jiān'},
+                {hanzi: '固', pinyin: 'gù'},
+                {hanzi: '栏', pinyin: 'lán'},
+                {hanzi: '案', pinyin: 'àn'},
+                {hanzi: '爪', pinyin: 'zhǎo'},
+                {hanzi: '楚', pinyin: 'chǔ'},
+            ],
+            // 第154关 - 三年级上册生字
+            [
+                {hanzi: '帆', pinyin: 'fān'},
+                {hanzi: '懒', pinyin: 'lǎn'},
+                {hanzi: '披', pinyin: 'pī'},
+                {hanzi: '划', pinyin: 'huà'},
+                {hanzi: '威', pinyin: 'wēi'},
+                {hanzi: '武', pinyin: 'wǔ'},
+                {hanzi: '拣', pinyin: 'jiǎn'},
+                {hanzi: '顔', pinyin: 'yán'},
+            ],
+            // 第155关 - 三年级上册生字
+            [
+                {hanzi: '形', pinyin: 'xíng'},
+                {hanzi: '状', pinyin: 'zhuàng'},
+                {hanzi: '渔', pinyin: 'yú'},
+                {hanzi: '料', pinyin: 'liào'},
+                {hanzi: '辈', pinyin: 'bèi'},
+                {hanzi: '汇', pinyin: 'huì'},
+                {hanzi: '欣', pinyin: 'xīn'},
+                {hanzi: '赏', pinyin: 'shǎng'},
+            ],
+            // 第156关 - 三年级上册生字
+            [
+                {hanzi: '映', pinyin: 'yìng'},
+                {hanzi: '挡', pinyin: 'dǎng'},
+                {hanzi: '视', pinyin: 'shì'},
+                {hanzi: '线', pinyin: 'xiàn'},
+                {hanzi: '浸', pinyin: 'jìn'},
+                {hanzi: '献', pinyin: 'xiàn'},
+                {hanzi: '药', pinyin: 'yào'},
+                {hanzi: '材', pinyin: 'cái'},
+            ],
+            // 第157关 - 三年级上册生字
+            [
+                {hanzi: '软', pinyin: 'ruǎn'},
+                {hanzi: '刮', pinyin: 'guā'},
+                {hanzi: '矛', pinyin: 'máo'},
+                {hanzi: '盾', pinyin: 'dùn'},
+                {hanzi: '集', pinyin: 'jí'},
+                {hanzi: '持', pinyin: 'chí'},
+                {hanzi: '般', pinyin: 'bān'},
+                {hanzi: '龟', pinyin: 'guī'},
+            ],
+            // 第158关 - 三年级上册生字
+            [
+                {hanzi: '攻', pinyin: 'gōng'},
+                {hanzi: '坦', pinyin: 'tǎn'},
+                {hanzi: '神', pinyin: 'shén'},
+                {hanzi: '兵', pinyin: 'bīng'},
+                {hanzi: '退', pinyin: 'tuì'},
+                {hanzi: '挖', pinyin: 'wā'},
+                {hanzi: '鞋', pinyin: 'xié'},
+                {hanzi: '斧', pinyin: 'fǔ'},
+            ],
+            // 第159关 - 三年级上册生字
+            [
+                {hanzi: '锯', pinyin: 'jù'},
+                {hanzi: '免', pinyin: 'miǎn'},
+                {hanzi: '屋', pinyin: 'wū'},
+                {hanzi: '抢', pinyin: 'qiǎng'},
+                {hanzi: '难', pinyin: 'nán'},
+                {hanzi: '管', pinyin: 'guǎn'},
+                {hanzi: '敌', pinyin: 'dí'},
+                {hanzi: '阶', pinyin: 'jiē'},
+            ],
+            // 第160关 - 三年级上册生字
+            [
+                {hanzi: '懂', pinyin: 'dǒng'},
+                {hanzi: '陶', pinyin: 'táo'},
+                {hanzi: '谦', pinyin: 'qiān'},
+                {hanzi: '虚', pinyin: 'xū'},
+                {hanzi: '恼', pinyin: 'nǎo'},
+                {hanzi: '怒', pinyin: 'nù'},
+                {hanzi: '感', pinyin: 'gǎn'},
+                {hanzi: '荒', pinyin: 'huāng'},
+            ],
+            // 第161关 - 三年级上册生字
+            [
+                {hanzi: '朴', pinyin: 'pǔ'},
+                {hanzi: '素', pinyin: 'sù'},
+                {hanzi: '值', pinyin: 'zhí'},
+                {hanzi: '受', pinyin: 'shòu'},
+                {hanzi: '愿', pinyin: 'yuàn'},
+                {hanzi: '姿', pinyin: 'zī'},
+                {hanzi: '势', pinyin: 'shì'},
+                {hanzi: '投', pinyin: 'tóu'},
+            ],
+            // 第162关 - 三年级上册生字
+            [
+                {hanzi: '况', pinyin: 'kuàng'},
+                {hanzi: '吞', pinyin: 'tūn'},
+                {hanzi: '烈', pinyin: 'liè'},
+                {hanzi: '绪', pinyin: 'xù'},
+                {hanzi: '述', pinyin: 'shù'},
+                {hanzi: '普', pinyin: 'pǔ'},
+                {hanzi: '鼓', pinyin: 'gǔ'},
+                {hanzi: '励', pinyin: 'lì'},
+            ],
+            // 第163关 - 三年级上册生字
+            [
+                {hanzi: '育', pinyin: 'yù'},
+                {hanzi: '瓶', pinyin: 'píng'},
+                {hanzi: '系', pinyin: 'xì'},
+                {hanzi: '危', pinyin: 'wēi'},
+                {hanzi: '险', pinyin: 'xiǎn'},
+                {hanzi: '顺', pinyin: 'shùn'},
+                {hanzi: '俩', pinyin: 'liǎ'},
+                {hanzi: '索', pinyin: 'suǒ'},
+            ],
+            // 第164关 - 三年级上册生字
+            [
+                {hanzi: '激', pinyin: 'jī'},
+                {hanzi: '堵', pinyin: 'dǔ'},
+                {hanzi: '获', pinyin: 'huò'},
+                {hanzi: '予', pinyin: 'yǔ'},
+                {hanzi: '担', pinyin: 'dān'},
+                {hanzi: '宽', pinyin: 'kuān'},
+                {hanzi: '裕', pinyin: 'yù'},
+                {hanzi: '买', pinyin: 'mǎi'},
+            ],
+            // 第165关 - 三年级上册/三年级下册生字
+            [
+                {hanzi: '猜', pinyin: 'cāi'},
+                {hanzi: '糖', pinyin: 'táng'},
+                {hanzi: '即', pinyin: 'jí'},
+                {hanzi: '卡', pinyin: 'kǎ'},
+                {hanzi: '盼', pinyin: 'pàn'},
+                {hanzi: '仁', pinyin: 'rén'},
+                {hanzi: '贴', pinyin: 'tiē'},
+                {hanzi: '聚', pinyin: 'jù'},
+            ],
+            // 第166关 - 三年级下册生字
+            [
+                {hanzi: '增', pinyin: 'zēng'},
+                {hanzi: '掠', pinyin: 'lüè'},
+                {hanzi: '稻', pinyin: 'dào'},
+                {hanzi: '偶', pinyin: 'ǒu'},
+                {hanzi: '沾', pinyin: 'zhān'},
+                {hanzi: '圈', pinyin: 'quān'},
+                {hanzi: '漾', pinyin: 'yàng'},
+                {hanzi: '倦', pinyin: 'juàn'},
+            ],
+            // 第167关 - 三年级下册生字
+            [
+                {hanzi: '符', pinyin: 'fú'},
+                {hanzi: '演', pinyin: 'yǎn'},
+                {hanzi: '赞', pinyin: 'zàn'},
+                {hanzi: '咏', pinyin: 'yǒng'},
+                {hanzi: '妆', pinyin: 'zhuāng'},
+                {hanzi: '裁', pinyin: 'cái'},
+                {hanzi: '剪', pinyin: 'jiǎn'},
+                {hanzi: '滨', pinyin: 'bīn'},
+            ],
+            // 第168关 - 三年级下册生字
+            [
+                {hanzi: '挨', pinyin: 'āi'},
+                {hanzi: '莲', pinyin: 'lián'},
+                {hanzi: '蓬', pinyin: 'péng'},
+                {hanzi: '账', pinyin: 'zhàng'},
+                {hanzi: '仿', pinyin: 'fǎng'},
+                {hanzi: '佛', pinyin: 'fó'},
+                {hanzi: '裳', pinyin: 'shang'},
+                {hanzi: '翩', pinyin: 'piān'},
+            ],
+            // 第169关 - 三年级下册生字
+            [
+                {hanzi: '蹈', pinyin: 'dǎo'},
+                {hanzi: '翠', pinyin: 'cuì'},
+                {hanzi: '秆', pinyin: 'gǎn'},
+                {hanzi: '腹', pinyin: 'fù'},
+                {hanzi: '赤', pinyin: 'chì'},
+                {hanzi: '衬', pinyin: 'chèn'},
+                {hanzi: '衫', pinyin: 'shān'},
+                {hanzi: '泛', pinyin: 'fàn'},
+            ],
+            // 第170关 - 三年级下册生字
+            [
+                {hanzi: '饲', pinyin: 'sì'},
+                {hanzi: '翁', pinyin: 'wēng'},
+                {hanzi: '陡', pinyin: 'dǒu'},
+                {hanzi: '欧', pinyin: 'ōu'},
+                {hanzi: '洲', pinyin: 'zhōu'},
+                {hanzi: '瑞', pinyin: 'ruì'},
+                {hanzi: '舒', pinyin: 'shū'},
+                {hanzi: '启', pinyin: 'qǐ'},
+            ],
+            // 第171关 - 三年级下册生字
+            [
+                {hanzi: '殊', pinyin: 'shū'},
+                {hanzi: '骤', pinyin: 'zhòu'},
+                {hanzi: '涉', pinyin: 'shè'},
+                {hanzi: '疲', pinyin: 'pí'},
+                {hanzi: '政', pinyin: 'zhèng'},
+                {hanzi: '踏', pinyin: 'tà'},
+                {hanzi: '救', pinyin: 'jiù'},
+                {hanzi: '载', pinyin: 'zài'},
+            ],
+            // 第172关 - 三年级下册生字
+            [
+                {hanzi: '森', pinyin: 'sēn'},
+                {hanzi: '郁', pinyin: 'yù'},
+                {hanzi: '葱', pinyin: 'cōng'},
+                {hanzi: '湛', pinyin: 'zhàn'},
+                {hanzi: '盖', pinyin: 'gài'},
+                {hanzi: '犁', pinyin: 'lí'},
+                {hanzi: '砍', pinyin: 'kǎn'},
+                {hanzi: '裸', pinyin: 'luǒ'},
+            ],
+            // 第173关 - 三年级下册生字
+            [
+                {hanzi: '扩', pinyin: 'kuò'},
+                {hanzi: '栋', pinyin: 'dòng'},
+                {hanzi: '柴', pinyin: 'chái'},
+                {hanzi: '喘', pinyin: 'chuǎn'},
+                {hanzi: '黎', pinyin: 'lí'},
+                {hanzi: '寓', pinyin: 'yù'},
+                {hanzi: '则', pinyin: 'zé'},
+                {hanzi: '窟', pinyin: 'kū'},
+            ],
+            // 第174关 - 三年级下册生字
+            [
+                {hanzi: '窿', pinyin: 'lóng'},
+                {hanzi: '狼', pinyin: 'láng'},
+                {hanzi: '叼', pinyin: 'diāo'},
+                {hanzi: '街', pinyin: 'jiē'},
+                {hanzi: '劝', pinyin: 'quàn'},
+                {hanzi: '悔', pinyin: 'huǐ'},
+                {hanzi: '盘', pinyin: 'pán'},
+                {hanzi: '缠', pinyin: 'chán'},
+            ],
+            // 第175关 - 三年级下册生字
+            [
+                {hanzi: '硬', pinyin: 'yìng'},
+                {hanzi: '魏', pinyin: 'wèi'},
+                {hanzi: '射', pinyin: 'shè'},
+                {hanzi: '箭', pinyin: 'jiàn'},
+                {hanzi: '猎', pinyin: 'liè'},
+                {hanzi: '雁', pinyin: 'yàn'},
+                {hanzi: '弦', pinyin: 'xián'},
+                {hanzi: '悲', pinyin: 'bēi'},
+            ],
+            // 第176关 - 三年级下册生字
+            [
+                {hanzi: '惨', pinyin: 'cǎn'},
+                {hanzi: '愈', pinyin: 'yù'},
+                {hanzi: '痛', pinyin: 'tòng'},
+                {hanzi: '裂', pinyin: 'liè'},
+                {hanzi: '叮', pinyin: 'dīng'},
+                {hanzi: '嘱', pinyin: 'zhǔ'},
+                {hanzi: '靠', pinyin: 'kào'},
+                {hanzi: '幅', pinyin: 'fú'},
+            ],
+            // 第177关 - 三年级下册生字
+            [
+                {hanzi: '审', pinyin: 'shěn'},
+                {hanzi: '肃', pinyin: 'sù'},
+                {hanzi: '晌', pinyin: 'shǎng'},
+                {hanzi: '悦', pinyin: 'yuè'},
+                {hanzi: '悉', pinyin: 'xī'},
+                {hanzi: '诲', pinyin: 'huì'},
+                {hanzi: '赛', pinyin: 'sài'},
+                {hanzi: '疼', pinyin: 'téng'},
+            ],
+            // 第178关 - 三年级下册生字
+            [
+                {hanzi: '忧', pinyin: 'yōu'},
+                {hanzi: '慰', pinyin: 'wèi'},
+                {hanzi: '梭', pinyin: 'suō'},
+                {hanzi: '虽', pinyin: 'suī'},
+                {hanzi: '狂', pinyin: 'kuáng'},
+                {hanzi: '赢', pinyin: 'yíng'},
+                {hanzi: '益', pinyin: 'yì'},
+                {hanzi: '穷', pinyin: 'qióng'},
+            ],
+            // 第179关 - 三年级下册生字
+            [
+                {hanzi: '将', pinyin: 'jiāng'},
+                {hanzi: '若', pinyin: 'ruò'},
+                {hanzi: '俱', pinyin: 'jù'},
+                {hanzi: '博', pinyin: 'bó'},
+                {hanzi: '鸦', pinyin: 'yā'},
+                {hanzi: '截', pinyin: 'jié'},
+                {hanzi: '伍', pinyin: 'wǔ'},
+                {hanzi: '默', pinyin: 'mò'},
+            ],
+            // 第180关 - 三年级下册生字
+            [
+                {hanzi: '局', pinyin: 'jú'},
+                {hanzi: '棒', pinyin: 'bàng'},
+                {hanzi: '羡', pinyin: 'xiàn'},
+                {hanzi: '慕', pinyin: 'mù'},
+                {hanzi: '禁', pinyin: 'jìn'},
+                {hanzi: '众', pinyin: 'zhòng'},
+                {hanzi: '纠', pinyin: 'jiū'},
+                {hanzi: '匠', pinyin: 'jiàng'},
+            ],
+            // 第181关 - 三年级下册生字
+            [
+                {hanzi: '替', pinyin: 'tì'},
+                {hanzi: '抄', pinyin: 'chāo'},
+                {hanzi: '墨', pinyin: 'mò'},
+                {hanzi: '骂', pinyin: 'mà'},
+                {hanzi: '缩', pinyin: 'suō'},
+                {hanzi: '承', pinyin: 'chéng'},
+                {hanzi: '肩', pinyin: 'jiān'},
+                {hanzi: '缘', pinyin: 'yuán'},
+            ],
+            // 第182关 - 三年级下册生字
+            [
+                {hanzi: '愤', pinyin: 'fèn'},
+                {hanzi: '毕', pinyin: 'bì'},
+                {hanzi: '戒', pinyin: 'jiè'},
+                {hanzi: '既', pinyin: 'jì'},
+                {hanzi: '贺', pinyin: 'hè'},
+                {hanzi: '顾', pinyin: 'gù'},
+                {hanzi: '迅', pinyin: 'xùn'},
+                {hanzi: '速', pinyin: 'sù'},
+            ],
+            // 第183关 - 三年级下册生字
+            [
+                {hanzi: '复', pinyin: 'fù'},
+                {hanzi: '恰', pinyin: 'qià'},
+                {hanzi: '犯', pinyin: 'fàn'},
+                {hanzi: '缓', pinyin: 'huǎn'},
+                {hanzi: '婆', pinyin: 'pó'},
+                {hanzi: '议', pinyin: 'yì'},
+                {hanzi: '达', pinyin: 'dá'},
+                {hanzi: '稚', pinyin: 'zhì'},
+            ],
+            // 第184关 - 三年级下册生字
+            [
+                {hanzi: '烦', pinyin: 'fán'},
+                {hanzi: '享', pinyin: 'xiǎng'},
+                {hanzi: '炸', pinyin: 'zhà'},
+                {hanzi: '输', pinyin: 'shū'},
+                {hanzi: '型', pinyin: 'xíng'},
+                {hanzi: '否', pinyin: 'fǒu'},
+                {hanzi: '垫', pinyin: 'diàn'},
+                {hanzi: '酒', pinyin: 'jiǔ'},
+            ],
+            // 第185关 - 三年级下册生字
+            [
+                {hanzi: '掩', pinyin: 'yǎn'},
+                {hanzi: '拳', pinyin: 'quán'},
+                {hanzi: '制', pinyin: 'zhì'},
+                {hanzi: '渴', pinyin: 'kě'},
+                {hanzi: '罐', pinyin: 'guàn'},
+                {hanzi: '累', pinyin: 'lèi'},
+                {hanzi: '竟', pinyin: 'jìng'},
+                {hanzi: '匆', pinyin: 'cōng'},
+            ],
+            // 第186关 - 三年级下册生字
+            [
+                {hanzi: '哀', pinyin: 'āi'},
+                {hanzi: '舔', pinyin: 'tiǎn'},
+                {hanzi: '反', pinyin: 'fǎn'},
+                {hanzi: '递', pinyin: 'dì'},
+                {hanzi: '忍', pinyin: 'rěn'},
+                {hanzi: '凑', pinyin: 'còu'},
+                {hanzi: '咽', pinyin: 'yàn'},
+                {hanzi: '唾', pinyin: 'tuò'},
+            ],
+            // 第187关 - 三年级下册生字
+            [
+                {hanzi: '沫', pinyin: 'mò'},
+                {hanzi: '涌', pinyin: 'yǒng'},
+                {hanzi: '差', pinyin: 'chà'},
+                {hanzi: '抵', pinyin: 'dǐ'},
+                {hanzi: '庄', pinyin: 'zhuāng'},
+                {hanzi: '稼', pinyin: 'jià'},
+                {hanzi: '兽', pinyin: 'shòu'},
+                {hanzi: '存', pinyin: 'cún'},
+            ],
+            // 第188关 - 三年级下册生字
+            [
+                {hanzi: '繁', pinyin: 'fán'},
+                {hanzi: '殖', pinyin: 'zhí'},
+                {hanzi: '蔬', pinyin: 'shū'},
+                {hanzi: '麻', pinyin: 'má'},
+                {hanzi: '较', pinyin: 'jiào'},
+                {hanzi: '杀', pinyin: 'shā'},
+                {hanzi: '预', pinyin: 'yù'},
+                {hanzi: '幕', pinyin: 'mù'},
+            ],
+            // 第189关 - 三年级下册生字
+            [
+                {hanzi: '临', pinyin: 'lín'},
+                {hanzi: '悬', pinyin: 'xuán'},
+                {hanzi: '曾', pinyin: 'céng'},
+                {hanzi: '奥', pinyin: 'ào'},
+                {hanzi: '努', pinyin: 'nǔ'},
+                {hanzi: '登', pinyin: 'dēng'},
+                {hanzi: '任', pinyin: 'rèn'},
+                {hanzi: '撒', pinyin: 'sā'},
+            ],
+            // 第190关 - 三年级下册生字
+            [
+                {hanzi: '藻', pinyin: 'zǎo'},
+                {hanzi: '旦', pinyin: 'dàn'},
+                {hanzi: '项', pinyin: 'xiàng'},
+                {hanzi: '估', pinyin: 'gū'},
+                {hanzi: '龄', pinyin: 'líng'},
+                {hanzi: '络', pinyin: 'luò'},
+                {hanzi: '箱', pinyin: 'xiāng'},
+                {hanzi: '迫', pinyin: 'pò'},
+            ],
+            // 第191关 - 三年级下册生字
+            [
+                {hanzi: '悟', pinyin: 'wù'},
+                {hanzi: '盯', pinyin: 'dīng'},
+                {hanzi: '鼠', pinyin: 'shǔ'},
+                {hanzi: '唐', pinyin: 'táng'},
+                {hanzi: '警', pinyin: 'jǐng'},
+                {hanzi: '眯', pinyin: 'mī'},
+                {hanzi: '览', pinyin: 'lǎn'},
+                {hanzi: '敞', pinyin: 'chǎng'},
+            ],
+            // 第192关 - 三年级下册生字
+            [
+                {hanzi: '寄', pinyin: 'jì'},
+                {hanzi: '秒', pinyin: 'miǎo'},
+                {hanzi: '恋', pinyin: 'liàn'},
+                {hanzi: '彤', pinyin: 'tóng'},
+                {hanzi: '陪', pinyin: 'péi'},
+                {hanzi: '趁', pinyin: 'chèn'},
+                {hanzi: '窄', pinyin: 'zhǎi'},
+                {hanzi: '段', pinyin: 'duàn'},
+            ],
+            // 第193关 - 三年级下册生字
+            [
+                {hanzi: '漆', pinyin: 'qī'},
+                {hanzi: '镇', pinyin: 'zhèn'},
+                {hanzi: '摊', pinyin: 'tān'},
+                {hanzi: '忧', pinyin: 'yōu'},
+                {hanzi: '换', pinyin: 'huàn'},
+                {hanzi: '摔', pinyin: 'shuāi'},
+                {hanzi: '竖', pinyin: 'shù'},
+                {hanzi: '卖', pinyin: 'mài'},
+            ],
+            // 第194关 - 三年级下册生字
+            [
+                {hanzi: '售', pinyin: 'shòu'},
+                {hanzi: '驮', pinyin: 'tuó'},
+                {hanzi: '构', pinyin: 'gòu'},
+                {hanzi: '掏', pinyin: 'tāo'},
+                {hanzi: '馆', pinyin: 'guǎn'},
+                {hanzi: '辨', pinyin: 'biàn'},
+                {hanzi: '堆', pinyin: 'duī'},
+                {hanzi: '模', pinyin: 'mó'},
+            ],
+            // 第195关 - 三年级下册生字
+            [
+                {hanzi: '付', pinyin: 'fù'},
+                {hanzi: '标', pinyin: 'biāo'},
+                {hanzi: '齿', pinyin: 'chǐ'},
+                {hanzi: '乞', pinyin: 'qǐ'},
+                {hanzi: '巧', pinyin: 'qiǎo'},
+                {hanzi: '霄', pinyin: 'xiāo'},
+                {hanzi: '渡', pinyin: 'dù'},
+                {hanzi: '屏', pinyin: 'píng'},
+            ],
+            // 第196关 - 三年级下册生字
+            [
+                {hanzi: '烛', pinyin: 'zhú'},
+                {hanzi: '晓', pinyin: 'xiǎo'},
+                {hanzi: '偷', pinyin: 'tōu'},
+                {hanzi: '淹', pinyin: 'yān'},
+                {hanzi: '逼', pinyin: 'bī'},
+                {hanzi: '睁', pinyin: 'zhēng'},
+                {hanzi: '旱', pinyin: 'hàn'},
+                {hanzi: '徒', pinyin: 'tú'},
+            ],
+            // 第197关 - 三年级下册生字
+            [
+                {hanzi: '腾', pinyin: 'téng'},
+                {hanzi: '催', pinyin: 'cuī'},
+                {hanzi: '吊', pinyin: 'diào'},
+                {hanzi: '跪', pinyin: 'guì'},
+                {hanzi: '渠', pinyin: 'qú'},
+                {hanzi: '灌', pinyin: 'guàn'},
+                {hanzi: '溉', pinyin: 'gài'},
+                {hanzi: '隆', pinyin: 'lóng'},
+            ],
+            // 第198关 - 三年级下册/四年级上册生字
+            [
+                {hanzi: '塌', pinyin: 'tā'},
+                {hanzi: '燃', pinyin: 'rán'},
+                {hanzi: '挣', pinyin: 'zhēng'},
+                {hanzi: '熄', pinyin: 'xī'},
+                {hanzi: '喷', pinyin: 'pēn'},
+                {hanzi: '缺', pinyin: 'quē'},
+                {hanzi: '冶', pinyin: 'yě'},
+                {hanzi: '称', pinyin: 'chēng'},
+            ],
+            // 第199关 - 四年级上册生字
+            [
+                {hanzi: '盐', pinyin: 'yán'},
+                {hanzi: '笼', pinyin: 'lóng'},
+                {hanzi: '罩', pinyin: 'zhào'},
+                {hanzi: '蒙', pinyin: 'méng'},
+                {hanzi: '薄', pinyin: 'báo'},
+                {hanzi: '雾', pinyin: 'wù'},
+                {hanzi: '昂', pinyin: 'áng'},
+                {hanzi: '沸', pinyin: 'fèi'},
+            ],
+            // 第200关 - 四年级上册生字
+            [
+                {hanzi: '贯', pinyin: 'guàn'},
+                {hanzi: '旧', pinyin: 'jiù'},
+                {hanzi: '恢', pinyin: 'huī'},
+                {hanzi: '灿', pinyin: 'càn'},
+                {hanzi: '烂', pinyin: 'làn'},
+                {hanzi: '竿', pinyin: 'gān'},
+                {hanzi: '茫', pinyin: 'máng'},
+                {hanzi: '桨', pinyin: 'jiǎng'},
+            ],
+            // 第201关 - 四年级上册生字
+            [
+                {hanzi: '规', pinyin: 'guī'},
+                {hanzi: '律', pinyin: 'lǜ'},
+                {hanzi: '株', pinyin: 'zhū'},
+                {hanzi: '缝', pinyin: 'fèng'},
+                {hanzi: '隙', pinyin: 'xì'},
+                {hanzi: '耀', pinyin: 'yào'},
+                {hanzi: '梢', pinyin: 'shāo'},
+                {hanzi: '寂', pinyin: 'jì'},
+            ],
+            // 第202关 - 四年级上册生字
+            [
+                {hanzi: '莫', pinyin: 'mò'},
+                {hanzi: '腊', pinyin: 'là'},
+                {hanzi: '浑', pinyin: 'hún'},
+                {hanzi: '占', pinyin: 'zhàn'},
+                {hanzi: '铺', pinyin: 'pù'},
+                {hanzi: '均', pinyin: 'jūn'},
+                {hanzi: '匀', pinyin: 'yún'},
+                {hanzi: '叠', pinyin: 'dié'},
+            ],
+            // 第203关 - 四年级上册生字
+            [
+                {hanzi: '茎', pinyin: 'jīng'},
+                {hanzi: '柄', pinyin: 'bǐng'},
+                {hanzi: '触', pinyin: 'chù'},
+                {hanzi: '痕', pinyin: 'hén'},
+                {hanzi: '逐', pinyin: 'zhú'},
+                {hanzi: '宅', pinyin: 'zhái'},
+                {hanzi: '蔽', pinyin: 'bì'},
+                {hanzi: '弃', pinyin: 'qì'},
+            ],
+            // 第204关 - 四年级上册生字
+            [
+                {hanzi: '毫', pinyin: 'háo'},
+                {hanzi: '择', pinyin: 'zé'},
+                {hanzi: '址', pinyin: 'zhǐ'},
+                {hanzi: '穴', pinyin: 'xué'},
+                {hanzi: '掘', pinyin: 'jué'},
+                {hanzi: '搜', pinyin: 'sōu'},
+                {hanzi: '倾', pinyin: 'qīng'},
+                {hanzi: '扒', pinyin: 'bā'},
+            ],
+            // 第205关 - 四年级上册生字
+            [
+                {hanzi: '抛', pinyin: 'pāo'},
+                {hanzi: '溢', pinyin: 'yì'},
+                {hanzi: '允', pinyin: 'yǔn'},
+                {hanzi: '牌', pinyin: 'pái'},
+                {hanzi: '添', pinyin: 'tiān'},
+                {hanzi: '训', pinyin: 'xùn'},
+                {hanzi: '覆', pinyin: 'fù'},
+                {hanzi: '凝', pinyin: 'níng'},
+            ],
+            // 第206关 - 四年级上册生字
+            [
+                {hanzi: '辣', pinyin: 'là'},
+                {hanzi: '愉', pinyin: 'yú'},
+                {hanzi: '拆', pinyin: 'chāi'},
+                {hanzi: '融', pinyin: 'róng'},
+                {hanzi: '剩', pinyin: 'shèng'},
+                {hanzi: '伐', pinyin: 'fá'},
+                {hanzi: '煤', pinyin: 'méi'},
+                {hanzi: '颈', pinyin: 'jǐng'},
+            ],
+            // 第207关 - 四年级上册生字
+            [
+                {hanzi: '郑', pinyin: 'zhèng'},
+                {hanzi: '厉', pinyin: 'lì'},
+                {hanzi: '剧', pinyin: 'jù'},
+                {hanzi: '餐', pinyin: 'cān'},
+                {hanzi: '倘', pinyin: 'tǎng'},
+                {hanzi: '饮', pinyin: 'yǐn'},
+                {hanzi: '侍', pinyin: 'shì'},
+                {hanzi: '脾', pinyin: 'pí'},
+            ],
+            // 第208关 - 四年级上册生字
+            [
+                {hanzi: '蹲', pinyin: 'dūn'},
+                {hanzi: '供', pinyin: 'gōng'},
+                {hanzi: '格', pinyin: 'gé'},
+                {hanzi: '凭', pinyin: 'píng'},
+                {hanzi: '贪', pinyin: 'tān'},
+                {hanzi: '职', pinyin: 'zhí'},
+                {hanzi: '痒', pinyin: 'yǎng'},
+                {hanzi: '稿', pinyin: 'gǎo'},
+            ],
+            // 第209关 - 四年级上册生字
+            [
+                {hanzi: '踩', pinyin: 'cǎi'},
+                {hanzi: '梅', pinyin: 'méi'},
+                {hanzi: '蛇', pinyin: 'shé'},
+                {hanzi: '跌', pinyin: 'diē'},
+                {hanzi: '撞', pinyin: 'zhuàng'},
+                {hanzi: '辟', pinyin: 'pì'},
+                {hanzi: '崇', pinyin: 'chóng'},
+                {hanzi: '旋', pinyin: 'xuán'},
+            ],
+            // 第210关 - 四年级上册生字
+            [
+                {hanzi: '嘉', pinyin: 'jiā'},
+                {hanzi: '砖', pinyin: 'zhuān'},
+                {hanzi: '隔', pinyin: 'gé'},
+                {hanzi: '屯', pinyin: 'tún'},
+                {hanzi: '堡', pinyin: 'bǎo'},
+                {hanzi: '垒', pinyin: 'lěi'},
+                {hanzi: '仗', pinyin: 'zhàng'},
+                {hanzi: '扶', pinyin: 'fú'},
+            ],
+            // 第211关 - 四年级上册生字
+            [
+                {hanzi: '智', pinyin: 'zhì'},
+                {hanzi: '慧', pinyin: 'huì'},
+                {hanzi: '魄', pinyin: 'pò'},
+                {hanzi: '殿', pinyin: 'diàn'},
+                {hanzi: '廊', pinyin: 'láng'},
+                {hanzi: '柱', pinyin: 'zhù'},
+                {hanzi: '栽', pinyin: 'zāi'},
+                {hanzi: '筑', pinyin: 'zhù'},
+            ],
+            // 第212关 - 四年级上册生字
+            [
+                {hanzi: '阁', pinyin: 'gé'},
+                {hanzi: '朱', pinyin: 'zhū'},
+                {hanzi: '堤', pinyin: 'dī'},
+                {hanzi: '雕', pinyin: 'diāo'},
+                {hanzi: '狮', pinyin: 'shī'},
+                {hanzi: '态', pinyin: 'tài'},
+                {hanzi: '孟', pinyin: 'mèng'},
+                {hanzi: '浩', pinyin: 'hào'},
+            ],
+            // 第213关 - 四年级上册生字
+            [
+                {hanzi: '陵', pinyin: 'líng'},
+                {hanzi: '辞', pinyin: 'cí'},
+                {hanzi: '唯', pinyin: 'wéi'},
+                {hanzi: '舍', pinyin: 'shě'},
+                {hanzi: '君', pinyin: 'jūn'},
+                {hanzi: '洪', pinyin: 'hóng'},
+                {hanzi: '暴', pinyin: 'bào'},
+                {hanzi: '猛', pinyin: 'měng'},
+            ],
+            // 第214关 - 四年级上册生字
+            [
+                {hanzi: '涨', pinyin: 'zhǎng'},
+                {hanzi: '裤', pinyin: 'kù'},
+                {hanzi: '懒', pinyin: 'lǎn'},
+                {hanzi: '稳', pinyin: 'wěn'},
+                {hanzi: '俗', pinyin: 'sú'},
+                {hanzi: '衡', pinyin: 'héng'},
+                {hanzi: '序', pinyin: 'xù'},
+                {hanzi: '伏', pinyin: 'fú'},
+            ],
+            // 第215关 - 四年级上册生字
+            [
+                {hanzi: '峡', pinyin: 'xiá'},
+                {hanzi: '桂', pinyin: 'guì'},
+                {hanzi: '移', pinyin: 'yí'},
+                {hanzi: '湾', pinyin: 'wān'},
+                {hanzi: '彼', pinyin: 'bǐ'},
+                {hanzi: '袭', pinyin: 'xí'},
+                {hanzi: '余', pinyin: 'yú'},
+                {hanzi: '怀', pinyin: 'huái'},
+            ],
+            // 第216关 - 四年级上册生字
+            [
+                {hanzi: '旷', pinyin: 'kuàng'},
+                {hanzi: '暂', pinyin: 'zàn'},
+                {hanzi: '胞', pinyin: 'bāo'},
+                {hanzi: '脉', pinyin: 'mài'},
+                {hanzi: '帝', pinyin: 'dì'},
+                {hanzi: '伯', pinyin: 'bó'},
+                {hanzi: '租', pinyin: 'zū'},
+                {hanzi: '振', pinyin: 'zhèn'},
+            ],
+            // 第217关 - 四年级上册生字
+            [
+                {hanzi: '范', pinyin: 'fàn'},
+                {hanzi: '闯', pinyin: 'chuǎng'},
+                {hanzi: '凡', pinyin: 'fán'},
+                {hanzi: '巡', pinyin: 'xún'},
+                {hanzi: '嚷', pinyin: 'rǎng'},
+                {hanzi: '妇', pinyin: 'fù'},
+                {hanzi: '惩', pinyin: 'chéng'},
+                {hanzi: '篇', pinyin: 'piān'},
+            ],
+            // 第218关 - 四年级上册生字
+            [
+                {hanzi: '荐', pinyin: 'jiàn'},
+                {hanzi: '翻', pinyin: 'fān'},
+                {hanzi: '帘', pinyin: 'lián'},
+                {hanzi: '页', pinyin: 'yè'},
+                {hanzi: '删', pinyin: 'shān'},
+                {hanzi: '词', pinyin: 'cí'},
+                {hanzi: '燥', pinyin: 'zào'},
+                {hanzi: '握', pinyin: 'wò'},
+            ],
+            // 第219关 - 四年级上册生字
+            [
+                {hanzi: '洽', pinyin: 'qià'},
+                {hanzi: '昏', pinyin: 'hūn'},
+                {hanzi: '厅', pinyin: 'tīng'},
+                {hanzi: '糊', pinyin: 'hú'},
+                {hanzi: '改', pinyin: 'gǎi'},
+                {hanzi: '程', pinyin: 'chéng'},
+                {hanzi: '赖', pinyin: 'lài'},
+                {hanzi: '耕', pinyin: 'gēng'},
+            ],
+            // 第220关 - 四年级上册生字
+            [
+                {hanzi: '驾', pinyin: 'jià'},
+                {hanzi: '幻', pinyin: 'huàn'},
+                {hanzi: '潜', pinyin: 'qián'},
+                {hanzi: '核', pinyin: 'hé'},
+                {hanzi: '控', pinyin: 'kòng'},
+                {hanzi: '联', pinyin: 'lián'},
+                {hanzi: '哲', pinyin: 'zhé'},
+                {hanzi: '归', pinyin: 'guī'},
+            ],
+            // 第221关 - 四年级上册生字
+            [
+                {hanzi: '恐', pinyin: 'kǒng'},
+                {hanzi: '凶', pinyin: 'xiōng'},
+                {hanzi: '笨', pinyin: 'bèn'},
+                {hanzi: '鸽', pinyin: 'gē'},
+                {hanzi: '仅', pinyin: 'jǐn'},
+                {hanzi: '顿', pinyin: 'dùn'},
+                {hanzi: '描', pinyin: 'miáo'},
+                {hanzi: '绘', pinyin: 'huì'},
+            ],
+            // 第222关 - 四年级上册/四年级下册生字
+            [
+                {hanzi: '吨', pinyin: 'dūn'},
+                {hanzi: '盈', pinyin: 'yíng'},
+                {hanzi: '敏', pinyin: 'mǐn'},
+                {hanzi: '捷', pinyin: 'jié'},
+                {hanzi: '崭', pinyin: 'zhǎn'},
+                {hanzi: '亭', pinyin: 'tíng'},
+                {hanzi: '庭', pinyin: 'tíng'},
+                {hanzi: '潭', pinyin: 'tán'},
+            ],
+            // 第223关 - 四年级下册生字
+            [
+                {hanzi: '螺', pinyin: 'luó'},
+                {hanzi: '谙', pinyin: 'ān'},
+                {hanzi: '澜', pinyin: 'lán'},
+                {hanzi: '瑕', pinyin: 'xiá'},
+                {hanzi: '攀', pinyin: 'pān'},
+                {hanzi: '峦', pinyin: 'luán'},
+                {hanzi: '泰', pinyin: 'tài'},
+                {hanzi: '骆', pinyin: 'luò'},
+            ],
+            // 第224关 - 四年级下册生字
+            [
+                {hanzi: '驼', pinyin: 'tuó'},
+                {hanzi: '罗', pinyin: 'luó'},
+                {hanzi: '障', pinyin: 'zhàng'},
+                {hanzi: '兀', pinyin: 'wù'},
+                {hanzi: '绵', pinyin: 'mián'},
+                {hanzi: '浙', pinyin: 'zhè'},
+                {hanzi: '桐', pinyin: 'tóng'},
+                {hanzi: '簇', pinyin: 'cù'},
+            ],
+            // 第225关 - 四年级下册生字
+            [
+                {hanzi: '浓', pinyin: 'nóng'},
+                {hanzi: '臀', pinyin: 'tún'},
+                {hanzi: '稍', pinyin: 'shāo'},
+                {hanzi: '额', pinyin: 'é'},
+                {hanzi: '蜿', pinyin: 'wān'},
+                {hanzi: '蜒', pinyin: 'yán'},
+                {hanzi: '乳', pinyin: 'rǔ'},
+                {hanzi: '源', pinyin: 'yuán'},
+            ],
+            // 第226关 - 四年级下册生字
+            [
+                {hanzi: '维', pinyin: 'wéi'},
+                {hanzi: '财', pinyin: 'cái'},
+                {hanzi: '属', pinyin: 'shǔ'},
+                {hanzi: '货', pinyin: 'huò'},
+                {hanzi: '驰', pinyin: 'chí'},
+                {hanzi: '赠', pinyin: 'zèng'},
+                {hanzi: '驶', pinyin: 'shǐ'},
+                {hanzi: '德', pinyin: 'dé'},
+            ],
+            // 第227关 - 四年级下册生字
+            [
+                {hanzi: '惑', pinyin: 'huò'},
+                {hanzi: '码', pinyin: 'mǎ'},
+                {hanzi: '库', pinyin: 'kù'},
+                {hanzi: '捎', pinyin: 'shāo'},
+                {hanzi: '橡', pinyin: 'xiàng'},
+                {hanzi: '尊', pinyin: 'zūn'},
+                {hanzi: '沃', pinyin: 'wò'},
+                {hanzi: '呈', pinyin: 'chéng'},
+            ],
+            // 第228关 - 四年级下册生字
+            [
+                {hanzi: '惫', pinyin: 'bèi'},
+                {hanzi: '堪', pinyin: 'kān'},
+                {hanzi: '款', pinyin: 'kuǎn'},
+                {hanzi: '例', pinyin: 'lì'},
+                {hanzi: '瘦', pinyin: 'shòu'},
+                {hanzi: '杰', pinyin: 'jié'},
+                {hanzi: '喉', pinyin: 'hóu'},
+                {hanzi: '捶', pinyin: 'chuí'},
+            ],
+            // 第229关 - 四年级下册生字
+            [
+                {hanzi: '僵', pinyin: 'jiāng'},
+                {hanzi: '配', pinyin: 'pèi'},
+                {hanzi: '滩', pinyin: 'tān'},
+                {hanzi: '侦', pinyin: 'zhēn'},
+                {hanzi: '嘲', pinyin: 'cháo'},
+                {hanzi: '啄', pinyin: 'zhuó'},
+                {hanzi: '企', pinyin: 'qǐ'},
+                {hanzi: '愚', pinyin: 'yú'},
+            ],
+            // 第230关 - 四年级下册生字
+            [
+                {hanzi: '蠢', pinyin: 'chǔn'},
+                {hanzi: '返', pinyin: 'fǎn'},
+                {hanzi: '鸥', pinyin: 'ōu'},
+                {hanzi: '帽', pinyin: 'mào'},
+                {hanzi: '吁', pinyin: 'xū'},
+                {hanzi: '彻', pinyin: 'chè'},
+                {hanzi: '蝙', pinyin: 'biān'},
+                {hanzi: '蝠', pinyin: 'fú'},
+            ],
+            // 第231关 - 四年级下册生字
+            [
+                {hanzi: '捕', pinyin: 'bǔ'},
+                {hanzi: '蛾', pinyin: 'é'},
+                {hanzi: '避', pinyin: 'bì'},
+                {hanzi: '锐', pinyin: 'ruì'},
+                {hanzi: '铛', pinyin: 'dāng'},
+                {hanzi: '蝇', pinyin: 'yíng'},
+                {hanzi: '揭', pinyin: 'jiē'},
+                {hanzi: '碍', pinyin: 'ài'},
+            ],
+            // 第232关 - 四年级下册生字
+            [
+                {hanzi: '荧', pinyin: 'yíng'},
+                {hanzi: '削', pinyin: 'xuē'},
+                {hanzi: '喂', pinyin: 'wèi'},
+                {hanzi: '哨', pinyin: 'shào'},
+                {hanzi: '挺', pinyin: 'tǐng'},
+                {hanzi: '斯', pinyin: 'sī'},
+                {hanzi: '枪', pinyin: 'qiāng'},
+                {hanzi: '防', pinyin: 'fáng'},
+            ],
+            // 第233关 - 四年级下册生字
+            [
+                {hanzi: '汉', pinyin: 'hàn'},
+                {hanzi: '滚', pinyin: 'gǔn'},
+                {hanzi: '毁', pinyin: 'huǐ'},
+                {hanzi: '惯', pinyin: 'guàn'},
+                {hanzi: '牺', pinyin: 'xī'},
+                {hanzi: '牲', pinyin: 'shēng'},
+                {hanzi: '凯', pinyin: 'kǎi'},
+                {hanzi: '征', pinyin: 'zhēng'},
+            ],
+            // 第234关 - 四年级下册生字
+            [
+                {hanzi: '阿', pinyin: 'ā'},
+                {hanzi: '姨', pinyin: 'yí'},
+                {hanzi: '济', pinyin: 'jì'},
+                {hanzi: '贡', pinyin: 'gòng'},
+                {hanzi: '圣', pinyin: 'shèng'},
+                {hanzi: '驻', pinyin: 'zhù'},
+                {hanzi: '罪', pinyin: 'zuì'},
+                {hanzi: '恶', pinyin: 'è'},
+            ],
+            // 第235关 - 四年级下册生字
+            [
+                {hanzi: '健', pinyin: 'jiàn'},
+                {hanzi: '康', pinyin: 'kāng'},
+                {hanzi: '径', pinyin: 'jìng'},
+                {hanzi: '畅', pinyin: 'chàng'},
+                {hanzi: '磕', pinyin: 'kē'},
+                {hanzi: '绊', pinyin: 'bàn'},
+                {hanzi: '瞬', pinyin: 'shùn'},
+                {hanzi: '弧', pinyin: 'hú'},
+            ],
+            // 第236关 - 四年级下册生字
+            [
+                {hanzi: '翔', pinyin: 'xiáng'},
+                {hanzi: '权', pinyin: 'quán'},
+                {hanzi: '缤', pinyin: 'bīn'},
+                {hanzi: '扰', pinyin: 'rǎo'},
+                {hanzi: '欲', pinyin: 'yù'},
+                {hanzi: '屈', pinyin: 'qū'},
+                {hanzi: '茁', pinyin: 'zhuó'},
+                {hanzi: '诊', pinyin: 'zhěn'},
+            ],
+            // 第237关 - 四年级下册生字
+            [
+                {hanzi: '撼', pinyin: 'hàn'},
+                {hanzi: '蹋', pinyin: 'tà'},
+                {hanzi: '限', pinyin: 'xiàn'},
+                {hanzi: '棚', pinyin: 'péng'},
+                {hanzi: '饰', pinyin: 'shì'},
+                {hanzi: '冠', pinyin: 'guān'},
+                {hanzi: '菊', pinyin: 'jú'},
+                {hanzi: '瞧', pinyin: 'qiáo'},
+            ],
+            // 第238关 - 四年级下册生字
+            [
+                {hanzi: '率', pinyin: 'lǜ'},
+                {hanzi: '觅', pinyin: 'mì'},
+                {hanzi: '耸', pinyin: 'sǒng'},
+                {hanzi: '捣', pinyin: 'dǎo'},
+                {hanzi: '巢', pinyin: 'cháo'},
+                {hanzi: '谐', pinyin: 'xié'},
+                {hanzi: '眠', pinyin: 'mián'},
+                {hanzi: '辛', pinyin: 'xīn'},
+            ],
+            // 第239关 - 四年级下册生字
+            [
+                {hanzi: '蚕', pinyin: 'cán'},
+                {hanzi: '桑', pinyin: 'sāng'},
+                {hanzi: '昼', pinyin: 'zhòu'},
+                {hanzi: '耕', pinyin: 'gēng'},
+                {hanzi: '绩', pinyin: 'jì'},
+                {hanzi: '塞', pinyin: 'sāi'},
+                {hanzi: '鹭', pinyin: 'lù'},
+                {hanzi: '笠', pinyin: 'lì'},
+            ],
+            // 第240关 - 四年级下册生字
+            [
+                {hanzi: '略', pinyin: 'lüè'},
+                {hanzi: '辩', pinyin: 'biàn'},
+                {hanzi: '奉', pinyin: 'fèng'},
+                {hanzi: '违', pinyin: 'wéi'},
+                {hanzi: '磅', pinyin: 'bàng'},
+                {hanzi: '拴', pinyin: 'shuān'},
+                {hanzi: '拖', pinyin: 'tuō'},
+                {hanzi: '释', pinyin: 'shì'},
+            ],
+            // 第241关 - 四年级下册生字
+            [
+                {hanzi: '宣', pinyin: 'xuān'},
+                {hanzi: '萨', pinyin: 'sà'},
+                {hanzi: '妄', pinyin: 'wàng'},
+                {hanzi: '执', pinyin: 'zhí'},
+                {hanzi: '港', pinyin: 'gǎng'},
+                {hanzi: '澈', pinyin: 'chè'},
+                {hanzi: '壶', pinyin: 'hú'},
+                {hanzi: '缸', pinyin: 'gāng'},
+            ],
+            // 第242关 - 四年级下册生字
+            [
+                {hanzi: '罢', pinyin: 'bà'},
+                {hanzi: '苟', pinyin: 'gǒu'},
+                {hanzi: '绣', pinyin: 'xiù'},
+                {hanzi: '挥', pinyin: 'huī'},
+                {hanzi: '徽', pinyin: 'huī'},
+                {hanzi: '聋', pinyin: 'lóng'},
+                {hanzi: '哑', pinyin: 'yǎ'},
+                {hanzi: '昌', pinyin: 'chāng'},
+            ],
+            // 第243关 - 四年级下册生字
+            [
+                {hanzi: '妻', pinyin: 'qī'},
+                {hanzi: '刺', pinyin: 'cì'},
+                {hanzi: '绑', pinyin: 'bǎng'},
+                {hanzi: '扁', pinyin: 'biǎn'},
+                {hanzi: '鹊', pinyin: 'què'},
+                {hanzi: '蔡', pinyin: 'cài'},
+                {hanzi: '睬', pinyin: 'cǎi'},
+                {hanzi: '肠', pinyin: 'cháng'},
+            ],
+            // 第244关 - 四年级下册生字
+            [
+                {hanzi: '胃', pinyin: 'wèi'},
+                {hanzi: '烫', pinyin: 'tàng'},
+                {hanzi: '剂', pinyin: 'jì'},
+                {hanzi: '汤', pinyin: 'tāng'},
+                {hanzi: '焰', pinyin: 'yàn'},
+                {hanzi: '驱', pinyin: 'qū'},
+                {hanzi: '袖', pinyin: 'xiù'},
+                {hanzi: '败', pinyin: 'bài'},
+            ],
+            // 第245关 - 四年级下册生字
+            [
+                {hanzi: '罚', pinyin: 'fá'},
+                {hanzi: '佩', pinyin: 'pèi'},
+                {hanzi: '饶', pinyin: 'ráo'},
+                {hanzi: '抗', pinyin: 'kàng'},
+                {hanzi: '押', pinyin: 'yā'},
+                {hanzi: '锁', pinyin: 'suǒ'},
+                {hanzi: '狠', pinyin: 'hěn'},
+                {hanzi: '膝', pinyin: 'xī'},
+            ],
+            // 第246关 - 五年级上册/四年级下册生字
+            [
+                {hanzi: '肝', pinyin: 'gān'},
+                {hanzi: '脏', pinyin: 'zàng'},
+                {hanzi: '窃', pinyin: 'qiè'},
+                {hanzi: '炒', pinyin: 'chǎo'},
+                {hanzi: '锅', pinyin: 'guō'},
+                {hanzi: '踮', pinyin: 'diǎn'},
+                {hanzi: '哟', pinyin: 'yō'},
+                {hanzi: '饿', pinyin: 'è'},
+            ],
+            // 第247关 - 五年级上册生字
+            [
+                {hanzi: '惧', pinyin: 'jù'},
+                {hanzi: '充', pinyin: 'chōng'},
+                {hanzi: '檐', pinyin: 'yán'},
+                {hanzi: '皱', pinyin: 'zhòu'},
+                {hanzi: '碗', pinyin: 'wǎn'},
+                {hanzi: '酸', pinyin: 'suān'},
+                {hanzi: '撑', pinyin: 'chēng'},
+                {hanzi: '柜', pinyin: 'guì'},
+            ],
+            // 第248关 - 五年级上册生字
+            [
+                {hanzi: '侣', pinyin: 'lǚ'},
+                {hanzi: '娱', pinyin: 'yú'},
+                {hanzi: '盒', pinyin: 'hé'},
+                {hanzi: '豫', pinyin: 'yù'},
+                {hanzi: '趟', pinyin: 'tàng'},
+                {hanzi: '诵', pinyin: 'sòng'},
+                {hanzi: '零', pinyin: 'líng'},
+                {hanzi: '编', pinyin: 'biān'},
+            ],
+            // 第249关 - 五年级上册生字
+            [
+                {hanzi: '某', pinyin: 'mǒu'},
+                {hanzi: '洛', pinyin: 'luò'},
+                {hanzi: '榆', pinyin: 'yú'},
+                {hanzi: '畔', pinyin: 'pàn'},
+                {hanzi: '帐', pinyin: 'zhàng'},
+                {hanzi: '魂', pinyin: 'hún'},
+                {hanzi: '缕', pinyin: 'lǚ'},
+                {hanzi: '幽', pinyin: 'yōu'},
+            ],
+            // 第250关 - 五年级上册生字
+            [
+                {hanzi: '葬', pinyin: 'zàng'},
+                {hanzi: '愁', pinyin: 'chóu'},
+                {hanzi: '腮', pinyin: 'sāi'},
+                {hanzi: '甚', pinyin: 'shèn'},
+                {hanzi: '绸', pinyin: 'chóu'},
+                {hanzi: '呜', pinyin: 'wū'},
+                {hanzi: '谓', pinyin: 'wèi'},
+                {hanzi: '衰', pinyin: 'shuāi'},
+            ],
+            // 第251关 - 五年级上册生字
+            [
+                {hanzi: '绢', pinyin: 'juàn'},
+                {hanzi: '侨', pinyin: 'qiáo'},
+                {hanzi: '鲸', pinyin: 'jīng'},
+                {hanzi: '猪', pinyin: 'zhū'},
+                {hanzi: '腭', pinyin: 'è'},
+                {hanzi: '哺', pinyin: 'bǔ'},
+                {hanzi: '滤', pinyin: 'lǜ'},
+                {hanzi: '肺', pinyin: 'fèi'},
+            ],
+            // 第252关 - 五年级上册生字
+            [
+                {hanzi: '矮', pinyin: 'ǎi'},
+                {hanzi: '判', pinyin: 'pàn'},
+                {hanzi: '胎', pinyin: 'tāi'},
+                {hanzi: '盗', pinyin: 'dào'},
+                {hanzi: '嫌', pinyin: 'xián'},
+                {hanzi: '恙', pinyin: 'yàng'},
+                {hanzi: '藕', pinyin: 'ǒu'},
+                {hanzi: '粘', pinyin: 'zhān'},
+            ],
+            // 第253关 - 五年级上册生字
+            [
+                {hanzi: '噪', pinyin: 'zào'},
+                {hanzi: '废', pinyin: 'fèi'},
+                {hanzi: '捞', pinyin: 'lāo'},
+                {hanzi: '饵', pinyin: 'ěr'},
+                {hanzi: '溅', pinyin: 'jiàn'},
+                {hanzi: '钩', pinyin: 'gōu'},
+                {hanzi: '翼', pinyin: 'yì'},
+                {hanzi: '纵', pinyin: 'zòng'},
+            ],
+            // 第254关 - 五年级上册生字
+            [
+                {hanzi: '啪', pinyin: 'pā'},
+                {hanzi: '鳃', pinyin: 'sāi'},
+                {hanzi: '皎', pinyin: 'jiǎo'},
+                {hanzi: '唇', pinyin: 'chún'},
+                {hanzi: '沮', pinyin: 'jǔ'},
+                {hanzi: '诱', pinyin: 'yòu'},
+                {hanzi: '诫', pinyin: 'jiè'},
+                {hanzi: '践', pinyin: 'jiàn'},
+            ],
+            // 第255关 - 五年级上册生字
+            [
+                {hanzi: '亩', pinyin: 'mǔ'},
+                {hanzi: '吩', pinyin: 'fēn'},
+                {hanzi: '咐', pinyin: 'fù'},
+                {hanzi: '茅', pinyin: 'máo'},
+                {hanzi: '榨', pinyin: 'zhà'},
+                {hanzi: '榴', pinyin: 'liú'},
+                {hanzi: '杉', pinyin: 'shān'},
+                {hanzi: '矶', pinyin: 'jī'},
+            ],
+            // 第256关 - 五年级上册生字
+            [
+                {hanzi: '混', pinyin: 'hùn'},
+                {hanzi: '昔', pinyin: 'xī'},
+                {hanzi: '墟', pinyin: 'xū'},
+                {hanzi: '曼', pinyin: 'màn'},
+                {hanzi: '疾', pinyin: 'jí'},
+                {hanzi: '爆', pinyin: 'bào'},
+                {hanzi: '砾', pinyin: 'lì'},
+                {hanzi: '砸', pinyin: 'zá'},
+            ],
+            // 第257关 - 五年级上册生字
+            [
+                {hanzi: '颤', pinyin: 'chàn'},
+                {hanzi: '糕', pinyin: 'gāo'},
+                {hanzi: '迪', pinyin: 'dí'},
+                {hanzi: '搂', pinyin: 'lǒu'},
+                {hanzi: '豪', pinyin: 'háo'},
+                {hanzi: '誊', pinyin: 'téng'},
+                {hanzi: '置', pinyin: 'zhì'},
+                {hanzi: '司', pinyin: 'sī'},
+            ],
+            // 第258关 - 五年级上册生字
+            [
+                {hanzi: '妙', pinyin: 'miào'},
+                {hanzi: '版', pinyin: 'bǎn'},
+                {hanzi: '慈', pinyin: 'cí'},
+                {hanzi: '祥', pinyin: 'xiáng'},
+                {hanzi: '歧', pinyin: 'qí'},
+                {hanzi: '谨', pinyin: 'jǐn'},
+                {hanzi: '慎', pinyin: 'shèn'},
+                {hanzi: '损', pinyin: 'sǔn'},
+            ],
+            // 第259关 - 五年级上册生字
+            [
+                {hanzi: '皇', pinyin: 'huáng'},
+                {hanzi: '珑', pinyin: 'lóng'},
+                {hanzi: '剔', pinyin: 'tī'},
+                {hanzi: '杭', pinyin: 'háng'},
+                {hanzi: '莱', pinyin: 'lái'},
+                {hanzi: '瑶', pinyin: 'yáo'},
+                {hanzi: '宏', pinyin: 'hóng'},
+                {hanzi: '宋', pinyin: 'sòng'},
+            ],
+            // 第260关 - 五年级上册生字
+            [
+                {hanzi: '侵', pinyin: 'qīn'},
+                {hanzi: '统', pinyin: 'tǒng'},
+                {hanzi: '销', pinyin: 'xiāo'},
+                {hanzi: '瑰', pinyin: 'guī'},
+                {hanzi: '烬', pinyin: 'jìn'},
+                {hanzi: '庙', pinyin: 'miào'},
+                {hanzi: '务', pinyin: 'wù'},
+                {hanzi: '葛', pinyin: 'gé'},
+            ],
+            // 第261关 - 五年级上册生字
+            [
+                {hanzi: '吼', pinyin: 'hǒu'},
+                {hanzi: '腔', pinyin: 'qiāng'},
+                {hanzi: '崎', pinyin: 'qí'},
+                {hanzi: '岖', pinyin: 'qū'},
+                {hanzi: '尸', pinyin: 'shī'},
+                {hanzi: '斩', pinyin: 'zhǎn'},
+                {hanzi: '坠', pinyin: 'zhuì'},
+                {hanzi: '雹', pinyin: 'báo'},
+            ],
+            // 第262关 - 五年级上册生字
+            [
+                {hanzi: '仇', pinyin: 'chóu'},
+                {hanzi: '恨', pinyin: 'hèn'},
+                {hanzi: '眺', pinyin: 'tiào'},
+                {hanzi: '丸', pinyin: 'wán'},
+                {hanzi: '崖', pinyin: 'yá'},
+                {hanzi: '岷', pinyin: 'mín'},
+                {hanzi: '典', pinyin: 'diǎn'},
+                {hanzi: '副', pinyin: 'fù'},
+            ],
+            // 第263关 - 五年级上册生字
+            [
+                {hanzi: '委', pinyin: 'wěi'},
+                {hanzi: '协', pinyin: 'xié'},
+                {hanzi: '宾', pinyin: 'bīn'},
+                {hanzi: '泽', pinyin: 'zé'},
+                {hanzi: '奏', pinyin: 'zòu'},
+                {hanzi: '诞', pinyin: 'dàn'},
+                {hanzi: '钮', pinyin: 'niǔ'},
+                {hanzi: '瞻', pinyin: 'zhān'},
+            ],
+            // 第264关 - 五年级上册/五年级下册生字
+            [
+                {hanzi: '拂', pinyin: 'fú'},
+                {hanzi: '骑', pinyin: 'qí'},
+                {hanzi: '嗓', pinyin: 'sǎng'},
+                {hanzi: '党', pinyin: 'dǎng'},
+                {hanzi: '毯', pinyin: 'tǎn'},
+                {hanzi: '渲', pinyin: 'xuàn'},
+                {hanzi: '勒', pinyin: 'lēi'},
+                {hanzi: '吟', pinyin: 'yín'},
+            ],
+            // 第265关 - 五年级下册生字
+            [
+                {hanzi: '迂', pinyin: 'yū'},
+                {hanzi: '襟', pinyin: 'jīn'},
+                {hanzi: '蹄', pinyin: 'tí'},
+                {hanzi: '貌', pinyin: 'mào'},
+                {hanzi: '拘', pinyin: 'jū'},
+                {hanzi: '羞', pinyin: 'xiū'},
+                {hanzi: '涩', pinyin: 'sè'},
+                {hanzi: '跤', pinyin: 'jiāo'},
+            ],
+            // 第266关 - 五年级下册生字
+            [
+                {hanzi: '涯', pinyin: 'yá'},
+                {hanzi: '晰', pinyin: 'xī'},
+                {hanzi: '伞', pinyin: 'sǎn'},
+                {hanzi: '抚', pinyin: 'fǔ'},
+                {hanzi: '绍', pinyin: 'shào'},
+                {hanzi: '疆', pinyin: 'jiāng'},
+                {hanzi: '陷', pinyin: 'xiàn'},
+                {hanzi: '牧', pinyin: 'mù'},
+            ],
+            // 第267关 - 五年级下册生字
+            [
+                {hanzi: '蓑', pinyin: 'suō'},
+                {hanzi: '遮', pinyin: 'zhē'},
+                {hanzi: '醉', pinyin: 'zuì'},
+                {hanzi: '媚', pinyin: 'mèi'},
+                {hanzi: '锄', pinyin: 'chú'},
+                {hanzi: '剥', pinyin: 'bō'},
+                {hanzi: '毡', pinyin: 'zhān'},
+                {hanzi: '卸', pinyin: 'xiè'},
+            ],
+            // 第268关 - 五年级下册生字
+            [
+                {hanzi: '咀', pinyin: 'jǔ'},
+                {hanzi: '嚼', pinyin: 'jué'},
+                {hanzi: '漠', pinyin: 'mò'},
+                {hanzi: '寞', pinyin: 'mò'},
+                {hanzi: '袄', pinyin: 'ǎo'},
+                {hanzi: '袍', pinyin: 'páo'},
+                {hanzi: '胚', pinyin: 'pēi'},
+                {hanzi: '祸', pinyin: 'huò'},
+            ],
+            // 第269关 - 五年级下册生字
+            [
+                {hanzi: '患', pinyin: 'huàn'},
+                {hanzi: '赋', pinyin: 'fù'},
+                {hanzi: '淘', pinyin: 'táo'},
+                {hanzi: '妨', pinyin: 'fáng'},
+                {hanzi: '岂', pinyin: 'qǐ'},
+                {hanzi: '痴', pinyin: 'chī'},
+                {hanzi: '绞', pinyin: 'jiǎo'},
+                {hanzi: '汁', pinyin: 'zhī'},
+            ],
+            // 第270关 - 五年级下册生字
+            [
+                {hanzi: '厘', pinyin: 'lí'},
+                {hanzi: '愧', pinyin: 'kuì'},
+                {hanzi: '亏', pinyin: 'kuī'},
+                {hanzi: '梁', pinyin: 'liáng'},
+                {hanzi: '惠', pinyin: 'huì'},
+                {hanzi: '诣', pinyin: 'yì'},
+                {hanzi: '乃', pinyin: 'nǎi'},
+                {hanzi: '曰', pinyin: 'yuē'},
+            ],
+            // 第271关 - 五年级下册生字
+            [
+                {hanzi: '禽', pinyin: 'qín'},
+                {hanzi: '侮', pinyin: 'wǔ'},
+                {hanzi: '辱', pinyin: 'rǔ'},
+                {hanzi: '谎', pinyin: 'huǎng'},
+                {hanzi: '敝', pinyin: 'bì'},
+                {hanzi: '矩', pinyin: 'jǔ'},
+                {hanzi: '囚', pinyin: 'qiú'},
+                {hanzi: '嘻', pinyin: 'xī'},
+            ],
+            // 第272关 - 五年级下册生字
+            [
+                {hanzi: '臣', pinyin: 'chén'},
+                {hanzi: '淮', pinyin: 'huái'},
+                {hanzi: '柑', pinyin: 'gān'},
+                {hanzi: '橘', pinyin: 'jú'},
+                {hanzi: '枳', pinyin: 'zhǐ'},
+                {hanzi: '贼', pinyin: 'zéi'},
+                {hanzi: '赔', pinyin: 'péi'},
+                {hanzi: '妮', pinyin: 'nī'},
+            ],
+            // 第273关 - 五年级下册生字
+            [
+                {hanzi: '役', pinyin: 'yì'},
+                {hanzi: '硝', pinyin: 'xiāo'},
+                {hanzi: '炭', pinyin: 'tàn'},
+                {hanzi: '谊', pinyin: 'yì'},
+                {hanzi: '谣', pinyin: 'yáo'},
+                {hanzi: '噩', pinyin: 'è'},
+                {hanzi: '耗', pinyin: 'hào'},
+                {hanzi: '跺', pinyin: 'duò'},
+            ],
+            // 第274关 - 五年级下册生字
+            [
+                {hanzi: '嫂', pinyin: 'sǎo'},
+                {hanzi: '挎', pinyin: 'kuà'},
+                {hanzi: '咆', pinyin: 'páo'},
+                {hanzi: '哮', pinyin: 'xiāo'},
+                {hanzi: '疯', pinyin: 'fēng'},
+                {hanzi: '狞', pinyin: 'níng'},
+                {hanzi: '淌', pinyin: 'tǎng'},
+                {hanzi: '肆', pinyin: 'sì'},
+            ],
+            // 第275关 - 五年级下册生字
+            [
+                {hanzi: '揪', pinyin: 'jiū'},
+                {hanzi: '豹', pinyin: 'bào'},
+                {hanzi: '瞪', pinyin: 'dèng'},
+                {hanzi: '呻', pinyin: 'shēn'},
+                {hanzi: '膛', pinyin: 'táng'},
+                {hanzi: '搀', pinyin: 'chān'},
+                {hanzi: '祭', pinyin: 'jì'},
+                {hanzi: '奠', pinyin: 'diàn'},
+            ],
+            // 第276关 - 五年级下册生字
+            [
+                {hanzi: '璧', pinyin: 'bì'},
+                {hanzi: '召', pinyin: 'zhào'},
+                {hanzi: '诺', pinyin: 'nuò'},
+                {hanzi: '怯', pinyin: 'qiè'},
+                {hanzi: '瑟', pinyin: 'sè'},
+                {hanzi: '拒', pinyin: 'jù'},
+                {hanzi: '诸', pinyin: 'zhū'},
+                {hanzi: '荆', pinyin: 'jīng'},
+            ],
+            // 第277关 - 五年级下册生字
+            [
+                {hanzi: '妒', pinyin: 'dù'},
+                {hanzi: '忌', pinyin: 'jì'},
+                {hanzi: '曹', pinyin: 'cáo'},
+                {hanzi: '督', pinyin: 'dū'},
+                {hanzi: '鲁', pinyin: 'lǔ'},
+                {hanzi: '延', pinyin: 'yán'},
+                {hanzi: '幔', pinyin: 'màn'},
+                {hanzi: '私', pinyin: 'sī'},
+            ],
+            // 第278关 - 五年级下册生字
+            [
+                {hanzi: '寨', pinyin: 'zhài'},
+                {hanzi: '擂', pinyin: 'léi'},
+                {hanzi: '呐', pinyin: 'nà'},
+                {hanzi: '援', pinyin: 'yuán'},
+                {hanzi: '丞', pinyin: 'chéng'},
+                {hanzi: '擞', pinyin: 'sǒu'},
+                {hanzi: '绽', pinyin: 'zhàn'},
+                {hanzi: '扳', pinyin: 'bān'},
+            ],
+            // 第279关 - 五年级下册生字
+            [
+                {hanzi: '监', pinyin: 'jiān'},
+                {hanzi: '侄', pinyin: 'zhí'},
+                {hanzi: '郎', pinyin: 'láng'},
+                {hanzi: '皆', pinyin: 'jiē'},
+                {hanzi: '敛', pinyin: 'liǎn'},
+                {hanzi: '媳', pinyin: 'xí'},
+                {hanzi: '骚', pinyin: 'sāo'},
+                {hanzi: '宗', pinyin: 'zōng'},
+            ],
+            // 第280关 - 五年级下册生字
+            [
+                {hanzi: '怜', pinyin: 'lián'},
+                {hanzi: '帕', pinyin: 'pà'},
+                {hanzi: '脊', pinyin: 'jí'},
+                {hanzi: '莞', pinyin: 'guǎn'},
+                {hanzi: '锦', pinyin: 'jǐn'},
+                {hanzi: '姹', pinyin: 'chà'},
+                {hanzi: '嫣', pinyin: 'yān'},
+                {hanzi: '暇', pinyin: 'xiá'},
+            ],
+            // 第281关 - 五年级下册生字
+            [
+                {hanzi: '颇', pinyin: 'pǒ'},
+                {hanzi: '尼', pinyin: 'ní'},
+                {hanzi: '艇', pinyin: 'tǐng'},
+                {hanzi: '叉', pinyin: 'chā'},
+                {hanzi: '艄', pinyin: 'shāo'},
+                {hanzi: '翘', pinyin: 'qiào'},
+                {hanzi: '翘', pinyin: 'qiào'},
+                {hanzi: '舱', pinyin: 'cāng'},
+            ],
+            // 第282关 - 五年级下册/六年级上册生字
+            [
+                {hanzi: '姆', pinyin: 'mǔ'},
+                {hanzi: '祷', pinyin: 'dǎo'},
+                {hanzi: '雇', pinyin: 'gù'},
+                {hanzi: '邀', pinyin: 'yāo'},
+                {hanzi: '俯', pinyin: 'fǔ'},
+                {hanzi: '瀑', pinyin: 'pù'},
+                {hanzi: '峭', pinyin: 'qiào'},
+                {hanzi: '躯', pinyin: 'qū'},
+            ],
+            // 第283关 - 六年级上册生字
+            [
+                {hanzi: '津', pinyin: 'jīn'},
+                {hanzi: '蕴', pinyin: 'yùn'},
+                {hanzi: '侠', pinyin: 'xiá'},
+                {hanzi: '谧', pinyin: 'mì'},
+                {hanzi: '巷', pinyin: 'xiàng'},
+                {hanzi: '俏', pinyin: 'qiào'},
+                {hanzi: '逗', pinyin: 'dòu'},
+                {hanzi: '庞', pinyin: 'páng'},
+            ],
+            // 第284关 - 六年级上册生字
+            [
+                {hanzi: '烘', pinyin: 'hōng'},
+                {hanzi: '烤', pinyin: 'kǎo'},
+                {hanzi: '韵', pinyin: 'yùn'},
+                {hanzi: '勤', pinyin: 'qín'},
+                {hanzi: '勉', pinyin: 'miǎn'},
+                {hanzi: '吻', pinyin: 'wěn'},
+                {hanzi: '施', pinyin: 'shī'},
+                {hanzi: '挠', pinyin: 'náo'},
+            ],
+            // 第285关 - 六年级上册生字
+            [
+                {hanzi: '庸', pinyin: 'yōng'},
+                {hanzi: '艰', pinyin: 'jiān'},
+                {hanzi: '毅', pinyin: 'yì'},
+                {hanzi: '铲', pinyin: 'chǎn'},
+                {hanzi: '劣', pinyin: 'liè'},
+                {hanzi: '惹', pinyin: 'rě'},
+                {hanzi: '讥', pinyin: 'jī'},
+                {hanzi: '浆', pinyin: 'jiāng'},
+            ],
+            // 第286关 - 六年级上册生字
+            [
+                {hanzi: '岔', pinyin: 'chà'},
+                {hanzi: '挚', pinyin: 'zhì'},
+                {hanzi: '寝', pinyin: 'qǐn'},
+                {hanzi: '频', pinyin: 'pín'},
+                {hanzi: '朦', pinyin: 'méng'},
+                {hanzi: '胧', pinyin: 'lóng'},
+                {hanzi: '凄', pinyin: 'qī'},
+                {hanzi: '斑', pinyin: 'bān'},
+            ],
+            // 第287关 - 六年级上册生字
+            [
+                {hanzi: '篇', pinyin: 'piān'},
+                {hanzi: '搁', pinyin: 'gē'},
+                {hanzi: '填', pinyin: 'tián'},
+                {hanzi: '怨', pinyin: 'yuàn'},
+                {hanzi: '掀', pinyin: 'xiān'},
+                {hanzi: '唉', pinyin: 'āi'},
+                {hanzi: '裹', pinyin: 'guǒ'},
+                {hanzi: '魁', pinyin: 'kuí'},
+            ],
+            // 第288关 - 六年级上册生字
+            [
+                {hanzi: '梧', pinyin: 'wú'},
+                {hanzi: '淋', pinyin: 'lín'},
+                {hanzi: '撕', pinyin: 'sī'},
+                {hanzi: '霉', pinyin: 'méi'},
+                {hanzi: '虑', pinyin: 'lǜ'},
+                {hanzi: '悠', pinyin: 'yōu'},
+                {hanzi: '仪', pinyin: 'yí'},
+                {hanzi: '歉', pinyin: 'qiàn'},
+            ],
+            // 第289关 - 六年级上册生字
+            [
+                {hanzi: '溜', pinyin: 'liū'},
+                {hanzi: '嘿', pinyin: 'hēi'},
+                {hanzi: '割', pinyin: 'gē'},
+                {hanzi: '莹', pinyin: 'yíng'},
+                {hanzi: '蔼', pinyin: 'ǎi'},
+                {hanzi: '资', pinyin: 'zī'},
+                {hanzi: '矿', pinyin: 'kuàng'},
+                {hanzi: '赐', pinyin: 'cì'},
+            ],
+            // 第290关 - 六年级上册生字
+            [
+                {hanzi: '竭', pinyin: 'jié'},
+                {hanzi: '滥', pinyin: 'làn'},
+                {hanzi: '胁', pinyin: 'xié'},
+                {hanzi: '睹', pinyin: 'dǔ'},
+                {hanzi: '嗡', pinyin: 'wēng'},
+                {hanzi: '骏', pinyin: 'jùn'},
+                {hanzi: '鹰', pinyin: 'yīng'},
+                {hanzi: '潺', pinyin: 'chán'},
+            ],
+            // 第291关 - 六年级上册生字
+            [
+                {hanzi: '脂', pinyin: 'zhī'},
+                {hanzi: '婴', pinyin: 'yīng'},
+                {hanzi: '眷', pinyin: 'juàn'},
+                {hanzi: '扭', pinyin: 'niǔ'},
+                {hanzi: '胯', pinyin: 'kuà'},
+                {hanzi: '厨', pinyin: 'chú'},
+                {hanzi: '套', pinyin: 'tào'},
+                {hanzi: '猬', pinyin: 'wèi'},
+            ],
+            // 第292关 - 六年级上册生字
+            [
+                {hanzi: '畜', pinyin: 'chù'},
+                {hanzi: '窜', pinyin: 'cuàn'},
+                {hanzi: '挽', pinyin: 'wǎn'},
+                {hanzi: '囫', pinyin: 'hú'},
+                {hanzi: '囵', pinyin: 'lún'},
+                {hanzi: '枣', pinyin: 'zǎo'},
+                {hanzi: '搞', pinyin: 'gǎo'},
+                {hanzi: '恍', pinyin: 'huǎng'},
+            ],
+            // 第293关 - 六年级上册生字
+            [
+                {hanzi: '详', pinyin: 'xiáng'},
+                {hanzi: '逝', pinyin: 'shì'},
+                {hanzi: '章', pinyin: 'zhāng'},
+                {hanzi: '咳', pinyin: 'ké'},
+                {hanzi: '嗽', pinyin: 'sòu'},
+                {hanzi: '塑', pinyin: 'sù'},
+                {hanzi: '饼', pinyin: 'bǐng'},
+                {hanzi: '谱', pinyin: 'pǔ'},
+            ],
+            // 第294关 - 六年级上册生字
+            [
+                {hanzi: '抑', pinyin: 'yì'},
+                {hanzi: '挫', pinyin: 'cuò'},
+                {hanzi: '歇', pinyin: 'xiē'},
+                {hanzi: '吉', pinyin: 'jí'},
+                {hanzi: '营', pinyin: 'yíng'},
+                {hanzi: '劈', pinyin: 'pī'},
+                {hanzi: '寇', pinyin: 'kòu'},
+                {hanzi: '蕉', pinyin: 'jiāo'},
+            ],
+            // 第295关 - 六年级上册生字
+            [
+                {hanzi: '筒', pinyin: 'tǒng'},
+                {hanzi: '躁', pinyin: 'zào'},
+                {hanzi: '革', pinyin: 'gé'},
+                {hanzi: '遭', pinyin: 'zāo'},
+                {hanzi: '泣', pinyin: 'qì'},
+                {hanzi: '浴', pinyin: 'yù'},
+                {hanzi: '搏', pinyin: 'bó'},
+                {hanzi: '碑', pinyin: 'bēi'},
+            ],
+            // 第296关 - 六年级上册生字
+            [
+                {hanzi: '茵', pinyin: 'yīn'},
+                {hanzi: '蜡', pinyin: 'là'},
+                {hanzi: '陌', pinyin: 'mò'},
+                {hanzi: '盲', pinyin: 'máng'},
+                {hanzi: '键', pinyin: 'jiàn'},
+                {hanzi: '粼', pinyin: 'lín'},
+                {hanzi: '霎', pinyin: 'shà'},
+                {hanzi: '录', pinyin: 'lù'},
+            ],
+            // 第297关 - 六年级下册生字
+            [
+                {hanzi: '挪', pinyin: 'nuó'},
+                {hanzi: '蒸', pinyin: 'zhēng'},
+                {hanzi: '秧', pinyin: 'yāng'},
+                {hanzi: '萎', pinyin: 'wēi'},
+                {hanzi: '番', pinyin: 'fān'},
+                {hanzi: '雅', pinyin: 'yǎ'},
+                {hanzi: '勃', pinyin: 'bó'},
+                {hanzi: '旬', pinyin: 'xún'},
+            ],
+            // 第298关 - 六年级下册生字
+            [
+                {hanzi: '熬', pinyin: 'áo'},
+                {hanzi: '蒜', pinyin: 'suàn'},
+                {hanzi: '醋', pinyin: 'cù'},
+                {hanzi: '饺', pinyin: 'jiǎo'},
+                {hanzi: '翡', pinyin: 'fěi'},
+                {hanzi: '拌', pinyin: 'bàn'},
+                {hanzi: '榛', pinyin: 'zhēn'},
+                {hanzi: '栗', pinyin: 'lì'},
+            ],
+            // 第299关 - 六年级下册生字
+            [
+                {hanzi: '筝', pinyin: 'zhēng'},
+                {hanzi: '麦', pinyin: 'mài'},
+                {hanzi: '寺', pinyin: 'sì'},
+                {hanzi: '逛', pinyin: 'guàng'},
+                {hanzi: '籍', pinyin: 'jí'},
+                {hanzi: '屉', pinyin: 'tì'},
+                {hanzi: '怖', pinyin: 'bù'},
+                {hanzi: '瞅', pinyin: 'chǒu'},
+            ],
+            // 第300关 - 六年级下册生字
+            [
+                {hanzi: '魔', pinyin: 'mó'},
+                {hanzi: '刑', pinyin: 'xíng'},
+                {hanzi: '哼', pinyin: 'hēng'},
+                {hanzi: '峻', pinyin: 'jùn'},
+                {hanzi: '残', pinyin: 'cán'},
+                {hanzi: '匪', pinyin: 'fěi'},
+                {hanzi: '啃', pinyin: 'kěn'},
+                {hanzi: '舅', pinyin: 'jiù'},
+            ],
+            // 第301关 - 六年级下册生字
+            [
+                {hanzi: '鸿', pinyin: 'hóng'},
+                {hanzi: '鼎', pinyin: 'dǐng'},
+                {hanzi: '旺', pinyin: 'wàng'},
+                {hanzi: '炊', pinyin: 'chuī'},
+                {hanzi: '乖', pinyin: 'guāi'},
+                {hanzi: '兜', pinyin: 'dōu'},
+                {hanzi: '币', pinyin: 'bì'},
+                {hanzi: '哎', pinyin: 'āi'},
+            ],
+            // 第302关 - 六年级下册生字
+            [
+                {hanzi: '橱', pinyin: 'chú'},
+                {hanzi: '锈', pinyin: 'xiù'},
+                {hanzi: '摩', pinyin: 'mó'},
+                {hanzi: '揉', pinyin: 'róu'},
+                {hanzi: '玛', pinyin: 'mǎ'},
+                {hanzi: '蘸', pinyin: 'zhàn'},
+                {hanzi: '毒', pinyin: 'dú'},
+                {hanzi: '撇', pinyin: 'piē'},
+            ],
+            // 第303关 - 六年级下册生字
+            [
+                {hanzi: '噎', pinyin: 'yē'},
+                {hanzi: '搓', pinyin: 'cuō'},
+                {hanzi: '匣', pinyin: 'xiá'},
+                {hanzi: '喳', pinyin: 'zhā'},
+                {hanzi: '吭', pinyin: 'kēng'},
+                {hanzi: '娜', pinyin: 'nà'},
+                {hanzi: '伊', pinyin: 'yī'},
+                {hanzi: '搅', pinyin: 'jiǎo'},
+            ],
+            // 第304关 - 六年级下册生字
+            [
+                {hanzi: '埃', pinyin: 'āi'},
+                {hanzi: '伦', pinyin: 'lún'},
+                {hanzi: '藤', pinyin: 'téng'},
+                {hanzi: '析', pinyin: 'xī'},
+                {hanzi: '碱', pinyin: 'jiǎn'},
+                {hanzi: '顽', pinyin: 'wán'},
+                {hanzi: '卓', pinyin: 'zhuó'},
+                {hanzi: '效', pinyin: 'xiào'},
+            ],
+            // 第305关 - 六年级下册生字
+            [
+                {hanzi: '蚀', pinyin: 'shí'},
+                {hanzi: '乏', pinyin: 'fá'},
+                {hanzi: '誉', pinyin: 'yù'},
+                {hanzi: '衔', pinyin: 'xián'},
+                {hanzi: '粪', pinyin: 'fèn'},
+                {hanzi: '捐', pinyin: 'juān'},
+                {hanzi: '械', pinyin: 'xiè'},
+                {hanzi: '逆', pinyin: 'nì'},
+                {hanzi: '玫', pinyin: 'méi'},
+                {hanzi: '域', pinyin: 'yù'},
+            ],
         ];
 
         let gameState = {
@@ -1497,6 +4115,35 @@
                         startTimer();
                     }
                 }, 1000);
+            }
+        }
+
+        // 跳转到指定关卡
+        function goToLevel() {
+            const input = document.getElementById('levelInput');
+            let target = parseInt(input.value, 10);
+            if (isNaN(target) || target < 1) {
+                alert('请输入有效的关卡号');
+                return;
+            }
+            target = Math.min(target, hanziSets.length);
+
+            // 停止计时器与语音
+            clearInterval(gameState.gameTimer);
+            gameState.gameTimer = null;
+            if ('speechSynthesis' in window) {
+                speechSynthesis.cancel();
+            }
+
+            // 重置状态并跳关
+            gameState.level = target;
+            gameState.score = 0;
+            gameState.timeLeft = 60;
+            gameState.selectedCells = [];
+            createGrid();
+            updateDisplay();
+            if (gameState.timerEnabled) {
+                startTimer();
             }
         }
 
