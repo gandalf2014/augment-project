@@ -165,7 +165,26 @@
         }
 
         .card:active {
-            transform: scale(0.95);
+            transform: scale(0.95) translateY(2px);
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+        }
+
+        /* 点击涟漪 */
+        .ripple {
+            position: absolute;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(255, 255, 255, 0.55) 0%, rgba(255, 255, 255, 0) 70%);
+            transform: scale(0);
+            animation: rippleGrow 0.55s ease-out forwards;
+            pointer-events: none;
+            z-index: 5;
+        }
+
+        @keyframes rippleGrow {
+            to {
+                transform: scale(1);
+                opacity: 0;
+            }
         }
 
         .card-inner {
@@ -1154,10 +1173,26 @@
             return card;
         }
 
+        // 卡片点击涟漪效果
+        function spawnRipple(cellEl) {
+            const ripple = document.createElement('span');
+            ripple.className = 'ripple';
+            const size = Math.max(cellEl.offsetWidth, cellEl.offsetHeight) * 1.4;
+            ripple.style.width = size + 'px';
+            ripple.style.height = size + 'px';
+            ripple.style.left = (cellEl.offsetWidth / 2 - size / 2) + 'px';
+            ripple.style.top = (cellEl.offsetHeight / 2 - size / 2) + 'px';
+            cellEl.appendChild(ripple);
+            setTimeout(() => ripple.remove(), 600);
+        }
+
         // 处理卡片点击
         function handleCardClick(card, data) {
             // 确保音频上下文已解锁（通关音效需要）
             ensureFireworkAudio();
+            // 点击涟漪 + 翻卡音效
+            spawnRipple(card);
+            playFlipSound();
             // 如果正在处理或卡片已匹配或已翻开，不处理
             if (gameState.isProcessing ||
                 card.classList.contains('matched') ||

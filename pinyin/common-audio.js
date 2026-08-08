@@ -126,6 +126,30 @@ function playMatchSound() {
     }
 }
 
+// 翻卡“哒”音效（短促高频点击）
+function playFlipSound() {
+    if (!soundEnabled) return;
+    try {
+        ensureFireworkAudio();
+        if (!fireworkAudioCtx) return;
+        const ctx = fireworkAudioCtx;
+        const now = ctx.currentTime;
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'square';
+        osc.frequency.setValueAtTime(1800, now);
+        osc.frequency.exponentialRampToValueAtTime(900, now + 0.05);
+        gain.gain.setValueAtTime(0.12, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.06);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start(now);
+        osc.stop(now + 0.07);
+    } catch (e) {
+        console.warn('翻卡音效播放失败:', e);
+    }
+}
+
 // ===== TTS 兜底发音 =====
 
 // 处理拼音以改善TTS发音

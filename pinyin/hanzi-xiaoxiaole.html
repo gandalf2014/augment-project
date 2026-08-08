@@ -294,7 +294,30 @@
         }
 
         .cell:not(.flipped):active {
-            transform: scale(0.95);
+            transform: scale(0.95) translateY(2px);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+        }
+
+        /* 点击涟漪 */
+        .cell {
+            overflow: hidden;
+        }
+
+        .ripple {
+            position: absolute;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(255, 255, 255, 0.55) 0%, rgba(255, 255, 255, 0) 70%);
+            transform: scale(0);
+            animation: rippleGrow 0.55s ease-out forwards;
+            pointer-events: none;
+            z-index: 5;
+        }
+
+        @keyframes rippleGrow {
+            to {
+                transform: scale(1);
+                opacity: 0;
+            }
         }
 
         .cell.flipped {
@@ -546,6 +569,66 @@
             to {
                 transform: scale(1) translateY(0);
                 opacity: 1;
+            }
+        }
+
+        /* ===== 全屏庆祝：彩带雨 + 大字 ===== */
+        .confetti {
+            position: fixed;
+            top: -24px;
+            width: 10px;
+            height: 16px;
+            border-radius: 2px;
+            z-index: 2050;
+            pointer-events: none;
+            animation: confettiFall linear forwards;
+        }
+
+        @keyframes confettiFall {
+            0% {
+                transform: translateY(0) rotate(0deg);
+                opacity: 1;
+            }
+            100% {
+                transform: translateY(110vh) rotate(720deg);
+                opacity: 0.7;
+            }
+        }
+
+        .celebration-word {
+            position: fixed;
+            top: 32%;
+            left: 50%;
+            transform: translate(-50%, -50%) scale(0);
+            font-size: 3.2rem;
+            font-weight: 900;
+            color: #fff;
+            text-shadow: 0 4px 24px rgba(124, 77, 255, 0.9), 0 0 60px rgba(255, 213, 59, 0.7);
+            z-index: 2100;
+            pointer-events: none;
+            letter-spacing: 4px;
+            animation: wordBoom 1.6s cubic-bezier(0.2, 1.6, 0.4, 1) forwards;
+        }
+
+        @keyframes wordBoom {
+            0% {
+                transform: translate(-50%, -50%) scale(0) rotate(-8deg);
+                opacity: 0;
+            }
+            30% {
+                transform: translate(-50%, -50%) scale(1.25) rotate(3deg);
+                opacity: 1;
+            }
+            45% {
+                transform: translate(-50%, -50%) scale(1) rotate(0);
+            }
+            80% {
+                transform: translate(-50%, -50%) scale(1.05);
+                opacity: 1;
+            }
+            100% {
+                transform: translate(-50%, -50%) scale(1.4);
+                opacity: 0;
             }
         }
 
@@ -1002,6 +1085,19 @@
             initSpeechSynthesis();
         }
 
+        // 卡片点击涟漪效果
+        function spawnRipple(cellEl, x, y) {
+            const ripple = document.createElement('span');
+            ripple.className = 'ripple';
+            const size = Math.max(cellEl.offsetWidth, cellEl.offsetHeight) * 1.4;
+            ripple.style.width = size + 'px';
+            ripple.style.height = size + 'px';
+            ripple.style.left = (x - size / 2) + 'px';
+            ripple.style.top = (y - size / 2) + 'px';
+            cellEl.appendChild(ripple);
+            setTimeout(() => ripple.remove(), 600);
+        }
+
         // 创建游戏网格
         function createGrid() {
             const gridElement = document.getElementById('gameGrid');
@@ -1106,6 +1202,10 @@
 
             const cellElement = cell.element;
             const cellId = `${row}-${col}`;
+
+            // 点击涟漪（从卡片中心扩散）+ 翻卡音效
+            spawnRipple(cellElement, cellElement.offsetWidth / 2, cellElement.offsetHeight / 2);
+            playFlipSound();
 
             // 播放汉字读音（含组词）
             playHanziSound(cell.hanzi, cell.word);
@@ -1290,12 +1390,44 @@
         }
 
         // 关卡完成赞美弹窗（替代 alert）
+        // 彩带雨效果
+        function spawnConfetti() {
+            const colors = ['#ff6b6b', '#ffa94d', '#ffd43b', '#38d9a9', '#74c0fc', '#9775fa', '#f783ac'];
+            for (let i = 0; i < 60; i++) {
+                const c = document.createElement('div');
+                c.className = 'confetti';
+                c.style.left = Math.random() * 100 + 'vw';
+                c.style.background = colors[Math.floor(Math.random() * colors.length)];
+                c.style.animationDuration = (1.4 + Math.random() * 1.6) + 's';
+                c.style.animationDelay = (Math.random() * 0.8) + 's';
+                c.style.transform = 'rotate(' + Math.random() * 360 + 'deg)';
+                document.body.appendChild(c);
+            }
+            setTimeout(() => {
+                document.querySelectorAll('.confetti').forEach(el => el.remove());
+            }, 4000);
+        }
+
+        // 全屏庆祝大字
+        function spawnCelebrationWord() {
+            const messages = ['太棒了！', '真厉害！', '继续加油！', '完美！'];
+            const el = document.createElement('div');
+            el.className = 'celebration-word';
+            el.textContent = messages[Math.floor(Math.random() * messages.length)];
+            document.body.appendChild(el);
+            setTimeout(() => el.remove(), 1800);
+        }
+
         function showLevelCompleteModal(level, score, timeBonus) {
             const overlay = document.getElementById('levelModal');
             document.getElementById('levelModalTitle').textContent = '【恭喜】第' + level + '关完成！';
             document.getElementById('levelModalScore').innerHTML =
                 '得分: <b>' + score + '</b>分' + (timeBonus ? '<br>时间奖励: +' + timeBonus + '分' : '');
             overlay.classList.add('show');
+            // 全屏庆祝：彩带雨 + 大字 + 烟花音效
+            spawnConfetti();
+            spawnCelebrationWord();
+            playFireworkSound();
         }
 
         function closeLevelModal() {
