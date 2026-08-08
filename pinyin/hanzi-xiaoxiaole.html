@@ -298,11 +298,7 @@
             box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
         }
 
-        /* 点击涟漪 */
-        .cell {
-            overflow: hidden;
-        }
-
+        /* 点击涟漪（不使用 overflow:hidden，避免破坏 3D 翻转） */
         .ripple {
             position: absolute;
             border-radius: 50%;
