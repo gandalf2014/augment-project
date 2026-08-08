@@ -554,7 +554,92 @@
         }
 
         // 初始化游戏
+        // ===== 烟花爆竹音效（Web Audio API 合成，无需音频文件）=====
+        let fireworkAudioCtx = null;
+
+        // 确保音频上下文已解锁（须在用户手势中调用）
+        function ensureFireworkAudio() {
+            if (!fireworkAudioCtx) {
+                const AC = window.AudioContext || window.webkitAudioContext;
+                if (AC) {
+                    fireworkAudioCtx = new AC();
+                }
+            }
+            if (fireworkAudioCtx && fireworkAudioCtx.state === 'suspended') {
+                fireworkAudioCtx.resume();
+            }
+        }
+
+        // 烟花爆炸低频轰鸣
+        function playBoom(startTime, pan) {
+            const ctx = fireworkAudioCtx;
+            const dur = 0.9;
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(110 + Math.random() * 30, startTime);
+            osc.frequency.exponentialRampToValueAtTime(35, startTime + dur);
+            gain.gain.setValueAtTime(0.5, startTime);
+            gain.gain.exponentialRampToValueAtTime(0.001, startTime + dur);
+            if (ctx.createStereoPanner) {
+                const p = ctx.createStereoPanner();
+                p.pan.value = pan;
+                osc.connect(p);
+                p.connect(gain);
+            } else {
+                osc.connect(gain);
+            }
+            gain.connect(ctx.destination);
+            osc.start(startTime);
+            osc.stop(startTime + dur + 0.05);
+        }
+
+        // 鞭炮噼啪声（短促白噪声 burst）
+        function playCrackle(startTime) {
+            const ctx = fireworkAudioCtx;
+            const dur = 0.03 + Math.random() * 0.07;
+            const n = Math.floor(ctx.sampleRate * dur);
+            const buffer = ctx.createBuffer(1, n, ctx.sampleRate);
+            const data = buffer.getChannelData(0);
+            for (let i = 0; i < n; i++) {
+                data[i] = (Math.random() * 2 - 1) * (1 - i / n);
+            }
+            const src = ctx.createBufferSource();
+            src.buffer = buffer;
+            const filter = ctx.createBiquadFilter();
+            filter.type = 'highpass';
+            filter.frequency.value = 1200 + Math.random() * 2800;
+            const gain = ctx.createGain();
+            gain.gain.value = 0.2 + Math.random() * 0.4;
+            src.connect(filter);
+            filter.connect(gain);
+            gain.connect(ctx.destination);
+            src.start(startTime);
+        }
+
+        // 播放烟花爆竹音效
+        function playFireworkSound() {
+            try {
+                ensureFireworkAudio();
+                if (!fireworkAudioCtx) return;
+                const now = fireworkAudioCtx.currentTime;
+                // 三声烟花轰鸣
+                playBoom(now, -0.6);
+                playBoom(now + 0.35, 0.6);
+                playBoom(now + 0.75, 0);
+                // 一串鞭炮噼啪
+                for (let i = 0; i < 36; i++) {
+                    playCrackle(now + Math.random() * 2.0);
+                }
+            } catch (e) {
+                console.warn('烟花爆竹音效播放失败:', e);
+            }
+        }
+
         function initGame() {
+            // 用户首次交互时解锁音频上下文（通关音效需要）
+            document.addEventListener('click', ensureFireworkAudio, { once: true });
+            document.addEventListener('touchstart', ensureFireworkAudio, { once: true });
             renderGroupButtons();
             createGrid();
             updateDisplay();
@@ -585,6 +670,7 @@
             // 如果超过最大关卡，显示恭喜信息
             if (gameState.level > HANZI_SETS.length) {
                 setTimeout(() => {
+                    playFireworkSound();
                     alert('🎉 恭喜您完成了所有关卡！\n您已经掌握了所有汉字！');
                     // 重置到第一关继续游戏
                     gameState.level = 1;
@@ -773,7 +859,8 @@
             }
 
             if (remainingCells === 0) {
-                // 关卡完成
+                // 关卡完成，播放烟花爆竹音效
+                playFireworkSound();
                 gameState.level++;
                 let bonusMessage = `恭喜完成第${gameState.level - 1}关！`;
 
