@@ -115,6 +115,17 @@
             display: inline-block;
         }
 
+        .level-group-tag {
+            font-size: 0.75rem;
+            color: #b0bec5;
+            background: rgba(124, 77, 255, 0.22);
+            padding: 2px 10px;
+            border-radius: 12px;
+            margin-left: 6px;
+            font-weight: normal;
+            vertical-align: middle;
+        }
+
         /* 数字变化弹跳 */
         .bump {
             animation: numberBump 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
@@ -771,7 +782,7 @@
 
         <div class="game-info">
             <div class="score">得分: <span class="score-value" id="score">0</span></div>
-            <div class="level">关卡: <span class="level-value" id="level">1</span></div>
+            <div class="level">关卡: <span class="level-value" id="level">1</span><span class="level-group-tag" id="levelGroup"></span></div>
             <div class="time-toggle">
                 <span class="toggle-label">计时模式</span>
                 <div class="toggle-switch" id="timeToggle" onclick="toggleTimer()">
@@ -1060,6 +1071,8 @@
         }
 
         function initGame() {
+            // 每次进入游戏重新打乱关卡顺序
+            shuffleLevelOrder();
             // 用户首次交互时解锁音频上下文（通关音效需要）
             document.addEventListener('click', ensureFireworkAudio, { once: true });
             document.addEventListener('touchstart', ensureFireworkAudio, { once: true });
@@ -1088,9 +1101,8 @@
             gridElement.innerHTML = '';
             gameState.grid = [];
 
-            // 获取当前关卡的汉字集合
-            const levelIndex = Math.min(gameState.level - 1, HANZI_SETS.length - 1);
-            gameState.currentHanziSet = [...HANZI_SETS[levelIndex]];
+            // 获取当前关卡的汉字集合（随机顺序下按槽位取实际关卡）
+            gameState.currentHanziSet = [...HANZI_SETS[getCurrentSetIndex()]];
 
             // 如果超过最大关卡，显示恭喜信息
             if (gameState.level > HANZI_SETS.length) {
@@ -1391,6 +1403,39 @@
             }
         }
 
+        // ===== 随机关卡顺序 =====
+        let levelOrder = [];
+
+        // Fisher-Yates 洗牌：每次游戏开始重新打乱 1..N 关卡顺序
+        function shuffleLevelOrder() {
+            levelOrder = [];
+            for (let i = 1; i <= HANZI_SETS.length; i++) {
+                levelOrder.push(i);
+            }
+            for (let i = levelOrder.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [levelOrder[i], levelOrder[j]] = [levelOrder[j], levelOrder[i]];
+            }
+        }
+
+        // 当前槽位对应的实际关卡号（0-based 数据索引）
+        function getCurrentSetIndex() {
+            const n = levelOrder[gameState.level - 1];
+            return Math.min((n || 1) - 1, HANZI_SETS.length - 1);
+        }
+
+        // 关卡号 -> 册名 映射
+        const levelToGroup = {};
+        (function buildLevelToGroup() {
+            for (let i = 0; i < LEVEL_GROUPS.length; i++) {
+                const start = LEVEL_GROUPS[i].start;
+                const end = i + 1 < LEVEL_GROUPS.length ? LEVEL_GROUPS[i + 1].start - 1 : HANZI_SETS.length;
+                for (let n = start; n <= end; n++) {
+                    levelToGroup[n] = LEVEL_GROUPS[i].name;
+                }
+            }
+        })();
+
         // 渲染分册快捷按钮
         function renderGroupButtons() {
             const container = document.getElementById('groupButtons');
@@ -1401,7 +1446,16 @@
                 btn.className = 'group-btn';
                 btn.textContent = g.name;
                 btn.onclick = () => {
-                    document.getElementById('levelInput').value = g.start;
+                    // 在随机顺序中找第一个属于该册的槽位
+                    let slot = -1;
+                    for (let i = 0; i < levelOrder.length; i++) {
+                        if (levelToGroup[levelOrder[i]] === g.name) {
+                            slot = i + 1;
+                            break;
+                        }
+                    }
+                    if (slot < 0) return;
+                    document.getElementById('levelInput').value = slot;
                     goToLevel();
                     document.querySelectorAll('.group-btn').forEach(b => b.classList.remove('active'));
                     btn.classList.add('active');
@@ -1557,6 +1611,12 @@
             document.getElementById('score').textContent = gameState.score;
             document.getElementById('level').textContent = gameState.level;
             document.getElementById('time').textContent = gameState.timeLeft;
+            // 显示当前关卡所属册
+            const gTag = document.getElementById('levelGroup');
+            if (gTag) {
+                const actual = levelOrder[gameState.level - 1];
+                gTag.textContent = levelToGroup[actual] || '';
+            }
             // 数字变化弹跳动画
             ['score', 'level', 'time'].forEach(id => {
                 const el = document.getElementById(id);
